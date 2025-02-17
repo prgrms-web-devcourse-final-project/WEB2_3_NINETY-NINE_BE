@@ -180,7 +180,9 @@ public class UserController {
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("profileImageUrl", profileImageUrl);
 
-        // 응답 반환
+        // S3링크에서 이미지 반환하는 로직 포함
+
+        // 응답 반환 ( 나중에 이미지 자체를 반환하는 응답으로 변경 )
         return ResponseEntity.ok(successResponse("사용자 프로필 이미지를 반환합니다.", responseData));
     }
 
