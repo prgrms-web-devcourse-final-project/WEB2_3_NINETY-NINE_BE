@@ -9,6 +9,8 @@ import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.request.TokenRequestDTO;
 import com.example.onculture.domain.user.dto.response.UserResponse;
 import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "유저 API", description = "사용자 로그인 및 정보 관리")
 public class UserController {
 
     // 성공 응답 생성
@@ -38,6 +41,7 @@ public class UserController {
     }
 
     // 회원가입 Mock API
+    @Operation( summary = "회원가입 Mock API", description = "로컬 회원가입 API" )
     @PostMapping("/signup")
     public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequestDTO dto) {
         // 실제 회원가입 로직은 없고, 그냥 고정된 값 반환
@@ -45,6 +49,7 @@ public class UserController {
     }
 
     // 로그인 Mock API
+    @Operation( summary = "로그인 Mock API", description = "로컬 로그인 API" )
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
         // 로그인에 성공한 것으로 가정하고 고정된 메시지 반환
@@ -55,12 +60,15 @@ public class UserController {
         }
     }
 
+    // 로그아웃 Mock API
+    @Operation( summary = "로그아웃 Mock API" )
     @GetMapping( "/logout" )
     public ResponseEntity<String> logout() {
         return ResponseEntity.ok("로그아웃 성공");
     }
 
     // 토큰 재발급 Mock API
+    @Operation( summary = "토큰 재발급 Mock API", description = "AccessToken 토큰 만료 시, 재발급하는 API" )
     @PostMapping("/refresh-token")
     public ResponseEntity<String> refreshToken(@RequestBody TokenRequestDTO dto) {
         // 리프레시 토큰이 "valid-refresh-token"이면 새로운 액세스 토큰을 반환
@@ -73,6 +81,7 @@ public class UserController {
     }
 
     // 소셜 로그인 처리 Mock API
+    @Operation( summary = "소셜 로그인 처리 Mock API", description = "소셜 API에서 받은 인증 코드 활용하여 사용자 정보 조회" )
     @GetMapping("/social-login")
     public ResponseEntity<Map<String, String>> socialLogin(
             @RequestParam(defaultValue = "default-code") String code,
@@ -127,6 +136,7 @@ public class UserController {
      */
 
     // 로그인한 사용자 정보 반환 Mock API
+    @Operation( summary = "유저 전체 정보 조회 Mock API", description = "현재 로그인한 유저의 모든 정보를 반환하는 API" )
     @GetMapping("/user")
     public ResponseEntity<Map<String, Object>> user(HttpServletRequest request) {
 
@@ -145,6 +155,7 @@ public class UserController {
     }
 
     // 로그인한 사용자 일부 정보 반환 Mock API
+    @Operation( summary = "유저 일부 정보 조회 Mock API", description = "현재 로그인한 유저의 일부 정보를 반환하는 API" )
     @GetMapping("/user-simple")
     public ResponseEntity<Map<String, Object>> userSimple(HttpServletRequest request) {
 
@@ -159,6 +170,7 @@ public class UserController {
     }
 
     // 프로필 이미지 반환 Mock API
+    @Operation( summary = "프로필 이미지 조회 Mock API", description = "현재 로그인한 유저의 프로필 이미지를 반환하는 API" )
     @GetMapping("/profile-image")
     public ResponseEntity<Map<String, Object>> getProfileImage() {
         // 프로필 이미지 URL (S3에서 서명된 URL을 반환하는 Mock)
@@ -173,7 +185,8 @@ public class UserController {
     }
 
 
-    // 프로필 이미지 삽입 API (Mock)
+    // 프로필 이미지 삽입 Mock API
+    @Operation( summary = "프로필 이미지 생성 Mock API", description = "현재 로그인한 유저의 프로필 이미지를 삽입하는 API" )
     @PostMapping("/upload-profile-image")
     public ResponseEntity<Map<String, Object>> uploadProfileImage(
             @RequestParam("profileImage") MultipartFile profileImage,
@@ -199,6 +212,8 @@ public class UserController {
         return ResponseEntity.ok(successResponse("사용자 프로필 이미지를 추가했습니다.", responseData));
     }
 
+    // 프로필 이미지 삭제 Mock API
+    @Operation( summary = "프로필 이미지 삭제 Mock API", description = "현재 로그인한 유저의 프로필 이미지를 삭제하는 API" )
     @DeleteMapping( "/profile-image" )
     public ResponseEntity<Map<String, Object>> deleteProfileImage( HttpServletRequest request ) {
 
@@ -208,6 +223,7 @@ public class UserController {
     }
 
     // 비밀번호 수정 Mock API
+    @Operation( summary = "비밀번호 수정 Mock API", description = "현재 로그인한 유저의 비밀번호를 수정하는 API" )
     @PostMapping("/update-password")
     public ResponseEntity<Map<String, Object>> updatePassword(@RequestBody Map<String, String> requestBody, HttpServletRequest request ) {
         // 요청 바디에서 비밀번호 추출
@@ -230,6 +246,8 @@ public class UserController {
                 "message", "비밀번호가 성공적으로 수정되었습니다."));
     }
 
+    // 사용자 정보 수정 Mock API
+    @Operation( summary = "사용자 정보 수정 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
     @PutMapping( "/user" )
     public ResponseEntity<Map<String, Object>> updateUser(@RequestBody ModifyRequestDTO dto, HttpServletRequest request ) {
 
@@ -239,6 +257,8 @@ public class UserController {
         return ResponseEntity.ok(successResponse("사용자 정보가 수정되었습니다.", dto));
     }
 
+    // 사용자 정보 삭제 Mock API
+    @Operation( summary = "사용자 정보 삭제 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
     @DeleteMapping( "/user" )
     public ResponseEntity<Map<String, Object>> deleteUser( HttpServletRequest request ) {
 
