@@ -7,11 +7,10 @@ import java.util.List;
 
 @Getter
 @Setter
-public class PostListResponseDTO {
+public class UserPostListResponseDTO {
     private List<PostResponseDTO> posts;
     private int totalPages;
     private long totalElements;
     private int pageNum;
     private int pageSize;
-    private String sort;
 }

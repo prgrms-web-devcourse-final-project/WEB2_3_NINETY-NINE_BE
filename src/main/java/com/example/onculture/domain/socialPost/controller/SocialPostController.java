@@ -1,9 +1,7 @@
 package com.example.onculture.domain.socialPost.controller;
 
-import com.example.onculture.domain.socialPost.dto.CreatePostRequestDTO;
-import com.example.onculture.domain.socialPost.dto.LikeResponseDTO;
-import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
-import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
+import com.example.onculture.domain.socialPost.dto.*;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +13,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class SocialPostController {
+    @Operation(summary = "소셜 게시판 전체 조회", description = "sort 종류는 popular, latest, comments가 있고 기본값은 latest입니다")
     @GetMapping("/socialPosts")
-    public ResponseEntity<List<PostResponseDTO>> getSocialPosts(@RequestParam(defaultValue = "latest") String sort,
-                                                          @RequestParam(defaultValue = "1") int pageNum,
-                                                          @RequestParam(defaultValue = "1") int pageSize) {
+    public ResponseEntity<PostListResponseDTO> getSocialPosts(
+            @RequestParam(defaultValue = "latest") String sort,
+            @RequestParam(defaultValue = "1") int pageNum,
+            @RequestParam(defaultValue = "1") int pageSize) {
         PostResponseDTO post1 = new PostResponseDTO();
         post1.setId(1L);
         post1.setContent("내용1");
@@ -60,9 +60,17 @@ public class SocialPostController {
         posts.add(post2);
         posts.add(post3);
 
-        return ResponseEntity.status(HttpStatus.OK).body(posts);
-    }
+        PostListResponseDTO responseDTO = new PostListResponseDTO();
+        responseDTO.setPosts(posts);
+        responseDTO.setSort(sort);
+        responseDTO.setPageNum(pageNum);
+        responseDTO.setPageSize(pageSize);
+        responseDTO.setTotalPages(100);
+        responseDTO.setTotalElements(1000L);
 
+        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+    }
+    @Operation(summary = "소셜 게시판 상세 조회", description = "socialPostId에 해당하는 게시글의 상세 조회 API 입니다")
     @GetMapping("/socialPosts/{socialPostId}")
     public ResponseEntity<PostResponseDTO> getSocialPost(@PathVariable Long socialPostId) {
         PostResponseDTO post1 = new PostResponseDTO();
@@ -80,8 +88,9 @@ public class SocialPostController {
         return ResponseEntity.status(HttpStatus.OK).body(post1);
     }
 
+    @Operation(summary = "유저의 게시판 전체 조회", description = "userId에 해당하는 게시글을 불러옵니다")
     @GetMapping("/users/{userId}/socialPosts")
-    public ResponseEntity<List<PostResponseDTO>> getSocialPostsByUser(
+    public ResponseEntity<UserPostListResponseDTO> getSocialPostsByUser(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "1") int pageSize) {
@@ -126,9 +135,17 @@ public class SocialPostController {
         posts.add(post2);
         posts.add(post3);
 
-        return ResponseEntity.status(HttpStatus.OK).body(posts);
+        UserPostListResponseDTO responseDTO = new UserPostListResponseDTO();
+        responseDTO.setPosts(posts);
+        responseDTO.setPageNum(pageNum);
+        responseDTO.setPageSize(pageSize);
+        responseDTO.setTotalPages(100);
+        responseDTO.setTotalElements(1000L);
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
 
+    @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
     @PostMapping("/socialPosts")
     public ResponseEntity<PostResponseDTO> createSocialPost(@RequestBody CreatePostRequestDTO requestDTO) {
         PostResponseDTO post1 = new PostResponseDTO();
@@ -145,7 +162,7 @@ public class SocialPostController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(post1);
     }
-
+    @Operation(summary = "소셜 게시판 수정", description = "socialPostId에 해당하는 게시글의 수정 API 입니다")
     @PutMapping("/socialPosts/{socialPostId}")
     public ResponseEntity<PostResponseDTO> updateSocialPost(@RequestBody UpdatePostRequestDTO requestDTO, @PathVariable Long socialPostId) {
         PostResponseDTO post1 = new PostResponseDTO();
@@ -163,13 +180,15 @@ public class SocialPostController {
         return ResponseEntity.status(HttpStatus.OK).body(post1);
     }
 
+    @Operation(summary = "소셜 게시판 삭제", description = "socialPostId에 해당하는 게시글의 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}")
     public ResponseEntity<String> deleteSocialPost(@PathVariable Long socialPostId) {
         return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
     }
 
+    @Operation(summary = "소셜 게시판 좋아요 추가", description = "socialPostId에 해당하는 게시글의 좋아요 추가 API 입니다")
     @PostMapping("/socialPosts/{socialPostId}/likes")
-    public ResponseEntity<LikeResponseDTO> addLike(@PathVariable Long socialPostId) {
+    public ResponseEntity<LikeResponseDTO> addLikeBySocialPost(@PathVariable Long socialPostId) {
         LikeResponseDTO like = new LikeResponseDTO();
         like.setId(1L);
         like.setSocialPostId(socialPostId);
@@ -179,6 +198,7 @@ public class SocialPostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(like);
     }
 
+    @Operation(summary = "소셜 게시판 좋아요 추가", description = "socialPostId에 해당하는 게시글의 좋아요 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}/likes/{likeId}")
     public ResponseEntity<String> deleteLikeBySocialPost(@PathVariable Long socialPostId, @PathVariable Long likeId) {
         return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
