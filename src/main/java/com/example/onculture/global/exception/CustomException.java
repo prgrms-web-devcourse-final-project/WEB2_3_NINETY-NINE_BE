@@ -1,4 +1,4 @@
-package com.example.onculture.exception;
+package com.example.onculture.global.exception;
 
 import lombok.Getter;
 
