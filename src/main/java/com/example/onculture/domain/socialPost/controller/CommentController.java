@@ -3,6 +3,7 @@ package com.example.onculture.domain.socialPost.controller;
 import com.example.onculture.domain.socialPost.dto.CommentResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class CommentController {
+    @Operation(summary = "소셜 게시판 댓글 전체 조회", description = "socialPostId에 해당하는 게시글의 댓글 전체 조회 API 입니다")
     @GetMapping("/socialPosts/{socialPostId}/comments")
     public ResponseEntity<List<CommentResponseDTO>> getCommentsByPost(@PathVariable Long socialPostId) {
         CommentResponseDTO comment1 = new CommentResponseDTO();
@@ -48,6 +50,7 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.OK).body(comments);
     }
 
+    @Operation(summary = "소셜 게시판 댓글 생성", description = "socialPostId에 해당하는 게시글의 댓글 생성 API 입니다")
     @PostMapping("/socialPosts/{socialPostId}/comments")
     public ResponseEntity<CommentResponseDTO> createCommentByPost(
             @PathVariable Long socialPostId,
@@ -63,6 +66,7 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(comment1);
     }
 
+    @Operation(summary = "소셜 게시판 댓글 수정", description = "socialPostId에 해당하는 게시글의 댓글 생성 API 입니다")
     @PutMapping("/socialPosts/{socialPostId}/comments/{commentId}")
     public ResponseEntity<CommentResponseDTO> updateCommentByPost(
             @PathVariable Long socialPostId,
@@ -79,6 +83,7 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.OK).body(comment1);
     }
 
+    @Operation(summary = "소셜 게시판 댓글 삭제", description = "socialPostId에 해당하는 게시글의 댓글 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}/comments/{commentId}")
     public ResponseEntity<String> deleteCommentByPost(@PathVariable Long socialPostId, @PathVariable Long commentId) {
         return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
