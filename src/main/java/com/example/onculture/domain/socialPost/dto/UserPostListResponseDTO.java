@@ -13,4 +13,5 @@ public class UserPostListResponseDTO {
     private long totalElements;
     private int pageNum;
     private int pageSize;
+    private int numberOfElements;
 }
