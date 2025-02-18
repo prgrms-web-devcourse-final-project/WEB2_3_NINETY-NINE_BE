@@ -2,10 +2,7 @@ package com.example.onculture.domain.socialPost.service;
 
 
 import com.example.onculture.domain.socialPost.domain.SocialPost;
-import com.example.onculture.domain.socialPost.dto.CreatePostRequestDTO;
-import com.example.onculture.domain.socialPost.dto.PostListResponseDTO;
-import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
-import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
+import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -21,7 +18,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class SocialPostService {
     private final UserRepository userRepository;
-    private SocialPostRepository socialPostRepository;
+    private final SocialPostRepository socialPostRepository;
 
     public PostListResponseDTO getSocialPosts(String sort, int pageNum, int pageSize) {
         if (!(sort.equals("latest") || sort.equals("comments") || sort.equals("popular"))) {
@@ -61,9 +58,7 @@ public class SocialPostService {
     }
 
     public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
+        existsByUserId(userId);
 
         validatePageInput(pageNum, pageSize);
 
@@ -81,7 +76,7 @@ public class SocialPostService {
     }
 
     public PostResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
-        userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        existsByUserId(userId);
 
         SocialPost socialPost = SocialPost.builder()
                 .userId(userId)
@@ -95,9 +90,27 @@ public class SocialPostService {
         return new PostResponseDTO(socialPost);
     }
 
+    public PostResponseDTO updateSocialPost(Long userId, UpdatePostRequestDTO requestDTO, Long socialPostId) {
+        existsByUserId(userId);
+
+        SocialPost socialPost = socialPostRepository.findById(socialPostId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        socialPost.updateSocialPost(requestDTO);
+
+        socialPostRepository.save(socialPost);
+
+        return new PostResponseDTO(socialPost);
+    }
+
     private void validatePageInput(int pageNum, int pageSize) {
         if (pageNum < 0 || pageSize < 0) {
             throw new CustomException(ErrorCode.INVALID_PAGE_REQUEST);
         }
+    }
+
+    private void existsByUserId(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }

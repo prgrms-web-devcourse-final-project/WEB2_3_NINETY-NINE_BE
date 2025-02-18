@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.domain;
 
+import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -47,5 +48,11 @@ public class SocialPost {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateSocialPost(UpdatePostRequestDTO requestDTO) {
+        this.title = requestDTO.getTitle();
+        this.content = requestDTO.getContent();
+        this.imageUrl = requestDTO.getImageUrl();
     }
 }
