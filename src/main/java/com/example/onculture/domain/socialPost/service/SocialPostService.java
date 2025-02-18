@@ -1,6 +1,8 @@
 package com.example.onculture.domain.socialPost.service;
 
 
+import com.example.onculture.domain.socialPost.domain.SocialPost;
+import com.example.onculture.domain.socialPost.dto.CreatePostRequestDTO;
 import com.example.onculture.domain.socialPost.dto.PostListResponseDTO;
 import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
@@ -76,6 +78,21 @@ public class SocialPostService {
                 .totalElements(posts.getTotalElements())
                 .numberOfElements(posts.getNumberOfElements())
                 .build();
+    }
+
+    public PostResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
+        userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        SocialPost socialPost = SocialPost.builder()
+                .userId(userId)
+                .title(requestDTO.getTitle())
+                .content(requestDTO.getContent())
+                .imageUrl(requestDTO.getImageUrl())
+                .build();
+
+        socialPostRepository.save(socialPost);
+
+        return new PostResponseDTO(socialPost);
     }
 
     private void validatePageInput(int pageNum, int pageSize) {

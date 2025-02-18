@@ -50,19 +50,10 @@ public class SocialPostController {
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
     @PostMapping("/socialPosts")
     public ResponseEntity<PostResponseDTO> createSocialPost(@RequestBody CreatePostRequestDTO requestDTO) {
-        PostResponseDTO post1 = new PostResponseDTO();
-        post1.setId(1L);
-        post1.setContent(requestDTO.getContent());
-        post1.setTitle(requestDTO.getTitle());
-        post1.setImageUrl(requestDTO.getImageUrl());
-        post1.setCommentCount(3);
-        post1.setLikeCount(3);
-        post1.setViewCount(3);
-        post1.setUserId(1L);
-        post1.setCreatedAt(LocalDateTime.now().minusDays(1));
-        post1.setUpdatedAt(LocalDateTime.now().minusDays(1));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(post1);
+        PostResponseDTO responseDTO = socialPostService.createSocialPost(
+                // 1L은 임시 유저 아이디 입니다.
+                1L, requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }
 
     @Operation(summary = "소셜 게시판 수정", description = "socialPostId에 해당하는 게시글의 수정 API 입니다")

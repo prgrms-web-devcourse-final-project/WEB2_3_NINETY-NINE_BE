@@ -33,17 +33,4 @@ public class PostResponseDTO {
         this.createdAt = socialPost.getCreatedAt();
         this.updatedAt = socialPost.getUpdatedAt();
     }
-
-    public PostResponseDTO fromEntity(SocialPost socialPost) {
-        this.id = socialPost.getId();
-        this.title = socialPost.getTitle();
-        this.content = socialPost.getContent();
-        this.imageUrl = socialPost.getImageUrl();
-        this.likeCount = socialPost.getLikeCount();
-        this.viewCount = socialPost.getViewCount();
-        this.commentCount = socialPost.getCommentCount();
-        this.createdAt = socialPost.getCreatedAt();
-
-        return this;
-    }
 }
