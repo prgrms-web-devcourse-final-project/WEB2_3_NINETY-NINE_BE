@@ -20,24 +20,27 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
+    @Column(name = "user_id", updatable = false)     // User Id가 변경되지 않도록 설정
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "email", nullable = false, unique = true, updatable = false)    // unique 제약조건 추가
     private String email;
 
+    @Column(name = "password")
     private String password;
 
-    @Column(nullable = false)
+    @Column(name = "nickname", nullable = false, unique = true)
     private String nickname;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Role role;
+    @ColumnDefault("'USER'")
+    private Role role = Role.USER;
 
     @Column(nullable = false)
-    @ColumnDefault("0")
-    private Social flag;
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'Local'")
+    private Social flag = Social.Local;
 
     // createdAt: INSERT 시 자동 저장
     @CreationTimestamp
