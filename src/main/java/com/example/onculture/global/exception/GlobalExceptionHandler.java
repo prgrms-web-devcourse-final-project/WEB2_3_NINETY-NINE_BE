@@ -1,8 +1,4 @@
-package com.example.onculture.exception;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+package com.example.onculture.global.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
