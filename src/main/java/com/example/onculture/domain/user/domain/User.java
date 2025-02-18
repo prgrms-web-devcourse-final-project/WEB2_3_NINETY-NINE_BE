@@ -37,13 +37,11 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'USER'")
-    private Role role = Role.USER;
+    private Role role;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'Local'")
-    private Social flag = Social.Local;
+    private Social flag;
 
     // createdAt: INSERT 시 자동 저장
     @CreationTimestamp
@@ -57,8 +55,13 @@ public class User implements UserDetails {
     @ColumnDefault("false")  // 'false'가 기본값
     private boolean deletedFlag = false; // Java에서도 기본값 설정
 
-    // 상속 받은 UserDetails 클래스를 사용하기 위한 필수 @Override 메서드
+    @PrePersist
+    public void prePersist() {
+        this.flag = this.flag == null ? Social.Local: this.flag;    // flag 필드 기본값 설정
+        this.role = this.role == null ? Role.USER : this.role;      // role 필드 기본값 설정
+    }
 
+    // 상속 받은 UserDetails 클래스를 사용하기 위한 필수 @Override 메서드
     // 권한 반환
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

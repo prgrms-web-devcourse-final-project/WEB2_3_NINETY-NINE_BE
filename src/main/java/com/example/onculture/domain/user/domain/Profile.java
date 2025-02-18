@@ -45,4 +45,9 @@ public class Profile {
     @Enumerated(EnumType.STRING)
     @Column(name = "interests")
     private List<Interest> interests;
+
+    @PrePersist
+    public void prePersist() {
+        this.gender = this.gender == null ? Gender.U : this.gender;
+    }
 }
