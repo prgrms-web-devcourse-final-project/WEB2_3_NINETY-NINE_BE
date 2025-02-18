@@ -3,6 +3,7 @@ package com.example.onculture.domain.user.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,18 +26,10 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false)
     private String nickname;
-
-    @Column(nullable = false)
-    private String birth;
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -46,13 +39,15 @@ public class User {
     @ColumnDefault("0")
     private Social flag;
 
-    @Column(nullable = false, updatable = false, name = "created_at")
+    // createdAt: INSERT 시 자동 저장
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false, name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
-    @Column(name = "deleted_at")
+    // deletedAt: NULL 가능, 필요할 때 값 설정
+    @Column(name = "deleted_at", columnDefinition = "TIMESTAMP NULL")
     private LocalDateTime deletedAt;
 
-    @Column(nullable = false)
-    @ColumnDefault("0")
-    private boolean deletedFlag;
+    @ColumnDefault("false")  // 'false'가 기본값
+    private boolean deletedFlag = false; // Java에서도 기본값 설정
 }
