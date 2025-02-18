@@ -51,8 +51,6 @@ public class UserController {
     @PostMapping("/signup")
     public ResponseEntity<SuccessResponse<Void>> signup(@RequestBody SignupRequestDTO request) {
 
-        System.out.println("회원가입 컨트롤러 실행 : " + request.getEmail());
-
         Long userId = userService.save(request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
