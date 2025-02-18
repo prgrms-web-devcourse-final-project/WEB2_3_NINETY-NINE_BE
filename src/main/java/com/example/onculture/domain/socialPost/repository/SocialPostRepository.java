@@ -10,7 +10,6 @@ import com.example.onculture.domain.socialPost.domain.SocialPost;
 
 @Repository
 public interface SocialPostRepository extends JpaRepository<SocialPost, Long> {
-
     Page<SocialPost> findByUserId(Long userId, Pageable pageable);
 }
 
