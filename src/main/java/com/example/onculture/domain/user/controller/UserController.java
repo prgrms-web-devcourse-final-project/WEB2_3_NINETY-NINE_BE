@@ -9,9 +9,12 @@ import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.request.TokenRequestDTO;
 import com.example.onculture.domain.user.dto.response.UserResponse;
 import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
+import com.example.onculture.domain.user.service.UserService;
+import com.example.onculture.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -25,10 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
 @Tag(name = "유저 API", description = "사용자 로그인 및 정보 관리")
 public class UserController {
+
+    private final UserService userService;
 
     // 성공 응답 생성
     public Map<String, Object> successResponse(String message, Object data) {
@@ -40,12 +46,17 @@ public class UserController {
         return response;
     }
 
-    // 회원가입 Mock API
-    @Operation( summary = "회원가입 Mock API", description = "로컬 회원가입 API" )
+    // 회원가입 API
+    @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequestDTO dto) {
-        // 실제 회원가입 로직은 없고, 그냥 고정된 값 반환
-        return ResponseEntity.status(HttpStatus.CREATED).body(successResponse("회원가입 성공", dto.getNickname()));
+    public ResponseEntity<SuccessResponse<Void>> signup(@RequestBody SignupRequestDTO request) {
+
+        System.out.println("회원가입 컨트롤러 실행 : " + request.getEmail());
+
+        Long userId = userService.save(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다.", null));
     }
 
     // 로그인 Mock API
