@@ -17,8 +17,8 @@ public class SocialPostController {
     @GetMapping("/socialPosts")
     public ResponseEntity<PostListResponseDTO> getSocialPosts(
             @RequestParam(defaultValue = "latest") String sort,
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "1") int pageSize) {
+            @RequestParam(defaultValue = "0") int pageNum,
+            @RequestParam(defaultValue = "3") int pageSize) {
         PostResponseDTO post1 = new PostResponseDTO();
         post1.setId(1L);
         post1.setContent("내용1");
@@ -62,11 +62,11 @@ public class SocialPostController {
 
         PostListResponseDTO responseDTO = new PostListResponseDTO();
         responseDTO.setPosts(posts);
-        responseDTO.setSort(sort);
+        responseDTO.setNumberOfElements(3);
         responseDTO.setPageNum(pageNum);
         responseDTO.setPageSize(pageSize);
-        responseDTO.setTotalPages(100);
-        responseDTO.setTotalElements(1000L);
+        responseDTO.setTotalPages(1);
+        responseDTO.setTotalElements(3L);
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
@@ -92,8 +92,8 @@ public class SocialPostController {
     @GetMapping("/users/{userId}/socialPosts")
     public ResponseEntity<UserPostListResponseDTO> getSocialPostsByUser(
             @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "1") int pageSize) {
+            @RequestParam(defaultValue = "0") int pageNum,
+            @RequestParam(defaultValue = "3") int pageSize) {
         PostResponseDTO post1 = new PostResponseDTO();
         post1.setId(1L);
         post1.setContent("내용1");
@@ -139,8 +139,9 @@ public class SocialPostController {
         responseDTO.setPosts(posts);
         responseDTO.setPageNum(pageNum);
         responseDTO.setPageSize(pageSize);
-        responseDTO.setTotalPages(100);
-        responseDTO.setTotalElements(1000L);
+        responseDTO.setNumberOfElements(3);
+        responseDTO.setTotalPages(1);
+        responseDTO.setTotalElements(3L);
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }

@@ -13,5 +13,5 @@ public class PostListResponseDTO {
     private long totalElements;
     private int pageNum;
     private int pageSize;
-    private String sort;
+    private int numberOfElements;
 }
