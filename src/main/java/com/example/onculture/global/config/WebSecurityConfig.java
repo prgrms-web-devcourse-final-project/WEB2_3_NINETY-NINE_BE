@@ -33,7 +33,35 @@ public class WebSecurityConfig {
     }
      */
 
-    // 특정 HTTP 요청에 대한 웹 기반 보안 구성
+    // 특정 HTTP 요청에 대한 웹 기반 보안 구성 ( 버전2 - Restful API용 )
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        return http
+                // 인증, 인가 설정
+                // 특정 경로에 대한 액세스 설정
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/").permitAll()
+                        .requestMatchers("/static/**", "/styles/**", "/images/**", "/css/**", "/scripts/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/signup").permitAll()
+                        // 다른 요청들은 거부
+                        .anyRequest().authenticated())
+
+                // jwt 기반 로그인/로그아웃 사용 시 사용
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시, 세션을 사용하지 않음
+//                .httpBasic(withDefaults());  // Basic Auth 또는 JWT 인증 방식 사용
+
+                // csrf 설정 비활성화 ( 개발 중에는 비활성화 )
+                .csrf(AbstractHttpConfigurer::disable)
+                .build();
+    }
+
+    // 특정 HTTP 요청에 대한 웹 기반 보안 구성 ( 버전 1 - Thymeleaf용 )
+    /*
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -51,9 +79,6 @@ public class WebSecurityConfig {
                         .requestMatchers("/signup").permitAll()
                         // 다른 요청들은 거부
                         .anyRequest().authenticated())
-
-                // Rest API만 제공하기 때문에 불필요 ( 추후 Jwt 추가 시 폼 기반 로그인, 로그아웃 설정 삭제 )
-                /*
                 // 폼 기반 로그인 설정
                 .formLogin(formLogin -> formLogin
                         .loginPage("/login")            // 로그인 페이지 경로 설정
@@ -64,16 +89,11 @@ public class WebSecurityConfig {
                         .logoutSuccessUrl("/login")     // 로그아웃 완료 시, 이동 경로
                         .invalidateHttpSession(true)    // 로그아웃 이후에 세션 전체 삭제 여부 설정
                 )
-                 */
-
-                // jwt 기반 로그인/로그아웃 사용 시 사용
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT 사용 시, 세션을 사용하지 않음
-//                .httpBasic(withDefaults());  // Basic Auth 또는 JWT 인증 방식 사용
-
                 // csrf 설정 비활성화 ( 개발 중에는 비활성화 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();
     }
+     */
 
     // 인증 관리자 권한 설정
     // 사용자 정보를 가져올 서비스 재정의, 인증 방법(LDAP, JDBC 기반 인증) 등 설정
