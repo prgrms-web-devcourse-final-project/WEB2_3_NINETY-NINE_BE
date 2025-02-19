@@ -37,7 +37,10 @@ public class CommentController {
     public ResponseEntity<SuccessResponse<CommentResponseDTO>> createCommentByPost(
             @PathVariable Long socialPostId,
             @RequestBody CreateCommentRequestDTO requestDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(null);
+        CommentResponseDTO responseDTO = commentService.createCommentByPost(
+                // 1L은 임시 유저 아이디 입니다.
+                1L, socialPostId, requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.success(HttpStatus.CREATED, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 댓글 수정", description = "socialPostId에 해당하는 게시글의 댓글 생성 API 입니다")

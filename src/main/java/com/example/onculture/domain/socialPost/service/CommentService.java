@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.service;
 
+import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CommentResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
@@ -43,6 +44,29 @@ public class CommentService {
                 .totalElements(comments.getTotalElements())
                 .numberOfElements(comments.getNumberOfElements())
                 .build();
+    }
+
+    public CommentResponseDTO createCommentByPost(Long userId,
+                                                  Long socialPostId,
+                                                  CreateCommentRequestDTO requestDTO) {
+        existsByUserId(userId);
+
+        existsBySocialPostId(socialPostId);
+
+        Comment comment = Comment.builder()
+                .socialPostId(socialPostId)
+                .userId(userId)
+                .content(requestDTO.getContent())
+                .build();
+
+        commentRepository.save(comment);
+
+        return new CommentResponseDTO(comment);
+    }
+
+    private void existsByUserId(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     private void existsBySocialPostId(Long socialPostId) {
