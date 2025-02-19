@@ -10,8 +10,7 @@ import org.checkerframework.common.value.qual.StringVal;
 @AllArgsConstructor
 public enum Interest {
 
-    O("기타", "Other"),
-    P("팝업", "Pop-ups"),
+    P("팝업 스토어", "Pop-up Store"),
     E("전시회", "Exhibitions"),
     D("연극", "Drama"),
     M("뮤지컬", "Musicals"),
