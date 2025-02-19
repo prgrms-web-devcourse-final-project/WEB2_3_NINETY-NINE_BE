@@ -8,7 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-@ToString
 @Entity
 @Getter
 @Builder
@@ -40,9 +39,12 @@ public class SocialPost {
     private int likeCount = 0;
 
     @CreationTimestamp
+    @Column(nullable = false)
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @UpdateTimestamp
+    @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @PreUpdate
