@@ -57,16 +57,15 @@ public class UserController {
                 .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다.", null));
     }
 
-    // 로그인 Mock API
-    @Operation( summary = "로그인 Mock API", description = "로컬 로그인 API" )
+    // 로그인 API
+    @Operation( summary = "로그인 API", description = "로컬 로그인 API" )
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
-        // 로그인에 성공한 것으로 가정하고 고정된 메시지 반환
-        if (dto.getEmail().equals("test@gmail.com") && dto.getPassword().equals("!123456")) {
-            return ResponseEntity.ok("로그인 성공");
-        } else {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
-        }
+
+        // 로그인 성공 시, 엑세스 토큰 반환 ( JWT 구현 전까지는 랜덤 코드 사용 )
+        String accessToken = userService.login(dto);
+
+        return ResponseEntity.ok(SuccessResponse.success("로그인에 성공하였습니다.", accessToken));
     }
 
     // 로그아웃 Mock API

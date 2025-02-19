@@ -16,10 +16,5 @@ import java.util.List;
 public class UserSimpleResponse {
 
     private String email;
-
     private String nickname;
-
-    private String description;
-
-    private List<Interest> interests;
 }

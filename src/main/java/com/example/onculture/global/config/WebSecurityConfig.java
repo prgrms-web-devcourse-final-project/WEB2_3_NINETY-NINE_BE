@@ -8,9 +8,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -95,9 +97,16 @@ public class WebSecurityConfig {
     }
      */
 
-    // 인증 관리자 권한 설정
+    // 인증 관리자 권한 설정 ( 버전 2 )
+    @Bean
+    public AuthenticationManager authenticationManagerBean(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    // 인증 관리자 권한 설정 ( 버전 1 )
     // 사용자 정보를 가져올 서비스 재정의, 인증 방법(LDAP, JDBC 기반 인증) 등 설정
     // 사용자 인증(Authentication)을 처리하는 AuthenticationManager 빈을 설정하는 코드
+    /*
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http,
                                                        PasswordEncoder passwordEncoder, UserDetailsService userDetailsService, UserService userService)
@@ -107,6 +116,7 @@ public class WebSecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder);   // 비밀번호 암호화 방식 설정
         return new ProviderManager(authProvider);
     }
+     */
 
     // 패스워드 인코더로 사용할 빈 등록
     // pring Security 5 이상에서 기본적으로 제공하는 비밀번호 인코더
