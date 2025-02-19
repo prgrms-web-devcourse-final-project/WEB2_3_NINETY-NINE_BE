@@ -27,6 +27,7 @@ public class SocialPostController {
             @RequestParam(defaultValue = "0") int pageNum,
             @RequestParam(defaultValue = "9") int pageSize) {
         PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize);
+
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
 
@@ -41,8 +42,8 @@ public class SocialPostController {
     @GetMapping("/users/{userId}/socialPosts")
     public ResponseEntity<UserPostListResponseDTO> getSocialPostsByUser(
             @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "1") int pageSize) {
+            @RequestParam(defaultValue = "0") int pageNum,
+            @RequestParam(defaultValue = "3") int pageSize) {
         PostResponseDTO post1 = new PostResponseDTO();
         post1.setId(1L);
         post1.setContent("내용1");
@@ -88,8 +89,9 @@ public class SocialPostController {
         responseDTO.setPosts(posts);
         responseDTO.setPageNum(pageNum);
         responseDTO.setPageSize(pageSize);
-        responseDTO.setTotalPages(100);
-        responseDTO.setTotalElements(1000L);
+        responseDTO.setNumberOfElements(3);
+        responseDTO.setTotalPages(1);
+        responseDTO.setTotalElements(3L);
 
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
