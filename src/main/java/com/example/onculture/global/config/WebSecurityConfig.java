@@ -37,8 +37,6 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/login").permitAll()
-                        .requestMatchers("/signup").permitAll()
                         // 다른 요청들은 거부
                         .anyRequest().authenticated())
 
