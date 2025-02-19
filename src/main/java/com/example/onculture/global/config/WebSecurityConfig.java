@@ -24,17 +24,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    // 스프링 시큐리티 기능 비활성화 ( 사용 x )
-    // 정적 리소스, h2-console의 url은 인증, 인가 서비스를 적용하지 않는다.
-    /*
-    @Bean
-    public WebSecurityCustomizer configure() {
-        return (web) -> web.ignoring()
-                .requestMatchers("/h2-console/**")      // h2-console를 사용하지 않지만 일단 설정
-                .requestMatchers("/static/**", "/styles/**", "/imgs/**", "/scripts/**");
-    }
-     */
-
     // 특정 HTTP 요청에 대한 웹 기반 보안 구성 ( 버전2 - Restful API용 )
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -61,6 +50,44 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .build();
     }
+
+    // 인증 관리자 권한 설정 ( 버전 1 )
+    // 사용자 정보를 가져올 서비스 재정의, 인증 방법(LDAP, JDBC 기반 인증) 등 설정
+    // 사용자 인증(Authentication)을 처리하는 AuthenticationManager 빈을 설정하는 코드
+    @Bean
+    public AuthenticationManager authenticationManager(HttpSecurity http,
+                                                       PasswordEncoder passwordEncoder,
+                                                       UserDetailsService userDetailsService ) throws Exception {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();       // 기본 인증 제공자( UserDetailsService를 이용해 사용자 정보를 가져오고, 비밀번호 검증을 수행)
+        authProvider.setUserDetailsService(userDetailsService);    // 사용자 정보 로딩 서비스 설정 ( 반드시 UserDetailsService를 상속 받은 클래스 )
+        authProvider.setPasswordEncoder(passwordEncoder);   // 비밀번호 암호화 방식 설정
+
+        // 기본적으로 사용자 존재 여부를 알리지 않는다. ( 사용자 미존재 -> 비밀번호 미일치로 변환해서 반환 )
+        // UsernameNotFoundException(사용자 존재 여부)을 숨기지 않도록 설정 ( 우선 미사용 )
+//        authProvider.setHideUserNotFoundExceptions(false);
+
+        return new ProviderManager(authProvider);
+    }
+
+
+
+    // 패스워드 인코더로 사용할 빈 등록
+    // pring Security 5 이상에서 기본적으로 제공하는 비밀번호 인코더
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    // 스프링 시큐리티 기능 비활성화 ( 사용 x )
+    // 정적 리소스, h2-console의 url은 인증, 인가 서비스를 적용하지 않는다.
+    /*
+    @Bean
+    public WebSecurityCustomizer configure() {
+        return (web) -> web.ignoring()
+                .requestMatchers("/h2-console/**")      // h2-console를 사용하지 않지만 일단 설정
+                .requestMatchers("/static/**", "/styles/**", "/imgs/**", "/scripts/**");
+    }
+     */
 
     // 특정 HTTP 요청에 대한 웹 기반 보안 구성 ( 버전 1 - Thymeleaf용 )
     /*
@@ -97,33 +124,14 @@ public class WebSecurityConfig {
     }
      */
 
-    // 인증 관리자 권한 설정 ( 버전 2 )
+    // 인증 관리자 권한 설정 ( 버전 2 / 간편한 방식 )
+    /*
     @Bean
     public AuthenticationManager authenticationManagerBean(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
-    // 인증 관리자 권한 설정 ( 버전 1 )
-    // 사용자 정보를 가져올 서비스 재정의, 인증 방법(LDAP, JDBC 기반 인증) 등 설정
-    // 사용자 인증(Authentication)을 처리하는 AuthenticationManager 빈을 설정하는 코드
-    /*
-    @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http,
-                                                       PasswordEncoder passwordEncoder, UserDetailsService userDetailsService, UserService userService)
-            throws Exception {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();       // 기본 인증 제공자( UserDetailsService를 이용해 사용자 정보를 가져오고, 비밀번호 검증을 수행)
-        authProvider.setUserDetailsService(userService);    // 사용자 정보 로딩 서비스 설정 ( 반드시 UserDetailsService를 상속 받은 클래스 )
-        authProvider.setPasswordEncoder(passwordEncoder);   // 비밀번호 암호화 방식 설정
-        return new ProviderManager(authProvider);
-    }
      */
 
-    // 패스워드 인코더로 사용할 빈 등록
-    // pring Security 5 이상에서 기본적으로 제공하는 비밀번호 인코더
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
     // BCrypt 알고리즘만 사용하는 비밀번호 인코더 ( 사용 x )
     /*
     @Bean
