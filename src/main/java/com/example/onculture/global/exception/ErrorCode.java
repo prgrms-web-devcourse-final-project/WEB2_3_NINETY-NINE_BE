@@ -46,7 +46,7 @@ public enum ErrorCode {
 	UNAUTHORIZED_EXCEPTION(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다. [로그인] 또는 [회원가입] 후 다시 시도해주세요."),
 	INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효한 토큰이 아닙니다."),
 	INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효한 토큰이 아닙니다."),
-	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "올바른 비밀번호가 아닙니다."),
+	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 일치하지 않습니다."),
 	TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 토큰 입니다."),
 
 

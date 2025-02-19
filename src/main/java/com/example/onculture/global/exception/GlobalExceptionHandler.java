@@ -1,6 +1,8 @@
 package com.example.onculture.global.exception;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -25,6 +27,17 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(errorResponse);
 	}
 
+	// 사용자 인증 과정 - 사용자가 없을 경우
+	@ExceptionHandler(UsernameNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.USER_NOT_FOUND);
+		return ResponseEntity.status(ErrorCode.USER_NOT_FOUND.getStatus()).body(errorResponse);
+	}
 
-
+	// 사용자 인증 과정 - 비밀번호가 일치하지 않을 경우 ( 비밀번호가 일치하지 않을 경우, BadCredentialsException 에러가 발생한다 )
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
+		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.INVALID_CREDENTIALS);
+		return ResponseEntity.status(ErrorCode.INVALID_CREDENTIALS.getStatus()).body(errorResponse);
+	}
 }

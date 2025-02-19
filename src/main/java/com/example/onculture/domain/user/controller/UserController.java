@@ -1,6 +1,5 @@
 package com.example.onculture.domain.user.controller;
 
-import com.example.onculture.domain.user.domain.Gender;
 import com.example.onculture.domain.user.domain.Interest;
 import com.example.onculture.domain.user.domain.Role;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
@@ -17,6 +16,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +37,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AuthenticationManager authenticationManager;
 
     // 성공 응답 생성
     public Map<String, Object> successResponse(String message, Object data) {
@@ -62,8 +65,17 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
 
-        // 로그인 성공 시, 엑세스 토큰 반환 ( JWT 구현 전까지는 랜덤 코드 사용 )
-        String accessToken = userService.login(dto);
+        // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
+
+        // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+        System.out.println("Authentication: " + authentication);
+
+        // 인증 성공하면 임시 토큰 반환 (JWT 적용 전)
+        String accessToken = UUID.randomUUID().toString();
 
         return ResponseEntity.ok(SuccessResponse.success("로그인에 성공하였습니다.", accessToken));
     }
@@ -152,8 +164,6 @@ public class UserController {
                 .email("testuser@gmail.com")
                 .nickname("Test User")
                 .description("안녕하세요. 테스트 유저입니다.")
-                .birth("1990-01-01")
-                .gender(Gender.M)  // Gender enum 값 설정
                 .role(Role.USER)  // Role enum 값 설정
                 .createdAt(LocalDateTime.now())
                 .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
@@ -170,8 +180,6 @@ public class UserController {
         UserSimpleResponse userResponse = UserSimpleResponse.builder()
                 .email("testuser@gmail.com")
                 .nickname("Test User")
-                .description("안녕하세요. 테스트 유저입니다.")
-                .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
                 .build();
 
         return ResponseEntity.ok(successResponse("회원정보를 가져오기에 성공했습니다.", userResponse));

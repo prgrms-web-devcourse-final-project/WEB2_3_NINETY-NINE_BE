@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationFilter;
 import org.springframework.stereotype.Service;
@@ -28,13 +29,12 @@ public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
-    private final AuthenticationManager authenticationManager;
 
-    // 사용자 이름(email)으로 사용자의 정보를 가져오는 메서드
+    // 사용자 이름(email)으로 사용자의 정보를 가져오는 메서드 ( login 메서드 내 인증에 사용됨 )
     @Override
-    public User loadUserByUsername(String email) {
+    public User loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException((email)));
+                .orElseThrow(() -> new UsernameNotFoundException("해당 사용자가 존재하지 않습니다"));
     }
 
     // 회원가입 메서드
@@ -73,25 +73,6 @@ public class UserService implements UserDetailsService {
     }
      */
 
-    // 로그인 메서드 ( jwt 세팅 전까지는 랜덤 UUID 반환 )
-    public String login(LoginRequestDTO dto) {
-
-        // 이메일을 바탕으로 사용자 유무 확인
-        User user = loadUserByUsername(dto.getEmail());
-
-        // 이메일과 비밀번호를 사용하여 인증 시도
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                dto.getEmail(),
-                dto.getPassword());
-
-        // authenticationManager로 인증 수행 ( 입력한 아이디와 비밀번호를 기반으로 새로운 인증 과정을 수행 )
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
-
-        // 인증 성공 시, 엑세스 토큰 생성 ( JWT 구현 전까지는 랜덤 코드 사용 )
-        String accessToken = UUID.randomUUID().toString();
-
-        return accessToken;
-    }
 
     // 현재 사용자 인증 정보 조회 ( JWT 인증이 완료된 사용자 정보 조회 )
     public UserSimpleResponse userSimpleData(HttpServletRequest request, String accessToken) {
