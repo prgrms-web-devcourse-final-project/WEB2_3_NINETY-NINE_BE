@@ -55,7 +55,7 @@ public enum ErrorCode {
 	 * 403 FORBIDDEN: 권한 없음
 	 */
 	ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다."),
-	POST_DELETE_AUTHORIZATION_EXCEPTION(HttpStatus.FORBIDDEN, "작성자 본인 또는 관리자만 게시글을 삭제할 수 있습니다."),
+	UNAUTHORIZED_POST_MANAGE(HttpStatus.FORBIDDEN, "작성자 본인만 게시글을 관리할 수 있습니다."),
 	COMMENT_UPDATE_AUTHORIZATION_EXCEPTION(HttpStatus.FORBIDDEN, "작성자 본인만 댓글을 수정할 수 있습니다."),
 	COMMENT_DELETE_AUTHORIZATION_EXCEPTION(HttpStatus.FORBIDDEN, "작성자 본인 또는 관리자만 댓글을 삭제할 수 있습니다."),
 
@@ -90,7 +90,8 @@ public enum ErrorCode {
 	/*
 	 * 500 INTERNAL_SERVER_ERROR
 	 */
-	IMAGE_UPLOAD_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다.")
+	IMAGE_UPLOAD_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다."),
+	POST_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 삭제에 실패했습니다.")
 	;
 
 	private final HttpStatus status;
