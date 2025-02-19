@@ -93,6 +93,8 @@ public class SocialPostService {
     public PostResponseDTO updateSocialPost(Long userId, UpdatePostRequestDTO requestDTO, Long socialPostId) {
         existsByUserId(userId);
 
+        validateOwner(socialPostId, userId);
+
         SocialPost socialPost = socialPostRepository.findById(socialPostId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
@@ -101,6 +103,16 @@ public class SocialPostService {
         socialPostRepository.save(socialPost);
 
         return new PostResponseDTO(socialPost);
+    }
+
+    public String deleteSocialPost(Long userId, Long socialPostId) {
+        existsByUserId(userId);
+
+        validateOwner(socialPostId, userId);
+
+        socialPostRepository.deleteById(socialPostId);
+
+        return "삭제 완료";
     }
 
     private void validatePageInput(int pageNum, int pageSize) {
@@ -112,5 +124,14 @@ public class SocialPostService {
     private void existsByUserId(Long userId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public void validateOwner(Long socialPostId, Long userId) {
+        SocialPost socialPost = socialPostRepository.findById(socialPostId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        if (!socialPost.getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_POST_MANAGE);
+        }
     }
 }

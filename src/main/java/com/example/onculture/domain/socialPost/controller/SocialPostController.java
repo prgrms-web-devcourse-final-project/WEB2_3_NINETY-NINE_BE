@@ -68,7 +68,10 @@ public class SocialPostController {
     @Operation(summary = "소셜 게시판 삭제", description = "socialPostId에 해당하는 게시글의 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}")
     public ResponseEntity<String> deleteSocialPost(@PathVariable Long socialPostId) {
-        return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
+        String result = socialPostService.deleteSocialPost(
+                // 1L은 임시 유저 아이디 입니다.
+                1L, socialPostId);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
     @Operation(summary = "소셜 게시판 좋아요 추가", description = "socialPostId에 해당하는 게시글의 좋아요 추가 API 입니다")
