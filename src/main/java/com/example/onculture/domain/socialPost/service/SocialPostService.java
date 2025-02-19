@@ -62,7 +62,7 @@ public class SocialPostService {
 
         validatePageInput(pageNum, pageSize);
 
-        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
         Page<PostResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(PostResponseDTO::new);
 
         return UserPostListResponseDTO.builder()
