@@ -48,6 +48,13 @@ public class SocialPostService {
                 .build();
     }
 
+    public PostResponseDTO getSocialPost(Long socialPostId) {
+        return socialPostRepository
+                .findById(socialPostId)
+                .map(PostResponseDTO::new)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+    }
+
     private void validatePageInput(int pageNum, int pageSize) {
         if (pageNum < 0 || pageSize < 0) {
             throw new CustomException(ErrorCode.INVALID_PAGE_REQUEST);

@@ -34,8 +34,8 @@ public class SocialPostController {
     @Operation(summary = "소셜 게시판 상세 조회", description = "socialPostId에 해당하는 게시글의 상세 조회 API 입니다")
     @GetMapping("/socialPosts/{socialPostId}")
     public ResponseEntity<PostResponseDTO> getSocialPost(@PathVariable Long socialPostId) {
-
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+        PostResponseDTO responseDTO = socialPostService.getSocialPost(socialPostId);
+        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
 
     @Operation(summary = "유저의 게시판 전체 조회", description = "userId에 해당하는 게시글을 불러옵니다")

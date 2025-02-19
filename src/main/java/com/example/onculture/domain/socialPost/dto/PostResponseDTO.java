@@ -30,6 +30,7 @@ public class PostResponseDTO {
         this.viewCount = socialPost.getViewCount();
         this.commentCount = socialPost.getCommentCount();
         this.createdAt = socialPost.getCreatedAt();
+        this.updatedAt = socialPost.getUpdatedAt();
     }
 
     public PostResponseDTO fromEntity(SocialPost socialPost) {
