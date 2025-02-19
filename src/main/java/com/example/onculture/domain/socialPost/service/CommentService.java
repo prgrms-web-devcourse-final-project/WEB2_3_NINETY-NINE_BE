@@ -1,6 +1,7 @@
 package com.example.onculture.domain.socialPost.service;
 
 import com.example.onculture.domain.socialPost.domain.Comment;
+import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CommentResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
@@ -71,16 +72,41 @@ public class CommentService {
                                                   UpdateCommentRequestDTO requestDTO) {
         existsByUserId(userId);
 
+        validateOwner(commentId, userId);
+
         existsBySocialPostId(socialPostId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        if (isNotCommentFromPost(comment, socialPostId)) {
+            throw new CustomException(ErrorCode.COMMENT_NOT_BELONG_TO_POST);
+        }
 
         comment.updateComment(requestDTO);
 
         commentRepository.save(comment);
 
         return new CommentResponseDTO(comment);
+    }
+
+    public String deleteCommentByPost(Long userId, Long socialPostId, Long commentId) {
+        existsByUserId(userId);
+
+        validateOwner(commentId, userId);
+
+        existsBySocialPostId(socialPostId);
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        if (isNotCommentFromPost(comment, socialPostId)) {
+            throw new CustomException(ErrorCode.COMMENT_NOT_BELONG_TO_POST);
+        }
+
+        commentRepository.deleteById(commentId);
+
+        return "삭제 완료";
     }
 
     private void existsByUserId(Long userId) {
@@ -94,14 +120,22 @@ public class CommentService {
         }
     }
 
-    private void existsByCommentId(Long commentId) {
-        commentRepository.findById(commentId)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-    }
-
     private void validatePageInput(int pageNum, int pageSize) {
         if (pageNum < 0 || pageSize < 0) {
             throw new CustomException(ErrorCode.INVALID_PAGE_REQUEST);
         }
+    }
+
+    public void validateOwner(Long commentId, Long userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        if (!comment.getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_MANAGE);
+        }
+    }
+
+    public boolean isNotCommentFromPost(Comment comment, Long socialPostId) {
+        return !comment.getSocialPostId().equals(socialPostId);
     }
 }

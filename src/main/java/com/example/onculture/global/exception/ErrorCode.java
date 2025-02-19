@@ -28,7 +28,7 @@ public enum ErrorCode {
 	INVALID_APPLICATION_STATUS(HttpStatus.BAD_REQUEST, "신청 상태가 유효하지 않습니다."),
 
 	COMPANION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "해당 게시글의 동행이 존재합니다."),
-
+	COMMENT_NOT_BELONG_TO_POST(HttpStatus.BAD_REQUEST, "해당 댓글은 지정된 포스트에 속하지 않습니다."),
 
 	DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "중복 이메일 입니다."),
 	DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "중복 닉네임 입니다."),
@@ -56,6 +56,7 @@ public enum ErrorCode {
 	 */
 	ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다."),
 	UNAUTHORIZED_POST_MANAGE(HttpStatus.FORBIDDEN, "작성자 본인만 게시글을 관리할 수 있습니다."),
+	UNAUTHORIZED_COMMENT_MANAGE(HttpStatus.FORBIDDEN, "작성자 본인만 댓글을 관리할 수 있습니다."),
 	COMMENT_UPDATE_AUTHORIZATION_EXCEPTION(HttpStatus.FORBIDDEN, "작성자 본인만 댓글을 수정할 수 있습니다."),
 	COMMENT_DELETE_AUTHORIZATION_EXCEPTION(HttpStatus.FORBIDDEN, "작성자 본인 또는 관리자만 댓글을 삭제할 수 있습니다."),
 

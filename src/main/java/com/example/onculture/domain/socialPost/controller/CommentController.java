@@ -57,7 +57,10 @@ public class CommentController {
 
     @Operation(summary = "소셜 게시판 댓글 삭제", description = "socialPostId에 해당하는 게시글의 댓글 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}/comments/{commentId}")
-    public ResponseEntity<String> deleteCommentByPost(@PathVariable Long socialPostId, @PathVariable Long commentId) {
-        return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
+    public ResponseEntity<SuccessResponse<String>> deleteCommentByPost(@PathVariable Long socialPostId, @PathVariable Long commentId) {
+        String result  = commentService.deleteCommentByPost(
+                // 1L은 임시 유저 아이디 입니다.
+                1L, socialPostId, commentId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
     }
 }
