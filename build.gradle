@@ -40,6 +40,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security:3.4.2'
     testImplementation 'org.springframework.security:spring-security-test:6.4.2'
 
+    // JWT 의존성
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
     //Model Mapper
     implementation 'org.modelmapper:modelmapper:3.2.2'
 }
