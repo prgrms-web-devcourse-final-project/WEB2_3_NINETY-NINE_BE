@@ -5,10 +5,14 @@ import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
 import com.example.onculture.domain.user.repository.UserRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.response.SuccessResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -40,9 +44,23 @@ public class UserService implements UserDetailsService {
     // 회원가입 메서드
     public Long save(SignupRequestDTO dto) {
 
-        // 중복 이메일 검증 로직 추가
-        // 중복 닉네임 검증 로직 추가
+        String email = dto.getEmail();
+        String nickname = dto.getNickname();
 
+        // 중복 이메일 검증 로직 추가
+        // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
+        if (userRepository.findByEmail(email).isPresent()) {
+            // 커스텀한 중복 이메일 예외
+            throw new CustomException.DuplicateEmailException();
+        }
+
+        // 중복 닉네임 검증 로직 추가
+        if (userRepository.findByNickname(nickname).isPresent()) {
+            // 커스텀한 중복 닉네임 예외
+            throw new CustomException.DuplicateNicknameException();
+        }
+
+        // 회원가입 처리
         return userRepository.save(User.builder()
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
