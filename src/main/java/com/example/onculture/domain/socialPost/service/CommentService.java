@@ -4,6 +4,7 @@ import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CommentResponseDTO;
 import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
+import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.repository.CommentRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
@@ -64,6 +65,24 @@ public class CommentService {
         return new CommentResponseDTO(comment);
     }
 
+    public CommentResponseDTO updateCommentByPost(Long userId,
+                                                  Long socialPostId,
+                                                  Long commentId,
+                                                  UpdateCommentRequestDTO requestDTO) {
+        existsByUserId(userId);
+
+        existsBySocialPostId(socialPostId);
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        comment.updateComment(requestDTO);
+
+        commentRepository.save(comment);
+
+        return new CommentResponseDTO(comment);
+    }
+
     private void existsByUserId(Long userId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -73,6 +92,11 @@ public class CommentService {
         if (!socialPostRepository.existsById(socialPostId)) {
             throw new CustomException(ErrorCode.POST_NOT_FOUND);
         }
+    }
+
+    private void existsByCommentId(Long commentId) {
+        commentRepository.findById(commentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
     }
 
     private void validatePageInput(int pageNum, int pageSize) {

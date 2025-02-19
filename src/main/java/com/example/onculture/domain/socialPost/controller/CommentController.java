@@ -45,12 +45,14 @@ public class CommentController {
 
     @Operation(summary = "소셜 게시판 댓글 수정", description = "socialPostId에 해당하는 게시글의 댓글 생성 API 입니다")
     @PutMapping("/socialPosts/{socialPostId}/comments/{commentId}")
-    public ResponseEntity<CommentResponseDTO> updateCommentByPost(
+    public ResponseEntity<SuccessResponse<CommentResponseDTO>> updateCommentByPost(
             @PathVariable Long socialPostId,
             @PathVariable Long commentId,
             @RequestBody UpdateCommentRequestDTO requestDTO) {
-
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+        CommentResponseDTO responseDTO = commentService.updateCommentByPost(
+                // 1L은 임시 유저 아이디 입니다.
+                1L, socialPostId, commentId, requestDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 댓글 삭제", description = "socialPostId에 해당하는 게시글의 댓글 삭제 API 입니다")

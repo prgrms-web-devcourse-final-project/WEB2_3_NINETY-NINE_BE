@@ -1,5 +1,7 @@
 package com.example.onculture.domain.socialPost.domain;
 
+import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
+import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,4 +35,8 @@ public class Comment {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateComment(UpdateCommentRequestDTO requestDTO) {
+        this.content = requestDTO.getContent();
+    }
 }
