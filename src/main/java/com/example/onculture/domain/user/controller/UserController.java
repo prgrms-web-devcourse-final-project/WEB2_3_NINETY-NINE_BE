@@ -13,6 +13,7 @@ import com.example.onculture.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,7 @@ public class UserController {
     // 로그인 API
     @Operation( summary = "로그인 API", description = "로컬 로그인 API" )
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
+    public ResponseEntity<SuccessResponse<String>> login(@RequestBody LoginRequestDTO dto) {
 
         // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -80,11 +81,15 @@ public class UserController {
         return ResponseEntity.ok(SuccessResponse.success("로그인에 성공하였습니다.", accessToken));
     }
 
-    // 로그아웃 Mock API
-    @Operation( summary = "로그아웃 Mock API" )
+    // 로그아웃 API
+    @Operation( summary = "로그아웃 API" )
     @GetMapping( "/logout" )
-    public ResponseEntity<String> logout() {
-        return ResponseEntity.ok("로그아웃 성공");
+    public ResponseEntity<SuccessResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+
+        // 추후 RefreshToke 삭제 로직 추가 예정
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(SuccessResponse.success(HttpStatus.OK, "로그아웃 성공", null));
     }
 
     // 토큰 재발급 Mock API
