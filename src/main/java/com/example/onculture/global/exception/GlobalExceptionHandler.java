@@ -40,4 +40,18 @@ public class GlobalExceptionHandler {
 		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.INVALID_CREDENTIALS);
 		return ResponseEntity.status(ErrorCode.INVALID_CREDENTIALS.getStatus()).body(errorResponse);
 	}
+
+	// 중복 이메일 예외 처리
+	@ExceptionHandler(CustomException.DuplicateEmailException.class)
+	public ResponseEntity<ErrorResponse> handleDuplicateEmailException(CustomException.DuplicateEmailException ex) {
+		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.DUPLICATE_EMAIL);
+		return ResponseEntity.status(ErrorCode.DUPLICATE_EMAIL.getStatus()).body(errorResponse);
+	}
+
+	// 중복 닉네임 예외 처리
+	@ExceptionHandler(CustomException.DuplicateNicknameException.class)
+	public ResponseEntity<ErrorResponse> handleDuplicateNicknameException(CustomException.DuplicateNicknameException ex) {
+		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.DUPLICATE_NICKNAME);
+		return ResponseEntity.status(ErrorCode.DUPLICATE_NICKNAME.getStatus()).body(errorResponse);
+	}
 }
