@@ -27,6 +27,7 @@ public class SocialPostController {
             @RequestParam(defaultValue = "0") int pageNum,
             @RequestParam(defaultValue = "9") int pageSize) {
         PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize);
+
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
 
