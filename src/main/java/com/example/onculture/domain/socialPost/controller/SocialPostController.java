@@ -3,6 +3,7 @@ package com.example.onculture.domain.socialPost.controller;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.service.SocialPostService;
+import com.example.onculture.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,57 +23,56 @@ public class SocialPostController {
 
     @Operation(summary = "소셜 게시판 전체 조회", description = "sort 종류는 popular, latest, comments가 있고 기본값은 latest입니다")
     @GetMapping("/socialPosts")
-    public ResponseEntity<PostListResponseDTO> getSocialPosts(
+    public ResponseEntity<SuccessResponse<PostListResponseDTO>> getSocialPosts(
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int pageNum,
             @RequestParam(defaultValue = "9") int pageSize) {
         PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize);
-
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 상세 조회", description = "socialPostId에 해당하는 게시글의 상세 조회 API 입니다")
     @GetMapping("/socialPosts/{socialPostId}")
-    public ResponseEntity<PostResponseDTO> getSocialPost(@PathVariable Long socialPostId) {
+    public ResponseEntity<SuccessResponse<PostResponseDTO>> getSocialPost(@PathVariable Long socialPostId) {
         PostResponseDTO responseDTO = socialPostService.getSocialPost(socialPostId);
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "유저의 게시판 전체 조회", description = "userId에 해당하는 게시글을 불러옵니다")
     @GetMapping("/users/{userId}/socialPosts")
-    public ResponseEntity<UserPostListResponseDTO> getSocialPostsByUser(
+    public ResponseEntity<SuccessResponse<UserPostListResponseDTO>> getSocialPostsByUser(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int pageNum,
             @RequestParam(defaultValue = "9") int pageSize) {
        UserPostListResponseDTO responseDTO = socialPostService.getSocialPostsByUser(userId, pageNum, pageSize);
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
     @PostMapping("/socialPosts")
-    public ResponseEntity<PostResponseDTO> createSocialPost(@RequestBody CreatePostRequestDTO requestDTO) {
+    public ResponseEntity<SuccessResponse<PostResponseDTO>> createSocialPost(@RequestBody CreatePostRequestDTO requestDTO) {
         PostResponseDTO responseDTO = socialPostService.createSocialPost(
                 // 1L은 임시 유저 아이디 입니다.
                 1L, requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.success(HttpStatus.CREATED, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 수정", description = "socialPostId에 해당하는 게시글의 수정 API 입니다")
     @PutMapping("/socialPosts/{socialPostId}")
-    public ResponseEntity<PostResponseDTO> updateSocialPost(@RequestBody UpdatePostRequestDTO requestDTO, @PathVariable Long socialPostId) {
+    public ResponseEntity<SuccessResponse<PostResponseDTO>> updateSocialPost(@RequestBody UpdatePostRequestDTO requestDTO, @PathVariable Long socialPostId) {
         PostResponseDTO responseDTO = socialPostService.updateSocialPost(
                 // 1L은 임시 유저 아이디 입니다.
                 1L, requestDTO, socialPostId);
-        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 삭제", description = "socialPostId에 해당하는 게시글의 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}")
-    public ResponseEntity<String> deleteSocialPost(@PathVariable Long socialPostId) {
+    public ResponseEntity<SuccessResponse<String>> deleteSocialPost(@PathVariable Long socialPostId) {
         String result = socialPostService.deleteSocialPost(
                 // 1L은 임시 유저 아이디 입니다.
                 1L, socialPostId);
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
     }
 
     @Operation(summary = "소셜 게시판 좋아요 추가", description = "socialPostId에 해당하는 게시글의 좋아요 추가 API 입니다")
