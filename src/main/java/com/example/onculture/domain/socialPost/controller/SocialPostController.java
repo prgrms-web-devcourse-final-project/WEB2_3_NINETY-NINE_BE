@@ -43,57 +43,9 @@ public class SocialPostController {
     public ResponseEntity<UserPostListResponseDTO> getSocialPostsByUser(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int pageNum,
-            @RequestParam(defaultValue = "3") int pageSize) {
-        PostResponseDTO post1 = new PostResponseDTO();
-        post1.setId(1L);
-        post1.setContent("내용1");
-        post1.setTitle("제목1");
-        post1.setImageUrl("이미지1");
-        post1.setCommentCount(3);
-        post1.setLikeCount(3);
-        post1.setViewCount(3);
-        post1.setUserId(userId);
-        post1.setCreatedAt(LocalDateTime.now().minusDays(1));
-        post1.setUpdatedAt(LocalDateTime.now().minusDays(1));
-
-        PostResponseDTO post2 = new PostResponseDTO();
-        post2.setId(2L);
-        post2.setContent("내용2");
-        post2.setTitle("제목2");
-        post2.setImageUrl("이미지2");
-        post2.setCommentCount(2);
-        post2.setLikeCount(2);
-        post2.setViewCount(2);
-        post2.setUserId(userId);
-        post2.setCreatedAt(LocalDateTime.now().minusDays(2));
-        post2.setUpdatedAt(LocalDateTime.now().minusDays(2));
-
-        PostResponseDTO post3 = new PostResponseDTO();
-        post3.setId(3L);
-        post3.setContent("내용3");
-        post3.setTitle("제목3");
-        post3.setImageUrl("이미지3");
-        post3.setCommentCount(1);
-        post3.setLikeCount(1);
-        post3.setViewCount(1);
-        post3.setUserId(userId);
-        post3.setCreatedAt(LocalDateTime.now().minusDays(3));
-        post3.setUpdatedAt(LocalDateTime.now().minusDays(3));
-
-        List<PostResponseDTO> posts = new ArrayList<>();
-        posts.add(post1);
-        posts.add(post2);
-        posts.add(post3);
-
-        UserPostListResponseDTO responseDTO = new UserPostListResponseDTO();
-        responseDTO.setPosts(posts);
-        responseDTO.setPageNum(pageNum);
-        responseDTO.setPageSize(pageSize);
-        responseDTO.setNumberOfElements(3);
-        responseDTO.setTotalPages(1);
-        responseDTO.setTotalElements(3L);
-
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+            @RequestParam(defaultValue = "9") int pageSize) {
+       UserPostListResponseDTO responseDTO = socialPostService.getSocialPostsByUser(userId, pageNum, pageSize);
+        return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
     }
 
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")

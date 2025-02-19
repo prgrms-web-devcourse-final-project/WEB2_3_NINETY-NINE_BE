@@ -23,6 +23,7 @@ public class PostResponseDTO {
 
     public PostResponseDTO(SocialPost socialPost) {
         this.id = socialPost.getId();
+        this.userId = socialPost.getUserId();
         this.title = socialPost.getTitle();
         this.content = socialPost.getContent();
         this.imageUrl = socialPost.getImageUrl();
