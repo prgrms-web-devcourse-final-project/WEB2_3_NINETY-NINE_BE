@@ -1,6 +1,7 @@
 package com.example.onculture.domain.socialPost.domain;
 
 import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
+import com.example.onculture.domain.user.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,8 +19,9 @@ public class SocialPost {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false)
     private String title;
