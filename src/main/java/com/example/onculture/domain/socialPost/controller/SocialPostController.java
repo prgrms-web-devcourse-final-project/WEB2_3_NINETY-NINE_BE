@@ -1,25 +1,21 @@
 package com.example.onculture.domain.socialPost.controller;
 
-import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
+import com.example.onculture.domain.socialPost.service.SocialPostLikeService;
 import com.example.onculture.domain.socialPost.service.SocialPostService;
 import com.example.onculture.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
 @AllArgsConstructor
 public class SocialPostController {
     private final SocialPostService socialPostService;
+    private final SocialPostLikeService socialPostLikeService;
 
     @Operation(summary = "소셜 게시판 전체 조회", description = "sort 종류는 popular, latest, comments가 있고 기본값은 latest입니다")
     @GetMapping("/socialPosts")
@@ -75,21 +71,17 @@ public class SocialPostController {
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
     }
 
-    @Operation(summary = "소셜 게시판 좋아요 추가", description = "socialPostId에 해당하는 게시글의 좋아요 추가 API 입니다")
+    @Operation(summary = "소셜 게시판 좋아요 토글", description = "socialPostId에 해당하는 게시글의 좋아요 토글 API 입니다")
     @PostMapping("/socialPosts/{socialPostId}/likes")
-    public ResponseEntity<LikeResponseDTO> addLikeBySocialPost(@PathVariable Long socialPostId) {
-        LikeResponseDTO like = new LikeResponseDTO();
-        like.setId(1L);
-        like.setSocialPostId(socialPostId);
-        like.setUserId(1L);
-        like.setCreatedAt(LocalDateTime.now());
+    public ResponseEntity<SuccessResponse<String>> toggleLike(@PathVariable Long socialPostId) {
+        String result = socialPostLikeService.toggleLike(
+                // 1L은 임시 유저 아이디 입니다.
+                1L, socialPostId);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(like);
-    }
-
-    @Operation(summary = "소셜 게시판 좋아요 추가", description = "socialPostId에 해당하는 게시글의 좋아요 삭제 API 입니다")
-    @DeleteMapping("/socialPosts/{socialPostId}/likes/{likeId}")
-    public ResponseEntity<String> deleteLikeBySocialPost(@PathVariable Long socialPostId, @PathVariable Long likeId) {
-        return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
+        if (result.equals("좋아요 추가")) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.success(HttpStatus.CREATED, result));
+        } else {
+            return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
+        }
     }
 }
