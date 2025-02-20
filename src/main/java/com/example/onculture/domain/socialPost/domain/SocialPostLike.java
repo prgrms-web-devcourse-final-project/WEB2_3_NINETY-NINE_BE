@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.domain;
 
+import com.example.onculture.domain.user.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,18 +17,20 @@ public class SocialPostLike {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long socialPostId;
+    @ManyToOne
+    @JoinColumn(name = "social_post_id", nullable = false)
+    private SocialPost socialPost;
 
-    @Column(nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @CreationTimestamp
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    public SocialPostLike(Long userId, Long socialPostId) {
-        this.userId = userId;
-        this.socialPostId = socialPostId;
+    public SocialPostLike(User user, SocialPost socialPost) {
+        this.user = user;
+        this.socialPost = socialPost;
     }
 }
