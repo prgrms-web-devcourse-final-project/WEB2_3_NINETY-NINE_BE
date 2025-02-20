@@ -1,6 +1,5 @@
 package com.example.onculture.domain.user.controller;
 
-import com.example.onculture.domain.user.domain.Gender;
 import com.example.onculture.domain.user.domain.Interest;
 import com.example.onculture.domain.user.domain.Role;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
@@ -9,11 +8,18 @@ import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.request.TokenRequestDTO;
 import com.example.onculture.domain.user.dto.response.UserResponse;
 import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
+import com.example.onculture.domain.user.service.UserService;
+import com.example.onculture.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,10 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
 @Tag(name = "유저 API", description = "사용자 로그인 및 정보 관리")
 public class UserController {
+
+    private final UserService userService;
+    private final AuthenticationManager authenticationManager;
 
     // 성공 응답 생성
     public Map<String, Object> successResponse(String message, Object data) {
@@ -40,31 +50,46 @@ public class UserController {
         return response;
     }
 
-    // 회원가입 Mock API
-    @Operation( summary = "회원가입 Mock API", description = "로컬 회원가입 API" )
+    // 회원가입 API
+    @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequestDTO dto) {
-        // 실제 회원가입 로직은 없고, 그냥 고정된 값 반환
-        return ResponseEntity.status(HttpStatus.CREATED).body(successResponse("회원가입 성공", dto.getNickname()));
+    public ResponseEntity<SuccessResponse<Void>> signup(@RequestBody SignupRequestDTO request) {
+
+        Long userId = userService.save(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다.", null));
     }
 
-    // 로그인 Mock API
-    @Operation( summary = "로그인 Mock API", description = "로컬 로그인 API" )
+    // 로그인 API
+    @Operation( summary = "로그인 API", description = "로컬 로그인 API" )
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
-        // 로그인에 성공한 것으로 가정하고 고정된 메시지 반환
-        if (dto.getEmail().equals("test@gmail.com") && dto.getPassword().equals("!123456")) {
-            return ResponseEntity.ok("로그인 성공");
-        } else {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
-        }
+    public ResponseEntity<SuccessResponse<String>> login(@RequestBody LoginRequestDTO dto) {
+
+        // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
+
+        // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+        System.out.println("Authentication: " + authentication);
+
+        // 인증 성공하면 임시 토큰 반환 (JWT 적용 전)
+        String accessToken = UUID.randomUUID().toString();
+
+        return ResponseEntity.ok(SuccessResponse.success("로그인에 성공하였습니다.", accessToken));
     }
 
-    // 로그아웃 Mock API
-    @Operation( summary = "로그아웃 Mock API" )
+    // 로그아웃 API
+    @Operation( summary = "로그아웃 API" )
     @GetMapping( "/logout" )
-    public ResponseEntity<String> logout() {
-        return ResponseEntity.ok("로그아웃 성공");
+    public ResponseEntity<SuccessResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+
+        // 추후 RefreshToke 삭제 로직 추가 예정
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(SuccessResponse.success(HttpStatus.OK, "로그아웃 성공", null));
     }
 
     // 토큰 재발급 Mock API
@@ -144,8 +169,6 @@ public class UserController {
                 .email("testuser@gmail.com")
                 .nickname("Test User")
                 .description("안녕하세요. 테스트 유저입니다.")
-                .birth("1990-01-01")
-                .gender(Gender.M)  // Gender enum 값 설정
                 .role(Role.USER)  // Role enum 값 설정
                 .createdAt(LocalDateTime.now())
                 .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
@@ -162,8 +185,6 @@ public class UserController {
         UserSimpleResponse userResponse = UserSimpleResponse.builder()
                 .email("testuser@gmail.com")
                 .nickname("Test User")
-                .description("안녕하세요. 테스트 유저입니다.")
-                .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
                 .build();
 
         return ResponseEntity.ok(successResponse("회원정보를 가져오기에 성공했습니다.", userResponse));

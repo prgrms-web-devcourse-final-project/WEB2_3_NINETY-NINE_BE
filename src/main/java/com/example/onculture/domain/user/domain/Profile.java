@@ -5,6 +5,9 @@ import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,12 +21,12 @@ public class Profile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "profile_id")
+    @Column(name = "profile_id", updatable = false)
     private Long id;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn( name = "user_id", nullable = false)    // FK 매핑
-    @OnDelete(action = OnDeleteAction.CASCADE)      // 단방향 때에도, 해당 유저가 삭제되면 게시물이 자동 삭제되게 설정
+    @JoinColumn( name = "user_id", nullable = false )    // FK 매핑
+    @OnDelete(action = OnDeleteAction.CASCADE)      // 해당 유저가 삭제되면 프로필도 자동 삭제되게 설정
     private User user;
 
     private String description;
@@ -31,9 +34,10 @@ public class Profile {
     @Column(name = "profile_image")
     private String profileImage;
 
+    // 기본값 : Null
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "profile_interests", joinColumns = @JoinColumn(name = "profile_id"))
-    @Enumerated(EnumType.STRING)  // enum 값을 DB에 문자열로 저장
+    @Enumerated(EnumType.STRING)
     @Column(name = "interests")
     private List<Interest> interests;
 }
