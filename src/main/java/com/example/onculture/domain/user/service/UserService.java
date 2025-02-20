@@ -89,10 +89,20 @@ public class UserService {
     public Authentication authenticate(LoginRequestDTO dto) {
 
         // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
+        // 내부 상태
+        // principal (사용자 정보) = 사용자 이메일
+        // credentials (비밀번호) = 입력한 비밀번호
+        // authorities (권한 정보) = 권한 정보
+        // authenticated (인증 여부) = false
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
 
         // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
+        // 내부 상태
+        // principal (사용자 정보) = DB에서 가져온 사용자 객체
+        // credentials (비밀번호) = 보안상 제거됨 ( Null )
+        // authorities (권한 정보) = [ROLE_USER] ( 사용자의 권한 목록 )
+        // authenticated (인증 여부) = true
         return authenticationManager.authenticate(authenticationToken);
     }
 
