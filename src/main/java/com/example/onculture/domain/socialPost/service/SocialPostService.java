@@ -4,6 +4,7 @@ package com.example.onculture.domain.socialPost.service;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
+import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -58,7 +59,7 @@ public class SocialPostService {
     }
 
     public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize) {
-        existsByUserId(userId);
+        findUserOrThrow(userId);
 
         validatePageInput(pageNum, pageSize);
 
@@ -76,10 +77,10 @@ public class SocialPostService {
     }
 
     public PostResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
-        existsByUserId(userId);
+        User user = findUserOrThrow(userId);
 
         SocialPost socialPost = SocialPost.builder()
-                .userId(userId)
+                .user(user)
                 .title(requestDTO.getTitle())
                 .content(requestDTO.getContent())
                 .imageUrl(requestDTO.getImageUrl())
@@ -91,9 +92,9 @@ public class SocialPostService {
     }
 
     public PostResponseDTO updateSocialPost(Long userId, UpdatePostRequestDTO requestDTO, Long socialPostId) {
-        existsByUserId(userId);
+        User user = findUserOrThrow(userId);
 
-        validateOwner(socialPostId, userId);
+        validateOwner(socialPostId, user);
 
         SocialPost socialPost = socialPostRepository.findById(socialPostId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -106,9 +107,9 @@ public class SocialPostService {
     }
 
     public String deleteSocialPost(Long userId, Long socialPostId) {
-        existsByUserId(userId);
+        User user = findUserOrThrow(userId);
 
-        validateOwner(socialPostId, userId);
+        validateOwner(socialPostId, user);
 
         socialPostRepository.deleteById(socialPostId);
 
@@ -121,16 +122,16 @@ public class SocialPostService {
         }
     }
 
-    private void existsByUserId(Long userId) {
-        userRepository.findById(userId)
+    private User findUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
-    public void validateOwner(Long socialPostId, Long userId) {
+    public void validateOwner(Long socialPostId, User user) {
         SocialPost socialPost = socialPostRepository.findById(socialPostId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if (!socialPost.getUserId().equals(userId)) {
+        if (!(socialPost.getUser() == user)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_POST_MANAGE);
         }
     }
