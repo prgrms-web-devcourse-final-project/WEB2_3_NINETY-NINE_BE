@@ -2,15 +2,13 @@ package com.example.onculture.domain.socialPost.dto;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 
 @Getter
-@Setter
 @Builder
-public class UserPostListResponseDTO {
-    private List<PostResponseDTO> posts;
+public class CommentListResponseDTO {
+    private List<CommentResponseDTO> comments;
     private int totalPages;
     private long totalElements;
     private int pageNum;
