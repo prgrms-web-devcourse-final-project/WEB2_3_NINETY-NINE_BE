@@ -67,4 +67,24 @@ public class SocialPost {
         this.content = requestDTO.getContent();
         this.imageUrl = requestDTO.getImageUrl();
     }
+
+    public void increaseViewCount() {
+        this.viewCount++ ;
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        this.commentCount--;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        this.likeCount--;
+    }
 }
