@@ -40,8 +40,12 @@ public class User implements UserDetails {
     private Role role;
 
     @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean socialFlag = false;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Social flag;
+    private Social social;
 
     // createdAt: INSERT 시 자동 저장
     @CreationTimestamp
@@ -57,7 +61,7 @@ public class User implements UserDetails {
 
     @PrePersist
     public void prePersist() {
-        this.flag = this.flag == null ? Social.Local: this.flag;    // flag 필드 기본값 설정
+        this.social = this.social == null ? Social.Local: this.social;    // social 필드 기본값 설정
         this.role = this.role == null ? Role.USER : this.role;      // role 필드 기본값 설정
     }
 
