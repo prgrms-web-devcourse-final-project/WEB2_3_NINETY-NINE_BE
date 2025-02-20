@@ -8,6 +8,7 @@ import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.repository.CommentRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
+import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -28,7 +29,7 @@ public class CommentService {
     private final UserRepository userRepository;
 
     public CommentListResponseDTO getCommentsByPost(int pageNum, int pageSize, Long socialPostId) {
-        existsBySocialPostId(socialPostId);
+        findSocialPostOrThrow(socialPostId);
 
         validatePageInput(pageNum, pageSize);
 
@@ -51,13 +52,13 @@ public class CommentService {
     public CommentResponseDTO createCommentByPost(Long userId,
                                                   Long socialPostId,
                                                   CreateCommentRequestDTO requestDTO) {
-        existsByUserId(userId);
+        User user = findUserOrThrow(userId);
 
-        existsBySocialPostId(socialPostId);
+        SocialPost socialPost = findSocialPostOrThrow(socialPostId);
 
         Comment comment = Comment.builder()
-                .socialPostId(socialPostId)
-                .userId(userId)
+                .socialPost(socialPost)
+                .user(user)
                 .content(requestDTO.getContent())
                 .build();
 
@@ -70,16 +71,16 @@ public class CommentService {
                                                   Long socialPostId,
                                                   Long commentId,
                                                   UpdateCommentRequestDTO requestDTO) {
-        existsByUserId(userId);
+        User user = findUserOrThrow(userId);
 
-        validateOwner(commentId, userId);
+        validateOwner(commentId, user);
 
-        existsBySocialPostId(socialPostId);
+        SocialPost socialPost = findSocialPostOrThrow(socialPostId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        if (isNotCommentFromPost(comment, socialPostId)) {
+        if (isNotCommentFromPost(comment, socialPost)) {
             throw new CustomException(ErrorCode.COMMENT_NOT_BELONG_TO_POST);
         }
 
@@ -91,16 +92,16 @@ public class CommentService {
     }
 
     public String deleteCommentByPost(Long userId, Long socialPostId, Long commentId) {
-        existsByUserId(userId);
+        User user = findUserOrThrow(userId);
 
-        validateOwner(commentId, userId);
+        validateOwner(commentId, user);
 
-        existsBySocialPostId(socialPostId);
+        SocialPost socialPost = findSocialPostOrThrow(socialPostId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        if (isNotCommentFromPost(comment, socialPostId)) {
+        if (isNotCommentFromPost(comment, socialPost)) {
             throw new CustomException(ErrorCode.COMMENT_NOT_BELONG_TO_POST);
         }
 
@@ -109,15 +110,14 @@ public class CommentService {
         return "삭제 완료";
     }
 
-    private void existsByUserId(Long userId) {
-        userRepository.findById(userId)
+    private User findUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
-    private void existsBySocialPostId(Long socialPostId) {
-        if (!socialPostRepository.existsById(socialPostId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
+    private SocialPost findSocialPostOrThrow(Long socialPostId) {
+        return socialPostRepository.findById(socialPostId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
     private void validatePageInput(int pageNum, int pageSize) {
@@ -126,16 +126,16 @@ public class CommentService {
         }
     }
 
-    public void validateOwner(Long commentId, Long userId) {
+    public void validateOwner(Long commentId, User user) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        if (!comment.getUserId().equals(userId)) {
+        if (!(comment.getUser() == user)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_MANAGE);
         }
     }
 
-    public boolean isNotCommentFromPost(Comment comment, Long socialPostId) {
-        return !comment.getSocialPostId().equals(socialPostId);
+    public boolean isNotCommentFromPost(Comment comment, SocialPost socialPost) {
+        return !(comment.getSocialPost() == socialPost);
     }
 }

@@ -18,8 +18,8 @@ public class CommentResponseDTO {
 
     public CommentResponseDTO(Comment comment) {
         this.id = comment.getId();
-        this.socialPostId = comment.getSocialPostId();
-        this.userId = comment.getUserId();
+        this.socialPostId = comment.getSocialPost().getId();
+        this.userId = comment.getUser().getId();
         this.content = comment.getContent();
         this.createdAt = comment.getCreatedAt();
         this.updatedAt = comment.getUpdatedAt();
