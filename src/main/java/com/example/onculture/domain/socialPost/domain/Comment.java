@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.domain;
 
+import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,48 +14,29 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class SocialPost {
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
+    private Long socialPostId;
+
+    @Column(nullable = false)
     private Long userId;
 
     @Column(nullable = false)
-    private String title;
-
-    @Column(columnDefinition = "TEXT")
     private String content;
-
-    private String imageUrl;
-
-    @Column(nullable = false)
-    private int viewCount = 0;
-
-    @Column(nullable = false)
-    private int commentCount = 0;
-
-    @Column(nullable = false)
-    private int likeCount = 0;
 
     @CreationTimestamp
     @Column(nullable = false)
-
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void updateSocialPost(UpdatePostRequestDTO requestDTO) {
-        this.title = requestDTO.getTitle();
+    public void updateComment(UpdateCommentRequestDTO requestDTO) {
         this.content = requestDTO.getContent();
-        this.imageUrl = requestDTO.getImageUrl();
     }
 }
