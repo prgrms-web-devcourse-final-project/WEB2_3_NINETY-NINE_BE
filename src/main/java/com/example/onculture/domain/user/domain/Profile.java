@@ -40,4 +40,10 @@ public class Profile {
     @Enumerated(EnumType.STRING)
     @Column(name = "interests")
     private List<Interest> interests;
+
+    // 연관 관계 편의 메서드 추가 ( 사용 보류 )
+//    public void setUser(User user) {
+//        this.user = user;
+//        user.setProfile(this);
+//    }
 }

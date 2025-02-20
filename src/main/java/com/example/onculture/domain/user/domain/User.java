@@ -16,17 +16,17 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
-@NoArgsConstructor( access = AccessLevel.PROTECTED )
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-@Table( name = "user" )
-public class User implements UserDetails {
+@Table(name = "user")
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id", updatable = false)     // User Id가 변경되지 않도록 설정
+    @Column(name = "user_id", updatable = false)
     private Long id;
 
-    @Column(name = "email", nullable = false, unique = true, updatable = false)    // unique 제약조건 추가
+    @Column(name = "email", nullable = false, unique = true, updatable = false)
     private String email;
 
     @Column(name = "password")
@@ -47,67 +47,29 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Social social;
 
-    // createdAt: INSERT 시 자동 저장
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
-    // deletedAt: NULL 가능, 필요할 때 값 설정
     @Column(name = "deleted_at", columnDefinition = "TIMESTAMP NULL")
     private LocalDateTime deletedAt;
 
-    @ColumnDefault("false")  // 'false'가 기본값
-    private boolean deletedFlag = false; // Java에서도 기본값 설정
+    @ColumnDefault("false")
+    private boolean deletedFlag = false;
 
     @PrePersist
     public void prePersist() {
-        this.social = this.social == null ? Social.Local: this.social;    // social 필드 기본값 설정
-        this.role = this.role == null ? Role.USER : this.role;      // role 필드 기본값 설정
+        this.social = this.social == null ? Social.Local : this.social;
+        this.role = this.role == null ? Role.USER : this.role;
     }
 
-    // 상속 받은 UserDetails 클래스를 사용하기 위한 필수 @Override 메서드
-    // 권한 반환
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("user"));
-    }
+    // 양방향 연관 관계
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Profile profile;
 
-    // 사용자의 id를 반환(고유한 값)
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    // 사용자의 패스워드 반환
-    @Override
-    public String getPassword() {
-        return password;
-    }
-
-    // 계정 만료 여부 반환
-    @Override
-    public boolean isAccountNonExpired() {
-        // 만료되었는지 확인하는 로직
-        return true;    // true -> 만료되지 않았음
-    }
-
-    // 계정 잠금 여부 확인
-    @Override
-    public boolean isAccountNonLocked() {
-        // 계정 잠금되었는지 확인하는 로직
-        return true;    // true -> 잠금되지 않았음
-    }
-
-    // 패스워드의 만료 여부 반환
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;    // true -> 만료되지 않았음
-    }
-
-    // 계정 사용 가능 여부 반환
-    @Override
-    public boolean isEnabled() {
-        // 계정이 사용 가능한지 확인하는 로직
-        return true;    // true -> 사용 가능
-    }
+    // 연관 관계 편의 메서드 추가 ( 사용 보류 )
+//    public void setProfile(Profile profile) {
+//        this.profile = profile;
+//        profile.setUser(this);
+//    }
 }
