@@ -32,6 +32,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
     private final ModelMapper modelMapper;
 
     // 회원가입 메서드
@@ -84,6 +85,16 @@ public class UserService {
     }
      */
 
+    // 로그인 인증 메서드
+    public Authentication authenticate(LoginRequestDTO dto) {
+
+        // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
+
+        // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
+        return authenticationManager.authenticate(authenticationToken);
+    }
 
     // 현재 사용자 인증 정보 조회 ( JWT 인증이 완료된 사용자 정보 조회 )
     public UserSimpleResponse userSimpleData(HttpServletRequest request, String accessToken) {

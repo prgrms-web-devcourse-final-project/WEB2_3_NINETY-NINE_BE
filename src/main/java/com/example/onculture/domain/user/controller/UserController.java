@@ -66,13 +66,9 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<SuccessResponse<String>> login(@RequestBody LoginRequestDTO dto) {
 
-        // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
-
-        // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
-
+        // 사용자 인증 메서드 실행
+        Authentication authentication = userService.authenticate(dto);
+        // 인증 데이터 확인용
         System.out.println("Authentication: " + authentication);
 
         // 인증 성공하면 임시 토큰 반환 (JWT 적용 전)
