@@ -62,4 +62,14 @@ public class User {
         this.social = this.social == null ? Social.Local : this.social;
         this.role = this.role == null ? Role.USER : this.role;
     }
+
+    // 양방향 연관 관계
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Profile profile;
+
+    // 연관 관계 편의 메서드 추가 ( 사용 보류 )
+//    public void setProfile(Profile profile) {
+//        this.profile = profile;
+//        profile.setUser(this);
+//    }
 }
