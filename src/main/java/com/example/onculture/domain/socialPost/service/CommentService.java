@@ -64,6 +64,10 @@ public class CommentService {
 
         commentRepository.save(comment);
 
+        socialPost.increaseCommentCount();
+
+        socialPostRepository.save(socialPost);
+
         return new CommentResponseDTO(comment);
     }
 
@@ -106,6 +110,10 @@ public class CommentService {
         }
 
         commentRepository.deleteById(commentId);
+
+        socialPost.decreaseCommentCount();
+
+        socialPostRepository.save(socialPost);
 
         return "삭제 완료";
     }

@@ -52,10 +52,14 @@ public class SocialPostService {
     }
 
     public PostResponseDTO getSocialPost(Long socialPostId) {
-        return socialPostRepository
-                .findById(socialPostId)
-                .map(PostResponseDTO::new)
+        SocialPost socialPost = socialPostRepository.findById(socialPostId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+        socialPost.increaseViewCount();
+
+        socialPostRepository.save(socialPost);
+
+        return new PostResponseDTO(socialPost);
     }
 
     public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize) {

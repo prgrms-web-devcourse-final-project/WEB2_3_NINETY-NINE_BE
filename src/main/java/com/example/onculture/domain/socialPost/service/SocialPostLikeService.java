@@ -30,10 +30,18 @@ public class SocialPostLikeService {
         if (existingLike.isPresent()) {
             socialPostLikeRepository.delete(existingLike.get());  // 이미 존재하면 좋아요 취소
 
+            socialPost.decreaseLikeCount();
+
+            socialPostRepository.save(socialPost);
+
             return "좋아요 취소";
         } else {
             SocialPostLike newLike = new SocialPostLike(user, socialPost);
             socialPostLikeRepository.save(newLike);  // 존재하지 않으면 좋아요 추가
+
+            socialPost.increaseLikeCount();
+
+            socialPostRepository.save(socialPost);
 
             return "좋아요 추가";
         }

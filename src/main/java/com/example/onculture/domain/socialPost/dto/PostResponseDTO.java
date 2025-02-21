@@ -18,6 +18,8 @@ public class PostResponseDTO {
     private int viewCount;
     private int commentCount;
     private int likeCount;
+    private String userNickname;
+    private String userProfileImage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -32,5 +34,7 @@ public class PostResponseDTO {
         this.commentCount = socialPost.getCommentCount();
         this.createdAt = socialPost.getCreatedAt();
         this.updatedAt = socialPost.getUpdatedAt();
+        this.userNickname = socialPost.getUser().getProfile().getUser().getNickname();
+        this.userProfileImage = socialPost.getUser().getProfile().getProfileImage();
     }
 }
