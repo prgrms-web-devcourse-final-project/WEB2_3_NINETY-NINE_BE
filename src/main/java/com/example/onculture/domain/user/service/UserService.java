@@ -1,13 +1,17 @@
 package com.example.onculture.domain.user.service;
 
+import com.example.onculture.domain.user.domain.Role;
+import com.example.onculture.domain.user.domain.Social;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
+import com.example.onculture.domain.user.repository.RefreshTokenRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.response.SuccessResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -36,6 +40,7 @@ public class UserService {
     private final ModelMapper modelMapper;
 
     // 회원가입 메서드
+    @Transactional
     public Long save(SignupRequestDTO dto) {
 
         String email = dto.getEmail();
@@ -59,6 +64,9 @@ public class UserService {
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .nickname(dto.getNickname())
+                .role(Role.USER)
+                .socialFlag(false)
+                .social(Social.Local)
                 .build()).getId();
     }
 
@@ -89,21 +97,31 @@ public class UserService {
     public Authentication authenticate(LoginRequestDTO dto) {
 
         // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
-        // 내부 상태
+        // authenticate 내부 구조
+        /*
         // principal (사용자 정보) = 사용자 이메일
         // credentials (비밀번호) = 입력한 비밀번호
         // authorities (권한 정보) = 권한 정보
         // authenticated (인증 여부) = false
+         */
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
 
         // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
-        // 내부 상태
-        // principal (사용자 정보) = DB에서 가져온 사용자 객체
-        // credentials (비밀번호) = 보안상 제거됨 ( Null )
-        // authorities (권한 정보) = [ROLE_USER] ( 사용자의 권한 목록 )
-        // authenticated (인증 여부) = true
+        // authenticate 내부 구조
+        /*
+         principal (사용자 정보) = DB에서 가져온 사용자 객체
+         credentials (비밀번호) = 보안상 제거됨 ( Null )
+         authorities (권한 정보) = [ROLE_USER] ( 사용자의 권한 목록 )
+         authenticated (인증 여부) = true
+         */
         return authenticationManager.authenticate(authenticationToken);
+    }
+
+    // 유저ID로 유저 조회 메서드
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     // 현재 사용자 인증 정보 조회 ( JWT 인증이 완료된 사용자 정보 조회 )
