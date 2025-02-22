@@ -45,10 +45,12 @@ public enum ErrorCode {
 	 * 401 UNAUTHORIZED
 	 */
 	UNAUTHORIZED_EXCEPTION(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다. [로그인] 또는 [회원가입] 후 다시 시도해주세요."),
-	INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효한 토큰이 아닙니다."),
+	INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효한 리프레시 토큰이 아닙니다."),
 	INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효한 토큰이 아닙니다."),
+	UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),		// 로그인하지 않은 사용자 접근 시
 	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 일치하지 않습니다."),
 	TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 토큰 입니다."),
+	REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 RefreshToken 토큰 입니다. 재로그인 해주세요."),
 
 
 
@@ -92,8 +94,25 @@ public enum ErrorCode {
 	/*
 	 * 500 INTERNAL_SERVER_ERROR
 	 */
+	// JPA 조회 실패 시
+	FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "조회에 실패했습니다."), // 조회 실패 공용 에러코드
+	POST_FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 조회에 실패했습니다."),
+	COMMENT_FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "댓글 조회에 실패했습니다."),
+	USER_FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 조회에 실패했습니다."),
+	REFRESH_TOKEN_FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "리프레시 토큰 조회에 실패했습니다."),
+	// JPA save 실패 시
+	SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "저장에 실패했습니다."),		// 저장 실패 공용 에러코드
+	POST_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 저장에 실패했습니다."),
+	COMMENT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "댓글 저장에 실패했습니다."),
+	USER_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 저장에 실패했습니다."),
+	REFRESH_TOKEN_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "리프레시 토큰 저장에 실패했습니다."),
+	// JPA delete 실패 시
+	DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "삭제에 실패했습니다."),     // 삭제 실패 공용 에러코드
+	POST_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 삭제에 실패했습니다."),
+	COMMENT_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "댓글 삭제에 실패했습니다."),
+	USER_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 삭제에 실패했습니다."),
+	REFRESH_TOKEN_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "리프레시 토큰 삭제에 실패했습니다."),
 	IMAGE_UPLOAD_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다."),
-	POST_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 삭제에 실패했습니다.")
 	;
 
 	private final HttpStatus status;
