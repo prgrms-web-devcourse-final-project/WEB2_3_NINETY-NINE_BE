@@ -30,7 +30,8 @@ public class CustomUserDetails implements UserDetails {     // 인증 객체 ( U
     // 단일 권한 부여 메서드
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(role.name()));
+        // Spring Security에서 권한 인식을 위해 "ROLE_" 접두사 추가
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     // 다중권한 부여 메서드 ( 추후 필요할 때 사용 )

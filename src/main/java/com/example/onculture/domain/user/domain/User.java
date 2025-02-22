@@ -51,12 +51,6 @@ public class User {
     @Column(nullable = false, updatable = false, name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
-    @Column(name = "deleted_at", columnDefinition = "TIMESTAMP NULL")
-    private LocalDateTime deletedAt;
-
-    @ColumnDefault("false")
-    private boolean deletedFlag = false;
-
     @PrePersist
     public void prePersist() {
         this.social = this.social == null ? Social.Local : this.social;

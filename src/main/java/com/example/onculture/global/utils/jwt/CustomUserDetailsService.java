@@ -22,6 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {       // �
                         user.getId(),
                         user.getEmail(),
                         user.getPassword(),
+                        // 중요 : DB에 저장되어 있는 Role을 호출 -> CustomUserDetails 객체의 Role 필드에 추가 -> CustomUserDetails에 있는 getAuthorities()를 통해 Spring Security의 GrantedAuthority로 변환됨
                         user.getRole()  // Role 필드 추가
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("해당 사용자가 존재하지 않습니다"));
