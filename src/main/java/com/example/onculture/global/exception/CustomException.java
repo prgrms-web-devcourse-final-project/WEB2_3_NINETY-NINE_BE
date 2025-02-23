@@ -51,7 +51,7 @@ public class CustomException extends RuntimeException {
 	// 로그인하지 않은 사용자 접근 시
 	public static class CustomAuthenticationException extends CustomException {
 		public CustomAuthenticationException() {
-			super(ErrorCode.UNAUTHORIZED_ACCESS);
+			super(ErrorCode.UNAUTHORIZED_ACCESS_TOKEN);
 		}
 	}
 

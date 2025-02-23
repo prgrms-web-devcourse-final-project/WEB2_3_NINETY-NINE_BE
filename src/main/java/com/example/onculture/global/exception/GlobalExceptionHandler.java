@@ -83,8 +83,8 @@ public class GlobalExceptionHandler {
 	// 로그인하지 않은 사용자 접근 예외 핸들러
 	@ExceptionHandler(CustomException.CustomAuthenticationException.class)
 	public ResponseEntity<ErrorResponse> handleCustomAuthenticationException(CustomException.CustomAuthenticationException ex) {
-		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.UNAUTHORIZED_ACCESS);
-		return ResponseEntity.status(ErrorCode.UNAUTHORIZED_ACCESS.getStatus()).body(errorResponse);
+		ErrorResponse errorResponse = new ErrorResponse(ErrorCode.UNAUTHORIZED_ACCESS_TOKEN);
+		return ResponseEntity.status(ErrorCode.UNAUTHORIZED_ACCESS_TOKEN.getStatus()).body(errorResponse);
 	}
 
 	// 로그인했지만 권한 부족 예외 핸들러
