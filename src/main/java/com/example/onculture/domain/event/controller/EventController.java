@@ -1,5 +1,6 @@
-package com.example.onculture.domain.event;
+package com.example.onculture.domain.event.controller;
 
+import com.example.onculture.domain.event.dto.EventDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
