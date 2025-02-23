@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class NotificationService {
 	private final NotificationRepository notificationRepository;
 	private final ModelMapper modelMapper;
-	private final SimpMessagingTemplate messagingTemplate;
+	private final SimpMessagingTemplate messagingTemplate; // WebSocket을 통해 특정 클라이언트 또는 특정 주제(Topic)로 메시지를 보낼 때 사용됨
 
 	// 알림 기능 예정
 	// 1. 사용자가 작성한 글에 좋아요 달리면 알림
@@ -54,6 +54,7 @@ public class NotificationService {
 
 		// Entity → ResponseDTO 변환 후 WebSocket으로 전송
 		NotificationResponseDTO responseDTO = modelMapper.map(notification, NotificationResponseDTO.class);
+		// 특정 사용자의 WebSocket 구독 경로로 메시지 전송
 		messagingTemplate.convertAndSend("/topic/notifications/" + responseDTO.getUserId(), responseDTO);
 	}
 

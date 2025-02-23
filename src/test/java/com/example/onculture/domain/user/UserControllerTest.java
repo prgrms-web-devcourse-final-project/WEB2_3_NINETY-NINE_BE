@@ -1,10 +1,9 @@
-package com.example.onculture.user;
+package com.example.onculture.domain.user;
 
 import com.example.onculture.domain.user.controller.UserController;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
-import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.domain.user.service.UserService;
-import com.example.onculture.global.response.SuccessResponse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,11 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
