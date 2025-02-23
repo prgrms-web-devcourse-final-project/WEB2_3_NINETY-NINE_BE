@@ -1,34 +1,61 @@
 package com.example.onculture.domain.user.controller;
 
-import com.example.onculture.domain.user.domain.Gender;
 import com.example.onculture.domain.user.domain.Interest;
 import com.example.onculture.domain.user.domain.Role;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
 import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.request.TokenRequestDTO;
+import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserResponse;
 import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
+import com.example.onculture.domain.user.service.RefreshTokenService;
+import com.example.onculture.domain.user.service.UserService;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
+import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.JwtTokenProvider;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
 @Tag(name = "유저 API", description = "사용자 로그인 및 정보 관리")
 public class UserController {
+
+    private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
+    private final JwtTokenProvider jwtTokenProvider;
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpirationMillis;
 
     // 성공 응답 생성
     public Map<String, Object> successResponse(String message, Object data) {
@@ -40,44 +67,116 @@ public class UserController {
         return response;
     }
 
-    // 회원가입 Mock API
-    @Operation( summary = "회원가입 Mock API", description = "로컬 회원가입 API" )
+    // request 에 있는 쿠키에서 refreshToken 값 가져오기
+    public String extractRefreshToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("refreshToken")) {
+                    String value = cookie.getValue();
+                    // 쿠키에 있던 refreshToken가 null 및 빈값일 경우 null 로 반환
+                    return (value != null && !value.trim().isEmpty()) ? value : null;
+                }
+            }
+        }
+        return null;
+    }
+
+    // 회원가입 API
+    @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequestDTO dto) {
-        // 실제 회원가입 로직은 없고, 그냥 고정된 값 반환
-        return ResponseEntity.status(HttpStatus.CREATED).body(successResponse("회원가입 성공", dto.getNickname()));
+    public ResponseEntity<SuccessResponse<Void>> signup(@RequestBody SignupRequestDTO request) {
+        Long userId = userService.save(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다.", null));
     }
 
-    // 로그인 Mock API
-    @Operation( summary = "로그인 Mock API", description = "로컬 로그인 API" )
+    // 로그인 API
+    @Operation( summary = "로컬 로그인 API", description = "테스트를 위해 refreshToken도 같이 반환합니다." )
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
-        // 로그인에 성공한 것으로 가정하고 고정된 메시지 반환
-        if (dto.getEmail().equals("test@gmail.com") && dto.getPassword().equals("!123456")) {
-            return ResponseEntity.ok("로그인 성공");
-        } else {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다.");
-        }
+    public ResponseEntity<SuccessResponse<?>> login(@RequestBody LoginRequestDTO dto) {
+
+        // 사용자 인증 메서드 실행
+        Authentication authentication = userService.authenticate(dto);
+
+        // 엑세스 토큰 및 리프레시 토큰 생성
+        String accessToken = "Bearer " + jwtTokenProvider.createAccessToken(authentication);
+        // 리프레시 토큰 생성 및 DB 저장
+        String refreshToken = refreshTokenService.createRefreshToken(authentication);
+
+        System.out.println("accessToken: " + accessToken);
+        System.out.println("refreshToken: " + refreshToken);
+        System.out.println("refreshTokenExpirationMillis: " + refreshTokenExpirationMillis);
+
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)     // JavaScript에서 접근 불가 (보안 강화)
+                .secure(true)       // HTTPS에서만 쿠키 전송 (보안 강화)
+                .path("/")      // 쿠키가 모든 경로에서 사용 가능
+                .maxAge(Duration.ofMillis(refreshTokenExpirationMillis))        // 밀리초 → Duration 변환
+                .sameSite("Strict")     // 다른 도메인 요청에서는 전송되지 않음 (CSRF 방지)
+                .build();
+
+        // 테스트 반환용 코드
+        TokenResponse tokenResponse = new TokenResponse(accessToken, refreshToken);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, String.valueOf(refreshTokenCookie))
+                .body(SuccessResponse.success("로그인에 성공하였습니다.", tokenResponse));
+
+        // 실제 반환용 코드
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.SET_COOKIE, String.valueOf(refreshTokenCookie))
+//                .body(SuccessResponse.success("로그인에 성공하였습니다.",
+//                Map.of("access_token", accessToken)));
     }
 
-    // 로그아웃 Mock API
-    @Operation( summary = "로그아웃 Mock API" )
+    // 로그아웃 API
+    @Operation( summary = "로그아웃 API", description = "로그아웃을 통해 token 삭제" )
     @GetMapping( "/logout" )
-    public ResponseEntity<String> logout() {
-        return ResponseEntity.ok("로그아웃 성공");
+    public ResponseEntity<SuccessResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+
+        // request를 통해 쿠키에서 refreshToken 가져오기
+        String refreshToken = extractRefreshToken(request);
+
+        // refreshToken 쿠키가 있을 경우, DB에서 삭제
+        if ( refreshToken != null ) {
+            refreshTokenService.deleteRefreshToken(refreshToken);
+        }
+
+        // 클라이언트 쿠키에서 RefreshToken 삭제 (Set-Cookie 헤더 사용)
+        ResponseCookie deletedCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0) // 즉시 만료
+                .sameSite("Strict")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, String.valueOf(deletedCookie))
+                .body(SuccessResponse.success(HttpStatus.OK, "로그아웃 성공", null));
     }
 
-    // 토큰 재발급 Mock API
-    @Operation( summary = "토큰 재발급 Mock API", description = "AccessToken 토큰 만료 시, 재발급하는 API" )
+    // 액세스 토큰 재발급 API
+    @Operation( summary = "액세스 토큰 재발급 API", description = "refreshToken 토큰이 만료되어 있다면 기존 저장된 토큰 삭제 및 로그인 페이지로 리다이렉트" )
     @PostMapping("/refresh-token")
-    public ResponseEntity<String> refreshToken(@RequestBody TokenRequestDTO dto) {
-        // 리프레시 토큰이 "valid-refresh-token"이면 새로운 액세스 토큰을 반환
-        if ("valid-refresh-token".equals(dto.getRefreshToken())) {
-            String newAccessToken = "new-access-token-12345"; // 실제 토큰 생성 로직 대신 임시 토큰
-            return ResponseEntity.ok(newAccessToken);
-        } else {
-            throw new IllegalArgumentException("유효한 재인증 토큰이 아닙니다.");
+    public ResponseEntity<SuccessResponse<String>> refreshToken(
+            HttpServletRequest request ) {
+
+        // request를 통해 쿠키에서 refreshToken 가져오기
+        String refreshToken = extractRefreshToken(request);
+
+        // 리프레시 토큰 만료로 없을 경우, 재로그인 요청 메세지 반환
+        if (refreshToken == null) {
+            throw new CustomException.CustomInvalidTokenException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         }
+
+        // 액세스 재발급 메서드 실행
+        String accessToken = refreshTokenService.createAccessTokenFromRefreshToken(refreshToken);
+        log.info("재발급된 액세스 토큰 : " + accessToken);
+
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공", accessToken));
     }
 
     // 소셜 로그인 처리 Mock API
@@ -144,108 +243,12 @@ public class UserController {
                 .email("testuser@gmail.com")
                 .nickname("Test User")
                 .description("안녕하세요. 테스트 유저입니다.")
-                .birth("1990-01-01")
-                .gender(Gender.M)  // Gender enum 값 설정
                 .role(Role.USER)  // Role enum 값 설정
                 .createdAt(LocalDateTime.now())
                 .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
                 .build();
 
         return ResponseEntity.ok(successResponse("회원정보를 가져오기에 성공했습니다.", userResponse));
-    }
-
-    // 로그인한 사용자 일부 정보 반환 Mock API
-    @Operation( summary = "유저 일부 정보 조회 Mock API", description = "현재 로그인한 유저의 일부 정보를 반환하는 API" )
-    @GetMapping("/user-simple")
-    public ResponseEntity<Map<String, Object>> userSimple(HttpServletRequest request) {
-
-        UserSimpleResponse userResponse = UserSimpleResponse.builder()
-                .email("testuser@gmail.com")
-                .nickname("Test User")
-                .description("안녕하세요. 테스트 유저입니다.")
-                .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
-                .build();
-
-        return ResponseEntity.ok(successResponse("회원정보를 가져오기에 성공했습니다.", userResponse));
-    }
-
-    // 프로필 이미지 반환 Mock API
-    @Operation( summary = "프로필 이미지 조회 Mock API", description = "현재 로그인한 유저의 프로필 이미지를 반환하는 API" )
-    @GetMapping("/profile-image")
-    public ResponseEntity<Map<String, Object>> getProfileImage() {
-        // 프로필 이미지 URL (S3에서 서명된 URL을 반환하는 Mock)
-        String profileImageUrl = "https://your-bucket.s3.amazonaws.com/profile/12345.jpg";
-
-        // 응답 데이터 구성
-        Map<String, Object> responseData = new HashMap<>();
-        responseData.put("profileImageUrl", profileImageUrl);
-
-        // S3링크에서 이미지 반환하는 로직 포함
-
-        // 응답 반환 ( 나중에 이미지 자체를 반환하는 응답으로 변경 )
-        return ResponseEntity.ok(successResponse("사용자 프로필 이미지를 반환합니다.", responseData));
-    }
-
-
-    // 프로필 이미지 삽입 Mock API
-    @Operation( summary = "프로필 이미지 생성 Mock API", description = "현재 로그인한 유저의 프로필 이미지를 삽입하는 API" )
-    @PostMapping("/upload-profile-image")
-    public ResponseEntity<Map<String, Object>> uploadProfileImage(
-            @RequestParam("profileImage") MultipartFile profileImage,
-            HttpServletRequest request ) throws IOException {
-
-        // 이미지 파일이 정상적으로 전송되었는지 확인
-        if (profileImage.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "status", 400,
-                    "message", "이미지가 제공되지 않았습니다."
-            ));
-        }
-
-        // 프로필 이미지 파일을 S3에 업로드하는 작업 (Mock)
-        // 실제로는 S3 API를 호출하여 파일을 업로드하는 로직을 추가해야 합니다.
-        String profileImageUrl = "https://your-bucket.s3.amazonaws.com/profile/" + UUID.randomUUID() + ".jpg";
-
-        // 응답 데이터 구성
-        Map<String, Object> responseData = new HashMap<>();
-        responseData.put("profileImageUrl", profileImageUrl);
-
-        // 응답 반환
-        return ResponseEntity.ok(successResponse("사용자 프로필 이미지를 추가했습니다.", responseData));
-    }
-
-    // 프로필 이미지 삭제 Mock API
-    @Operation( summary = "프로필 이미지 삭제 Mock API", description = "현재 로그인한 유저의 프로필 이미지를 삭제하는 API" )
-    @DeleteMapping( "/profile-image" )
-    public ResponseEntity<Map<String, Object>> deleteProfileImage( HttpServletRequest request ) {
-
-        return ResponseEntity.ok(Map.of(
-                "status", 200,
-                "message", "사용자 프로필 이미지를 삭제했습니다."));
-    }
-
-    // 비밀번호 수정 Mock API
-    @Operation( summary = "비밀번호 수정 Mock API", description = "현재 로그인한 유저의 비밀번호를 수정하는 API" )
-    @PostMapping("/update-password")
-    public ResponseEntity<Map<String, Object>> updatePassword(@RequestBody Map<String, String> requestBody, HttpServletRequest request ) {
-        // 요청 바디에서 비밀번호 추출
-        String password = requestBody.get("password");
-
-        // 비밀번호가 존재하는지 확인
-        if (password == null || password.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-                    "status", 400,
-                    "message", "비밀번호가 제공되지 않았습니다."
-            ));
-        }
-
-        // 비밀번호 수정 로직 (Mock)
-        // 실제로는 비밀번호를 데이터베이스에 저장하는 로직이 추가
-
-        // 응답 반환
-        return ResponseEntity.ok(Map.of(
-                "status", 200,
-                "message", "비밀번호가 성공적으로 수정되었습니다."));
     }
 
     // 사용자 정보 수정 Mock API
@@ -257,15 +260,5 @@ public class UserController {
 
         // 응답 반환
         return ResponseEntity.ok(successResponse("사용자 정보가 수정되었습니다.", dto));
-    }
-
-    // 사용자 정보 삭제 Mock API
-    @Operation( summary = "사용자 정보 삭제 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
-    @DeleteMapping( "/user" )
-    public ResponseEntity<Map<String, Object>> deleteUser( HttpServletRequest request ) {
-
-        return ResponseEntity.ok(Map.of(
-                "status", 200,
-                "message", "회원탈퇴 완료"));
     }
 }

@@ -4,11 +4,11 @@ import lombok.*;
 
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class UserSimpleResponse {
+public class TokenResponse {
 
-    private String email;
-    private String nickname;
+    private String accessToken;
+    private String refreshToken;
 }
