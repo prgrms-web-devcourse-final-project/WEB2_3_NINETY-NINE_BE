@@ -1,0 +1,4 @@
+package com.example.onculture.domain.socialPost.service;
+
+public class SocialPostServiceTest {
+}
