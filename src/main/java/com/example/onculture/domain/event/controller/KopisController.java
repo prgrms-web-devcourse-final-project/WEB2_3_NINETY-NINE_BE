@@ -12,7 +12,7 @@ public class KopisController {
     private final KopisService kopisService;
 
     @PostMapping("api/kopis/performances/save")
-    public void saveKOPISPerformances(@RequestParam String from, @RequestParam String to, @RequestParam String genre) {
-        kopisService.savePerformances(from, to, genre);
+    public void saveKOPISPerformances(@RequestParam String from, @RequestParam String to, @RequestParam String genre, @RequestParam String status) {
+        kopisService.savePerformances(from, to, genre, status);
     }
 }

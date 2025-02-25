@@ -42,6 +42,7 @@ public class Theater {
     private String festivalFlag;
     private String updateDate;
     private String performanceState;
+    @Column(name = "show_times", length = 500)
     private String showTimes;
 
     @Lob

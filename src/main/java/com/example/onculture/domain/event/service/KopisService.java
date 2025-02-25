@@ -28,56 +28,80 @@ public class KopisService {
     private final TheaterRepository theaterRepository;
     private final XmlMapper xmlMapper;
     private static final String BASE_URL = "http://www.kopis.or.kr/openApi/restful/pblprfr";
-    private static final String SERVICE_KEY = "";
+    private static final String SERVICE_KEY = "5c98e680b5fc421693f8a6b32bf04d9f";
 
-    public KopisService(
-                        MusicalRepository musicalRepository,
-                        TheaterRepository theaterRepository) {
+    public KopisService(MusicalRepository musicalRepository, TheaterRepository theaterRepository) {
         this.restTemplate = new RestTemplate();
         this.musicalRepository = musicalRepository;
         this.theaterRepository = theaterRepository;
         this.xmlMapper = new XmlMapper();
     }
 
-    public void savePerformances(String from, String to, String genre) {
+    public void savePerformances(String from, String to, String genre, String status) {
+        // 장르 코드 변환
         String genreCode = getGenreCode(genre);
 
-        // 1. 공연 목록 API 호출 (XML 응답)
-        String performanceListResponse = restTemplate.getForObject(
-                getPerformanceListUrl(from, to, genreCode), String.class);
+        // 공연 목록 API 호출 및 공연 ID 목록 추출
+        List<String> performanceIds = fetchPerformanceIds(from, to, genreCode, status);
 
-        // 2. XML 파싱을 통해 PerformanceListDTO로 변환 후 공연 ID 목록 추출
-        List<String> performanceIds;
-        try {
-            PerformanceListDTO listDTO = xmlMapper.readValue(new StringReader(performanceListResponse), PerformanceListDTO.class);
-            performanceIds = listDTO.getPerformanceDTOS().stream()
-                    .map(PerformanceDTO::getMt20id)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("XML Parsing Error: 공연 목록", e);
-        }
-
-        // 3. 각 공연 ID별 상세정보 API 호출 및 엔터티 변환
+        // 각 공연 ID별 상세정보 API 호출 및 엔터티 변환
         List<Object> entities = new ArrayList<>();
         for (String id : performanceIds) {
-            String detailResponse = restTemplate.getForObject(getPerformanceDetailUrl(id), String.class);
-            try {
-                PerformanceDetailListDTO detailListDTO = xmlMapper.readValue(new StringReader(detailResponse), PerformanceDetailListDTO.class);
-                if (detailListDTO.getDbList() != null && !detailListDTO.getDbList().isEmpty()) {
-                    for (PerformanceDetailDTO dto : detailListDTO.getDbList()) {
-                        if ("musical".equalsIgnoreCase(genre)) {
-                            entities.add(dto.convertToMusical());
-                        } else if ("theater".equalsIgnoreCase(genre)) {
-                            entities.add(dto.convertToTheater());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("XML Parsing Error: 공연 상세 정보 for id: " + id, e);
-            }
+            entities.addAll(fetchPerformanceEntities(id));
         }
 
-        // 4. 변환된 엔터티 저장 (장르에 따라 분기)
+        // 변환된 엔터티 저장 (장르에 따라 분기)
+        saveEntities(entities, genre);
+    }
+
+    private List<String> fetchPerformanceIds(String from, String to, String genreCode, String status) {
+        List<String> performanceIds = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            String performanceListResponse = restTemplate.getForObject(
+                    getPerformanceListUrl(from, to, genreCode, page, status), String.class);
+            try {
+                PerformanceListDTO listDTO = xmlMapper.readValue(
+                        new StringReader(performanceListResponse), PerformanceListDTO.class);
+                if (listDTO.getPerformanceDTOS() == null || listDTO.getPerformanceDTOS().isEmpty()) {
+                    break;
+                }
+                performanceIds.addAll(
+                        listDTO.getPerformanceDTOS().stream()
+                                .map(PerformanceDTO::getMt20id)
+                                .collect(Collectors.toList()));
+            } catch (Exception e) {
+                throw new RuntimeException("XML Parsing Error: 공연 목록, page: " + page, e);
+            }
+            page++;
+        }
+        if (performanceIds.isEmpty()) {
+            throw new CustomException(ErrorCode.NO_CONTENT);
+        }
+        return performanceIds;
+    }
+
+    private List<Object> fetchPerformanceEntities(String performanceId) {
+        String detailResponse = restTemplate.getForObject(getPerformanceDetailUrl(performanceId), String.class);
+        List<Object> entityList = new ArrayList<>();
+        try {
+            PerformanceDetailListDTO detailListDTO = xmlMapper.readValue(new StringReader(detailResponse), PerformanceDetailListDTO.class);
+            if (detailListDTO.getDbList() != null && !detailListDTO.getDbList().isEmpty()) {
+                for (PerformanceDetailDTO dto : detailListDTO.getDbList()) {
+                    if (dto.getGenre().equalsIgnoreCase("뮤지컬")) {
+                        entityList.add(dto.convertToMusical());
+                    } else if (dto.getGenre().equalsIgnoreCase("연극")) {
+                        entityList.add(dto.convertToTheater());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("XML Parsing Error: 공연 상세 정보 for id: " + performanceId, e);
+        }
+        return entityList;
+    }
+
+    private void saveEntities(List<Object> entities, String genre) {
         if (!entities.isEmpty()) {
             if ("musical".equalsIgnoreCase(genre)) {
                 List<Musical> musicals = entities.stream()
@@ -90,10 +114,9 @@ public class KopisService {
                         .collect(Collectors.toList());
                 theaterRepository.saveAll(theaters);
             } else {
-                throw new CustomException(ErrorCode.INVALID_GENRE_REQUEST);
+                throw new CustomException(ErrorCode.SAVE_FAILED);
             }
         }
-
     }
 
     private String getGenreCode(String genre) {
@@ -106,15 +129,16 @@ public class KopisService {
         }
     }
 
-    private String getPerformanceListUrl(String from, String to, String genreCode) {
+    private String getPerformanceListUrl(String from, String to, String genreCode, int page, String status) {
         URI uri = URI.create(BASE_URL);
         return UriComponentsBuilder.fromUri(uri)
                 .queryParam("service", SERVICE_KEY)
                 .queryParam("stdate", from)
                 .queryParam("eddate", to)
                 .queryParam("rows", 10)
-                .queryParam("cpage", 1)
+                .queryParam("cpage", page)
                 .queryParam("shcate", genreCode)
+                .queryParam("prfstate", status)
                 .toUriString();
     }
 
