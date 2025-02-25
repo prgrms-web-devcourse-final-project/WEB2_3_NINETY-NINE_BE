@@ -1,0 +1,261 @@
+package com.example.onculture.domain.event.service;
+
+import com.example.onculture.domain.event.model.FestivalPost;
+import com.example.onculture.domain.event.repository.FestivalPostRepository;
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.*;
+
+@Service
+public class FestivalPostService {
+
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
+
+    @Value("${spring.datasource.username}")
+    private String dbUser;
+
+    @Value("${spring.datasource.password}")
+    private String dbPassword;
+
+    @Value("${instagram.username}")
+    private String username;
+
+    @Value("${instagram.password}")
+    private String password;
+
+    private final FestivalPostRepository festivalPostRepository;
+
+    public FestivalPostService(FestivalPostRepository festivalPostRepository) {
+        this.festivalPostRepository = festivalPostRepository;
+    }
+
+    public FestivalPost saveFestivalPost(FestivalPost post) {
+        return festivalPostRepository.save(post);
+    }
+
+    public List<FestivalPost> listAll() {
+        return festivalPostRepository.findAll();
+    }
+
+    public List<FestivalPost> searchByLocation(String keyword) {
+        return festivalPostRepository.findByFestivalLocationContaining(keyword);
+    }
+
+    // 페스티벌 크롤링 실행 로직
+    public void runCrawling() {
+        try {
+            WebDriver driver = setupWebDriver();
+            try {
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+                // 인스타그램 로그인
+                loginToInstagram(driver, wait, username, password);
+
+                // 크롤링할 인스타그램 계정 (축제 계정)
+                driver.get("https://www.instagram.com/fstvl.life/");
+                Set<String> postLinks = collectPostLinks(driver, 5); //스크롤 제한 (동적으로 설정하면 가끔 자동로그인이 안되면 크롤링 안됨)
+                System.out.println("총 수집된 게시글 개수: " + postLinks.size());
+
+                // DB 연결 (JDBC 직접 사용)
+                try (Connection dbConnection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
+                    for (String festivalPostUrl : postLinks) {
+                        driver.get(festivalPostUrl);
+                        System.out.println("\n게시글 URL: " + festivalPostUrl);
+
+                        String festivalPostContent = fetchPostContent(wait);
+                        List<String> festivalImageUrls = fetchImageUrls(wait);
+
+                        // 파싱 로직: 제목, 일정, 장소, 티켓 가격, 예매 등 분리
+                        ParsedFestivalEvent event = parseFestivalEvent(festivalPostContent);
+
+                        // 필수 정보 누락 시 저장 건너뜀
+                        if (event.title.isEmpty() || event.schedule.isEmpty() ||
+                                event.operatingDate == null || event.location.isEmpty()) {
+                            System.out.println("필수 정보 누락되어 저장 건너뜀: " + festivalPostUrl);
+                            continue;
+                        }
+
+                        FestivalPost post = new FestivalPost();
+                        post.setFestivalPostUrl(festivalPostUrl);
+                        // 여러 정보를 하나의 문자열로 결합
+                        String combinedContent = event.title + "\n" + event.schedule;
+                        post.setFestivalContent(combinedContent);
+                        post.setFestivalOperatingDate(event.operatingDate);
+                        post.setFestivalLocation(event.location);
+                        post.setFestivalDetails(event.details);
+                        post.setFestivalTicketPrice(event.ticketPrice);
+
+                        // FestivalPost 저장
+                        FestivalPost savedPost = festivalPostRepository.save(post);
+                        System.out.println("FestivalPost 저장 완료!");
+
+                        // 별도로 이미지 저장하는 로직 (엔티티의 imageUrls에 저장하지 않을 경우)
+                        if (savedPost.getId() != null && festivalImageUrls != null && !festivalImageUrls.isEmpty()) {
+                            saveFestivalPostImages(savedPost.getId(), festivalImageUrls);
+                            System.out.println("FestivalPost 이미지 저장 완료!");
+                        }
+                    }
+                }
+            } finally {
+                driver.quit();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    // 크롬 드라이버 설정, 드라이버 버전 133.xxx.xxx.xxx.하면 오류떠서 133으로 하드코딩
+    private WebDriver setupWebDriver() {
+        WebDriverManager.chromedriver().driverVersion("133").setup();
+        return new ChromeDriver();
+    }
+    //인스타그램 로그인 페이지 이동 및 로그인
+    private void loginToInstagram(WebDriver driver, WebDriverWait wait, String username, String password) {
+        driver.get("https://www.instagram.com/accounts/login/");
+        try {
+            WebElement usernameInput = wait.until(ExpectedConditions.elementToBeClickable(By.name("username")));
+            usernameInput.sendKeys(username);
+            WebElement passwordInput = driver.findElement(By.name("password"));
+            passwordInput.sendKeys(password);
+            WebElement loginButton = driver.findElement(By.xpath("//button[@type='submit']"));
+            loginButton.click();
+            wait.until(ExpectedConditions.urlContains("instagram.com"));
+            System.out.println("로그인 성공!");
+        } catch (Exception e) {
+            System.out.println("로그인 실패: " + e.getMessage());
+        }
+    }
+    // 설정된 스크롤 횟수만큼 스크롤 하면서 데이터 수집
+    private Set<String> collectPostLinks(WebDriver driver, int scrollCount) throws InterruptedException {
+        Set<String> postLinks = new HashSet<>();
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        for (int i = 0; i < scrollCount; i++) {
+            List<WebElement> posts = driver.findElements(By.xpath("//a[contains(@href, '/p/')]"));
+            for (WebElement post : posts) {
+                postLinks.add(post.getAttribute("href"));
+            }
+            js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
+            Thread.sleep(3000); //3초 대기
+        }
+        return postLinks;
+    }
+    // 게시글의 텍스트 콘텐츠 가져옴 '_ap3a' 요소
+    private String fetchPostContent(WebDriverWait wait) {
+        try {
+            WebElement postContent = wait.until(
+                    ExpectedConditions.visibilityOfElementLocated(By.xpath("//h1[contains(@class, '_ap3a')]"))
+            );
+            String content = postContent.getText();
+            System.out.println("게시글 내용: " + content);
+            return content;
+        } catch (Exception e) {
+            System.out.println("게시글 내용 없음.");
+            return "";
+        }
+    }
+    // 게시글의 이미지 가져옴 'x5yr21d' 요소
+    private List<String> fetchImageUrls(WebDriverWait wait) {
+        List<String> imageUrls = new ArrayList<>();
+        try {
+            List<WebElement> images = wait.until(
+                    ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//img[contains(@class, 'x5yr21d')]"))
+            );
+            System.out.println("게시글 이미지:");
+            for (WebElement img : images) {
+                String src = img.getAttribute("src");
+                imageUrls.add(src);
+                System.out.println(src);
+            }
+        } catch (Exception e) {
+            System.out.println("게시글 이미지 없음.");
+        }
+        return imageUrls;
+    }
+
+    // 파싱된 데이터를 담을 헬퍼 클래스
+    private static class ParsedFestivalEvent {
+        String title = "";
+        String schedule = "";
+        String location = "";
+        String ticketPrice = "";
+        String booking = "";
+        String openTime = "";
+        String details = "";
+        java.sql.Date operatingDate = null;
+    }
+
+    // 간단한 파싱 로직: 게시글 내용을 줄 단위로 파싱하여 제목, 일정, 장소, 티켓 가격, 예매 등 정보를 추출
+    private ParsedFestivalEvent parseFestivalEvent(String content) {
+        ParsedFestivalEvent event = new ParsedFestivalEvent();
+        String[] lines = content.split("\\r?\\n");
+        for (String line : lines) {
+            line = line.trim();
+            if (line.startsWith("일정:") || line.startsWith("공연 일정:")) {
+                event.schedule = line.substring(line.indexOf(":") + 1).trim();
+                event.operatingDate = parseOperatingDate(event.schedule);
+            } else if (line.startsWith("장소:") || line.startsWith("공연 장소:")) {
+                event.location = line.substring(line.indexOf(":") + 1).trim();
+            } else if (line.startsWith("가격:") || line.startsWith("티켓 가격:")) {
+                event.ticketPrice = line.substring(line.indexOf(":") + 1).trim();
+            } else if (line.startsWith("예매:") || line.startsWith("티켓 예매:")) {
+                event.booking = line.substring(line.indexOf(":") + 1).trim();
+            } else if (line.startsWith("오픈:") || line.startsWith("티켓 오픈:")) {
+                event.openTime = line.substring(line.indexOf(":") + 1).trim();
+            } else {
+                if (event.title.isEmpty()) {
+                    event.title = line;
+                } else {
+                    if (event.details.isEmpty()) {
+                        event.details = line;
+                    } else {
+                        event.details += "\n" + line;
+                    }
+                }
+            }
+        }
+        return event;
+    }
+    // 일정 문자열에서 시작 날짜를 추출하여 java.sql.Date로 변환
+    private java.sql.Date parseOperatingDate(String scheduleLine) {
+        if (scheduleLine == null || scheduleLine.isEmpty()) {
+            return null;
+        }
+        String cleaned = scheduleLine.replaceAll("\\s+", "").replace("년", "/")
+                .replace("월", "/").replace("일", "");
+        String[] parts = cleaned.split("~");
+        String startDateStr = parts[0];
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/M/d");
+        try {
+            java.util.Date parsed = sdf.parse(startDateStr);
+            return new java.sql.Date(parsed.getTime());
+        } catch (Exception e) {
+            System.out.println("날짜 파싱 실패: " + e.getMessage());
+            return null;
+        }
+    }
+    //크롤링한 이미지 URL들을 데이터베이스에 저장
+    private void saveFestivalPostImages(long festivalPostId, List<String> imageUrls) {
+        try (Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
+            Set<String> uniqueImageUrls = new HashSet<>(imageUrls);
+            String insertImageSql = "INSERT INTO festival_post_images (festival_post_id, image_url) VALUES (?, ?)";
+            try (PreparedStatement imageStmt = connection.prepareStatement(insertImageSql)) {
+                for (String imageUrl : uniqueImageUrls) {
+                    imageStmt.setLong(1, festivalPostId);
+                    imageStmt.setString(2, imageUrl);
+                    imageStmt.addBatch();
+                }
+                imageStmt.executeBatch();
+            }
+        } catch (SQLException e) {
+            System.out.println("Festival 이미지 저장 실패: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
