@@ -1,5 +1,6 @@
 package com.example.onculture.domain.user.service;
 
+import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.model.LoginType;
 import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.model.Social;
@@ -10,7 +11,12 @@ import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
+import com.example.onculture.global.utils.CookieUtil;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
+import com.example.onculture.global.utils.jwt.JwtTokenProvider;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +30,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+import static com.example.onculture.global.utils.CookieUtil.*;
+
 @Slf4j
 @RequiredArgsConstructor    // final 필드나 @NonNull이 붙은 필드를 파라미터로 받는 생성자를 자동으로 생성
 @Service
@@ -32,6 +40,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final TokenService tokenService;
     private final ModelMapper modelMapper;
 
     // 회원가입 메서드
@@ -43,17 +53,11 @@ public class UserService {
 
         // 중복 이메일 검증 로직 추가
         // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
-        if (userRepository.findByEmail(email).isPresent()) {
-            // 커스텀한 중복 이메일 예외
-            throw new CustomException.DuplicateEmailException();
-        }
-
+        if (userRepository.findByEmail(email).isPresent()) throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
         // 중복 닉네임 검증 로직 추가
-        if (userRepository.findByNickname(nickname).isPresent()) {
-            // 커스텀한 중복 닉네임 예외
-            throw new CustomException.DuplicateNicknameException();
-        }
-
+        if (userRepository.findByNickname(nickname).isPresent()) throw new CustomException.DuplicateNicknameException();        // 커스텀한 중복 닉네임 예외
+        // 동일한 이메일의 소셜 가입자가 있을 경우 고려 ( 보류 )
+        /*
         // 이미 등록된 사용자 확인
         Optional<User> existingUser = userRepository.findByEmail(email);
 
@@ -64,8 +68,8 @@ public class UserService {
             user.socialUpdate(Social.LOCAL, user.getSocials());  // 소셜 로그인 정보 업데이트
             return userRepository.save(user);
         }
-
-        // 신규 사용자의 경우
+         */
+        // 신규 사용자 생성
         User user = User.builder()
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
@@ -79,7 +83,50 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // 로그인 인증 메서드
+    public TokenResponse login(LoginRequestDTO dto, HttpServletRequest request, HttpServletResponse response) {
+
+        // 사용자 인증 메서드 실행 및 인증 객체 반환
+        Authentication authentication = authenticate(dto);
+
+        // 인증 객체에서 사용자 데이터 가져오기
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+        String email = userDetails.getEmail();
+        Role role = userDetails.getRole();
+
+        // 액세스 토큰 생성
+        String accessToken = jwtTokenProvider.createAccessToken(userId, email, role);
+        // 리프레시 토큰 생성 및 DB 저장
+        String refreshToken = tokenService.createRefreshToken(userId);
+        // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
+        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+
+        // 테스트용 반환 DTO 및 응답 형식
+        return new TokenResponse(accessToken, refreshToken);
+    }
+
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        // request를 통해 쿠키에서 refreshToken 가져오기
+        String refreshToken = extractRefreshToken(request);
+        // refreshToken 쿠키가 있을 경우, DB에서 삭제
+        if ( refreshToken != null ) tokenService.deleteRefreshToken(refreshToken);
+        // 클라이언트 쿠키에서 RefreshToken 삭제 (Set-Cookie 헤더 사용)
+        CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
+    }
+
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        // request를 통해 쿠키에서 refreshToken 가져오기
+        String refreshToken = extractRefreshToken(request);
+        // 리프레시 토큰 만료로 없을 경우, 재로그인 요청 메세지 반환
+        if (refreshToken == null) throw new CustomException.CustomInvalidTokenException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        // 리프레시 토큰으로 액세스 토큰 재발급
+        String accessToken = tokenService.createAccessTokenFromRefreshToken(refreshToken);
+        log.info("재발급된 액세스 토큰 : " + accessToken);
+        // 쿠키에 액세스 토큰 저장
+        CookieUtil.addCookie(response, ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_DURATION);
+    }
+
+    // 로그인 인증 후 인증 객체 반환 메서드
     public Authentication authenticate(LoginRequestDTO dto) {
 
         // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
@@ -127,5 +174,21 @@ public class UserService {
         UserSimpleResponse userDetails = (UserSimpleResponse) authentication.getPrincipal();
 
         return userDetails;
+    }
+
+    // request 에 있는 쿠키에서 refreshToken 값 가져오기
+    public String extractRefreshToken(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("refreshToken")) {
+                    String value = cookie.getValue();
+                    // 쿠키에 있던 refreshToken가 null 및 빈값일 경우 null 로 반환
+                    return (value != null && !value.trim().isEmpty()) ? value : null;
+                }
+            }
+        }
+        return null;
     }
 }

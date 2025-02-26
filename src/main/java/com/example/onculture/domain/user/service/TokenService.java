@@ -4,26 +4,37 @@ import com.example.onculture.domain.user.domain.RefreshToken;
 import com.example.onculture.domain.user.repository.RefreshTokenRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
-import com.example.onculture.global.utils.jwt.CustomUserDetails;
+import com.example.onculture.global.utils.CookieUtil;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
-import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
+
+import static com.example.onculture.global.utils.CookieUtil.*;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class RefreshTokenService {
+public class TokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
+
+    // 생성된 액세스 및 리프레시 토큰을 쿠키에 저장
+    public static void addAllTokenToCookie(HttpServletRequest request, HttpServletResponse response, String accessToken, String refreshToken) {
+        // 기존 토큰 쿠키 삭제
+        CookieUtil.deleteCookie(request, response, ACCESS_TOKEN_COOKIE_NAME);
+        CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
+        // 새로운 토큰 쿠키 생성
+        CookieUtil.addCookie(response, ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_DURATION);
+        CookieUtil.addSecurityCookie(response, REFRESH_TOKEN_COOKIE_NAME, refreshToken, REFRESH_TOKEN_COOKIE_DURATION);
+    }
 
     // 리프레시 토큰 DB 저장 및 반환 메서드
     @Transactional

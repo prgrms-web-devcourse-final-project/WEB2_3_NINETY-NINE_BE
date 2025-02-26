@@ -18,9 +18,18 @@ public class CookieUtil {
     public final static String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";    // OAuth2 인가 요청 쿠키 이름
     public final static int COOKIE_EXPIRE_SECONDS = 18000;      // OAuth2 인가 요청 쿠키의 유효 시간 ( 18000 = 5seconds )
 
-    // 요청값(이름, 값, 만료 기간)을 바탕으로 쿠키 추가
+    // 요청값(이름, 값, 만료 기간)을 바탕으로 쿠키 생성 메서드
     public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
         Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");       // 전체 도메인에서 사용 가능하도록 설정
+        cookie.setMaxAge(maxAge);  // 쿠키 유효 시간 설정 (초 단위)
+        response.addCookie(cookie);
+    }
+
+    // 리프레시 전용 쿠키 생성 메서드
+    public static void addSecurityCookie(HttpServletResponse response, String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);   // XSS 공격 방지를 위해 HttpOnly 설정
         cookie.setPath("/");
         cookie.setMaxAge(maxAge);
         response.addCookie(cookie);
@@ -29,9 +38,7 @@ public class CookieUtil {
     // 쿠키의 이름을 입력받아 쿠키 삭제
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
         Cookie[] cookies = request.getCookies();
-        if ( cookies == null ) {
-            return;
-        }
+        if ( cookies == null ) return;
 
         for ( Cookie cookie : cookies ) {
             if (name.equals(cookie.getName())) {

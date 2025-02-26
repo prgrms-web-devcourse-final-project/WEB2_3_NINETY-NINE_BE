@@ -8,7 +8,7 @@ import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserResponse;
-import com.example.onculture.domain.user.service.RefreshTokenService;
+import com.example.onculture.domain.user.service.TokenService;
 import com.example.onculture.domain.user.service.UserService;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -17,7 +17,6 @@ import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +26,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -45,10 +42,10 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final RefreshTokenService refreshTokenService;
+    private final TokenService tokenService;
     private final JwtTokenProvider jwtTokenProvider;
     @Value("${jwt.refresh-token-expiration}")
-    private long refreshTokenExpirationMillis;
+
 
     // 성공 응답 생성
     public Map<String, Object> successResponse(String message, Object data) {
@@ -58,22 +55,6 @@ public class UserController {
         response.put("data", data);
 
         return response;
-    }
-
-    // request 에 있는 쿠키에서 refreshToken 값 가져오기
-    public String extractRefreshToken(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("refreshToken")) {
-                    String value = cookie.getValue();
-                    // 쿠키에 있던 refreshToken가 null 및 빈값일 경우 null 로 반환
-                    return (value != null && !value.trim().isEmpty()) ? value : null;
-                }
-            }
-        }
-        return null;
     }
 
     // 회원가입 API
@@ -88,93 +69,26 @@ public class UserController {
     // 로그인 API
     @Operation( summary = "로컬 로그인 API", description = "테스트를 위해 refreshToken도 같이 반환합니다." )
     @PostMapping("/login")
-    public ResponseEntity<SuccessResponse<?>> login(@RequestBody LoginRequestDTO dto) {
-
-        // 사용자 인증 메서드 실행
-        Authentication authentication = userService.authenticate(dto);
-
-        // 엑세스 토큰 및 리프레시 토큰 생성
-        // Authentication 객체에서 UserDetails 가져오기
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long userId = userDetails.getUserId();
-        String email = userDetails.getEmail();
-        Role role = userDetails.getRole();
-        String accessToken = "Bearer " + jwtTokenProvider.createAccessToken(userId, email, role);
-        // 리프레시 토큰 생성 및 DB 저장
-        String refreshToken = refreshTokenService.createRefreshToken(userId);
-
-        System.out.println("accessToken: " + accessToken);
-        System.out.println("refreshToken: " + refreshToken);
-        System.out.println("refreshTokenExpirationMillis: " + refreshTokenExpirationMillis);
-
-        // 액세스 토큰, 리프레시 토큰 둘 다 저장
-
-        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)     // JavaScript에서 접근 불가 (보안 강화)
-                .secure(true)       // HTTPS에서만 쿠키 전송 (보안 강화)
-                .path("/")      // 쿠키가 모든 경로에서 사용 가능
-                .maxAge(Duration.ofMillis(refreshTokenExpirationMillis))        // 밀리초 → Duration 변환
-                .sameSite("Strict")     // 다른 도메인 요청에서는 전송되지 않음 (CSRF 방지)
-                .build();
-
-        // 테스트용 반환 DTO 및 응답 형식
-        TokenResponse tokenResponse = new TokenResponse(accessToken, refreshToken);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, String.valueOf(refreshTokenCookie))
-                .body(SuccessResponse.success("로그인에 성공하였습니다.", tokenResponse));
-
-        // 실제 반환용 코드
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.SET_COOKIE, String.valueOf(refreshTokenCookie))
-//                .body(SuccessResponse.success("로그인에 성공하였습니다."));
+    public ResponseEntity<SuccessResponse<?>> localLogin(@RequestBody LoginRequestDTO dto, HttpServletRequest request, HttpServletResponse response) {
+        // 테스트용으로 응답 데이터에 액세스 토큰, 리프레시 토큰 반환 ( 최종 배포 시, 모든 토큰을 쿠키에 넣어서 반환 )
+        TokenResponse tokenResponse = userService.login(dto, request, response);
+        return ResponseEntity.ok(SuccessResponse.success("로그인에 성공하였습니다.", tokenResponse));
     }
 
     // 로그아웃 API
     @Operation( summary = "로그아웃 API", description = "로그아웃을 통해 token 삭제" )
     @GetMapping( "/logout" )
     public ResponseEntity<SuccessResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
-
-        // request를 통해 쿠키에서 refreshToken 가져오기
-        String refreshToken = extractRefreshToken(request);
-
-        // refreshToken 쿠키가 있을 경우, DB에서 삭제
-        if ( refreshToken != null ) {
-            refreshTokenService.deleteRefreshToken(refreshToken);
-        }
-
-        // 클라이언트 쿠키에서 RefreshToken 삭제 (Set-Cookie 헤더 사용)
-        ResponseCookie deletedCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(0) // 즉시 만료
-                .sameSite("Strict")
-                .build();
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, String.valueOf(deletedCookie))
-                .body(SuccessResponse.success(HttpStatus.OK, "로그아웃 성공", null));
+        userService.logout(request, response);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "로그아웃 성공"));
     }
 
     // 액세스 토큰 재발급 API
     @Operation( summary = "액세스 토큰 재발급 API", description = "refreshToken 토큰이 만료되어 있다면 기존 저장된 토큰 삭제 및 로그인 페이지로 리다이렉트" )
     @PostMapping("/refresh-token")
-    public ResponseEntity<SuccessResponse<String>> refreshToken(
-            HttpServletRequest request ) {
-
-        // request를 통해 쿠키에서 refreshToken 가져오기
-        String refreshToken = extractRefreshToken(request);
-
-        // 리프레시 토큰 만료로 없을 경우, 재로그인 요청 메세지 반환
-        if (refreshToken == null) {
-            throw new CustomException.CustomInvalidTokenException(ErrorCode.REFRESH_TOKEN_EXPIRED);
-        }
-
-        // 액세스 재발급 메서드 실행
-        String accessToken = refreshTokenService.createAccessTokenFromRefreshToken(refreshToken);
-        log.info("재발급된 액세스 토큰 : " + accessToken);
-
-        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공", accessToken));
+    public ResponseEntity<SuccessResponse<String>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        userService.refreshToken(request, response);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공"));
     }
 
     // 로그인한 사용자 정보 반환 Mock API
