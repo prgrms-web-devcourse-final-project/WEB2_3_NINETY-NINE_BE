@@ -2,11 +2,15 @@ package com.example.onculture.domain.notification.dto;
 
 import com.example.onculture.domain.notification.domain.Notification;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class NotificationRequestDTO {
 	private Long userId;       // 알림 받는 사용자 ID
 	private Long senderId;     // 알림을 보낸 사용자 ID (nullable)

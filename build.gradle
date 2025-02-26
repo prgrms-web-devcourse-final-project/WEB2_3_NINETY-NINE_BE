@@ -60,6 +60,10 @@ dependencies {
     // Read env from properties
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+    // Test (JUnit, Mockito, AssertJ)
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.mockito:mockito-core:5.15.2'
+    testImplementation 'org.assertj:assertj-core:3.27.3'
 }
 
 tasks.named('test') {
