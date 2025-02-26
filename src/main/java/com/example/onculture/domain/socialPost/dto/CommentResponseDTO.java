@@ -1,6 +1,7 @@
 package com.example.onculture.domain.socialPost.dto;
 
 import com.example.onculture.domain.socialPost.domain.Comment;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class CommentResponseDTO {
     private Long id;
     private Long socialPostId;
