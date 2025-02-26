@@ -1,6 +1,7 @@
 package com.example.onculture.domain.user.repository;
 
 import com.example.onculture.domain.user.domain.User;
+import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

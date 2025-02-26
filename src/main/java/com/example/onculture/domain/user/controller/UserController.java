@@ -1,20 +1,13 @@
 package com.example.onculture.domain.user.controller;
 
-import com.example.onculture.domain.user.model.Interest;
-import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
-import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
-import com.example.onculture.domain.user.dto.response.UserResponse;
-import com.example.onculture.domain.user.service.TokenService;
+import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.service.UserService;
-import com.example.onculture.global.exception.CustomException;
-import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
-import com.example.onculture.global.utils.jwt.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,16 +15,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -42,8 +31,6 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final TokenService tokenService;
-    private final JwtTokenProvider jwtTokenProvider;
     @Value("${jwt.refresh-token-expiration}")
 
 
@@ -91,41 +78,29 @@ public class UserController {
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공"));
     }
 
+    // 닉네임 중복 체크 API
+    @PostMapping("check-nickname")
+    public ResponseEntity<SuccessResponse<Boolean>> nicknameOverlap(@RequestParam String nickname) {
+        boolean isAlreadyNickname = userService.checkNickname(nickname);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, isAlreadyNickname));
+    }
+
     // 로그인한 사용자 정보 반환 Mock API
-    @Operation( summary = "유저 전체 정보 조회 Mock API", description = "현재 로그인한 유저의 모든 정보를 반환하는 API" )
+    @Operation( summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회" )
     @GetMapping("/user")
-    public ResponseEntity<Map<String, Object>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
-
-        System.out.println("customUserDetails: " + customUserDetails);
-        try {
-            System.out.println(customUserDetails.getUserId());
-            System.out.println(customUserDetails.getEmail());
-            System.out.println(customUserDetails.getPassword());
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-
-
-        UserResponse userResponse = UserResponse.builder()
-                .email("testuser@gmail.com")
-                .nickname("Test User")
-                .description("안녕하세요. 테스트 유저입니다.")
-                .role(Role.USER)  // Role enum 값 설정
-                .createdAt(LocalDateTime.now())
-                .interests(List.of(Interest.M, Interest.D, Interest.F, Interest.C))  // Interest enum 값 설정
-                .build();
-
-        return ResponseEntity.ok(successResponse("회원정보를 가져오기에 성공했습니다.", userResponse));
+    public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getEmail());
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "조회 성공", userProfileResponse));
     }
 
     // 사용자 정보 수정 Mock API
-    @Operation( summary = "사용자 정보 수정 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
-    @PutMapping( "/user" )
-    public ResponseEntity<Map<String, Object>> updateUser(@RequestBody ModifyRequestDTO dto, HttpServletRequest request ) {
-
-        // 사용자 데이터 업데이트 로직 실행
-
-        // 응답 반환
-        return ResponseEntity.ok(successResponse("사용자 정보가 수정되었습니다.", dto));
-    }
+//    @Operation( summary = "사용자 정보 수정 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
+//    @PutMapping( "/user" )
+//    public ResponseEntity<Map<String, Object>> updateUser(@RequestBody ModifyRequestDTO dto, HttpServletRequest request ) {
+//
+//        // 사용자 데이터 업데이트 로직 실행
+//
+//        // 응답 반환
+//        return ResponseEntity.ok(successResponse("사용자 정보가 수정되었습니다.", dto));
+//    }
 }

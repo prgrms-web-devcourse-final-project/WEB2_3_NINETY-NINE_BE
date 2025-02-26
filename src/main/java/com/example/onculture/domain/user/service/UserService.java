@@ -1,6 +1,9 @@
 package com.example.onculture.domain.user.service;
 
+import com.example.onculture.domain.user.domain.Profile;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
+import com.example.onculture.domain.user.dto.response.UserProfileResponse;
+import com.example.onculture.domain.user.model.Interest;
 import com.example.onculture.domain.user.model.LoginType;
 import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.model.Social;
@@ -83,11 +86,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    // 로컬 로그인 메서드
     public TokenResponse login(LoginRequestDTO dto, HttpServletRequest request, HttpServletResponse response) {
-
         // 사용자 인증 메서드 실행 및 인증 객체 반환
         Authentication authentication = authenticate(dto);
-
         // 인증 객체에서 사용자 데이터 가져오기
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUserId();
@@ -105,6 +107,7 @@ public class UserService {
         return new TokenResponse(accessToken, refreshToken);
     }
 
+    // 로그아웃 메서드
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         // request를 통해 쿠키에서 refreshToken 가져오기
         String refreshToken = extractRefreshToken(request);
@@ -114,6 +117,7 @@ public class UserService {
         CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
     }
 
+    // 재발급 메서드
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // request를 통해 쿠키에서 refreshToken 가져오기
         String refreshToken = extractRefreshToken(request);
@@ -124,6 +128,29 @@ public class UserService {
         log.info("재발급된 액세스 토큰 : " + accessToken);
         // 쿠키에 액세스 토큰 저장
         CookieUtil.addCookie(response, ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_DURATION);
+    }
+
+    // 닉네임 중복 여부 메서드
+    public Boolean checkNickname(String nickname) {
+        return userRepository.findByNickname(nickname).isPresent();
+    }
+
+    // 현재 사용자 정보 조회 메서드
+    public UserProfileResponse getUserProfile(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException.CustomJpaReadException(ErrorCode.USER_NOT_FOUND));
+
+        Profile profile = user.getProfile();
+
+        return UserProfileResponse.builder()
+                .nickname(user.getNickname())
+                .loginType(user.getLoginType())
+                .description(profile != null ? profile.getDescription() : "")
+                .interests(profile != null ? profile.getInterests() : new HashSet<>())
+                .profileImage(profile != null ? profile.getProfileImage() : "")
+                .s3Bucket("https://your-bucket.s3.amazonaws.com/profile1.jpg")   // S3 연결 전, 테스트용
+                .build();
     }
 
     // 로그인 인증 후 인증 객체 반환 메서드
