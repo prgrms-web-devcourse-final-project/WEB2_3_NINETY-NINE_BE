@@ -1,6 +1,5 @@
 package com.example.onculture.global.utils.jwt;
 
-import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -46,35 +46,35 @@ public class WebSecurityConfig {
                 // 특정 경로에 대한 액세스 설정
                 .authorizeHttpRequests(auth -> auth
 
-                        // 인증 토큰 여부에 따라 접근 제한 (모든 권한)
+                                // 인증 토큰 여부에 따라 접근 제한 (모든 권한)
 //                        .requestMatchers("경로").authenticated()
-                        // 권한에 따라 접근 제한
+                                // 권한에 따라 접근 제한
 //                        .requestMatchers("경로").hasRole("ADMIN")
 
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/login.html").permitAll()
-                        .requestMatchers("/index.html").permitAll()
-                        // 정적 리소스
-                        .requestMatchers(
-                                "/",
-                                "/imgs/**",
-                                "/static/index.html",
-                                "/templates/**",
-                                "/assets/**",
-                                "/css/**",
-                                "/js/**",
-                                "/favicon.ico"
-                        ).permitAll()
-                        // Swagger UI
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api-docs/**"
-                        ).permitAll()
-                        // 다른 요청들은 거부
-                        .anyRequest().authenticated()
+                                .requestMatchers("/").permitAll()
+                                .requestMatchers("/api/**").permitAll()
+                                .requestMatchers("/login.html").permitAll()
+                                .requestMatchers("/index.html").permitAll()
+                                // 정적 리소스
+                                .requestMatchers(
+                                        "/",
+                                        "/imgs/**",
+                                        "/static/index.html",
+                                        "/templates/**",
+                                        "/assets/**",
+                                        "/css/**",
+                                        "/js/**",
+                                        "/favicon.ico"
+                                ).permitAll()
+                                // Swagger UI
+                                .requestMatchers(
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/api-docs/**"
+                                ).permitAll()
+                                // 다른 요청들은 거부
+                                .anyRequest().authenticated()
                 );
 
         // JWT 기반 인증 추가
@@ -91,7 +91,7 @@ public class WebSecurityConfig {
                 .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint.userService(oAuth2UserCustomService))
                 // OAuth2 로그인 성공 시, 실행할 핸들러 ( JWT 토큰 발급 및 쿠키 저장, 특정 페이지로 리다이렉트 )
                 .successHandler(oAuth2SuccessHandler));
-                // OAuth2 로그인 실패 시, 실행할 핸들러 ( 에러 메세지 포함 및 특정 페이지 이동 )
+        // OAuth2 로그인 실패 시, 실행할 핸들러 ( 에러 메세지 포함 및 특정 페이지 이동 )
 //                .failureHandler(oAuth2FailureHandler()));
 
         //에러처리

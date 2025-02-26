@@ -20,6 +20,13 @@ public class CustomException extends RuntimeException {
 		}
 	}
 
+	// 커스텀 JPA Read 예외 클래스 (try~catch 구문에서 원하는 에러코드 지정 가능)
+	public static class CustomJpaReadException extends CustomException {
+		public CustomJpaReadException(ErrorCode errorCode) {
+			super(errorCode);
+		}
+	}
+
 	// 커스텀 JPA Delete 예외 클래스 (try~catch 구문에서 원하는 에러코드 지정 가능)
 	public static class CustomJpaDeleteException extends CustomException {
 		public CustomJpaDeleteException(ErrorCode errorCode) {

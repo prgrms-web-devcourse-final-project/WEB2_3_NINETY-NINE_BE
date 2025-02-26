@@ -1,7 +1,7 @@
 package com.example.onculture.global.utils.jwt;
 
-import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.domain.User;
+import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -10,19 +10,17 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
-
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.time.Duration;
-import java.util.*;
+import java.util.Date;
 
 @Slf4j
 @Getter
