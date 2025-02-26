@@ -1,10 +1,7 @@
-package com.example.onculture.domain.user.domain;
+package com.example.onculture.domain.user.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.checkerframework.common.value.qual.StringVal;
 
 @Getter
 @AllArgsConstructor

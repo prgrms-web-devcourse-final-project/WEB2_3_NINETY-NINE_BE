@@ -1,21 +1,20 @@
 package com.example.onculture.domain.user.controller;
 
-import com.example.onculture.domain.user.domain.Interest;
-import com.example.onculture.domain.user.domain.Role;
+import com.example.onculture.domain.user.model.Interest;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
 import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
-import com.example.onculture.domain.user.dto.request.TokenRequestDTO;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserResponse;
-import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
 import com.example.onculture.domain.user.service.RefreshTokenService;
 import com.example.onculture.domain.user.service.UserService;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -28,21 +27,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.ui.Model;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -87,7 +80,7 @@ public class UserController {
     @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
     @PostMapping("/signup")
     public ResponseEntity<SuccessResponse<Void>> signup(@RequestBody SignupRequestDTO request) {
-        Long userId = userService.save(request);
+        User user = userService.save(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다.", null));
     }
@@ -101,13 +94,20 @@ public class UserController {
         Authentication authentication = userService.authenticate(dto);
 
         // 엑세스 토큰 및 리프레시 토큰 생성
-        String accessToken = "Bearer " + jwtTokenProvider.createAccessToken(authentication);
+        // Authentication 객체에서 UserDetails 가져오기
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getUserId();
+        String email = userDetails.getEmail();
+        Role role = userDetails.getRole();
+        String accessToken = "Bearer " + jwtTokenProvider.createAccessToken(userId, email, role);
         // 리프레시 토큰 생성 및 DB 저장
-        String refreshToken = refreshTokenService.createRefreshToken(authentication);
+        String refreshToken = refreshTokenService.createRefreshToken(userId);
 
         System.out.println("accessToken: " + accessToken);
         System.out.println("refreshToken: " + refreshToken);
         System.out.println("refreshTokenExpirationMillis: " + refreshTokenExpirationMillis);
+
+        // 액세스 토큰, 리프레시 토큰 둘 다 저장
 
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)     // JavaScript에서 접근 불가 (보안 강화)
@@ -117,9 +117,8 @@ public class UserController {
                 .sameSite("Strict")     // 다른 도메인 요청에서는 전송되지 않음 (CSRF 방지)
                 .build();
 
-        // 테스트 반환용 코드
+        // 테스트용 반환 DTO 및 응답 형식
         TokenResponse tokenResponse = new TokenResponse(accessToken, refreshToken);
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, String.valueOf(refreshTokenCookie))
                 .body(SuccessResponse.success("로그인에 성공하였습니다.", tokenResponse));
@@ -127,8 +126,7 @@ public class UserController {
         // 실제 반환용 코드
 //        return ResponseEntity.ok()
 //                .header(HttpHeaders.SET_COOKIE, String.valueOf(refreshTokenCookie))
-//                .body(SuccessResponse.success("로그인에 성공하였습니다.",
-//                Map.of("access_token", accessToken)));
+//                .body(SuccessResponse.success("로그인에 성공하였습니다."));
     }
 
     // 로그아웃 API
@@ -179,65 +177,20 @@ public class UserController {
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공", accessToken));
     }
 
-    // 소셜 로그인 처리 Mock API
-    @Operation( summary = "소셜 로그인 처리 Mock API", description = "소셜 API에서 받은 인증 코드 활용하여 사용자 정보 조회" )
-    @GetMapping("/social-login")
-    public ResponseEntity<Map<String, String>> socialLogin(
-            @RequestParam(defaultValue = "default-code") String code,
-            HttpServletRequest request, Model model) {
-
-        // 1. 소셜 액세스 토큰 가져오기 (Mock)
-        String accessToken = "mock-access-token-12345";  // 실제로는 code를 이용해 액세스 토큰을 발급받아야 합니다.
-
-        // 2. 사용자 정보 가져오기 (Mock)
-        String email = "testuser@gmail.com";  // 실제로는 소셜 API에서 사용자 정보를 가져와야 합니다.
-        String nickname = "Test User";
-
-        // 3. JWT 토큰 생성 (Mock)
-        String jwtToken = "mock-jwt-token-67890";  // 실제 JWT 토큰 발급 로직을 대체
-
-        // 4. 클라이언트에 JWT 토큰 반환
-        Map<String, String> response = new HashMap<>();
-        response.put("token", jwtToken);
-        response.put("email", email);
-
-        // 헤드에 Location 설정 (리다이렉션을 피하고 상태코드를 OK로 변경)
-        return ResponseEntity.ok(response);  // 200 OK 상태로 응답 본문에 토큰과 이메일 포함
-    }
-
-    // 소셜 로그인 처리
-    /*
-    @GetMapping("/social-login")
-    public ResponseEntity<Map<String, String>> kakaoLogin(
-            @RequestParam String code,
-            HttpServletRequest request, Model model) {
-
-        // 1. 소셜 액세스 토큰 가져오기 (Mock)
-        String accessToken = "mock-access-token-12345";  // 실제로는 code를 이용해 액세스 토큰을 발급받아야 합니다.
-
-        // 2. 사용자 정보 가져오기 (Mock)
-        String email = "testuser@gmail.com";  // 실제로는 소셜 API에서 사용자 정보를 가져와야 합니다.
-        String nickname = "Test User";
-
-        // 3. JWT 토큰 생성 (Mock)
-        String jwtToken = "mock-jwt-token-67890";  // 실제 JWT 토큰 발급 로직을 대체
-
-        // 4. 클라이언트에 JWT 토큰 반환
-        Map<String, String> response = new HashMap<>();
-        response.put("token", jwtToken);
-        response.put("email", email);
-
-        // 헤드에 Location 설정
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .header("Location", "/social-login?token=" + jwtToken)
-                .body(response);  // 바디에는 JWT 토큰과 이메일을 포함
-    }
-     */
-
     // 로그인한 사용자 정보 반환 Mock API
     @Operation( summary = "유저 전체 정보 조회 Mock API", description = "현재 로그인한 유저의 모든 정보를 반환하는 API" )
     @GetMapping("/user")
-    public ResponseEntity<Map<String, Object>> user(HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+
+        System.out.println("customUserDetails: " + customUserDetails);
+        try {
+            System.out.println(customUserDetails.getUserId());
+            System.out.println(customUserDetails.getEmail());
+            System.out.println(customUserDetails.getPassword());
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
 
         UserResponse userResponse = UserResponse.builder()
                 .email("testuser@gmail.com")
