@@ -1,7 +1,7 @@
 package com.example.onculture.domain.user.dto.response;
 
-import com.example.onculture.domain.user.domain.Interest;
-import com.example.onculture.domain.user.domain.Role;
+import com.example.onculture.domain.user.model.Interest;
+import com.example.onculture.domain.user.model.Role;
 import lombok.*;
 
 import java.time.LocalDateTime;

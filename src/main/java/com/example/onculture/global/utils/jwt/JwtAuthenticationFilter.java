@@ -36,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     // Authorization의 접두사(Bearer)를 제거하는 메서드
+    // 클라이언트에서 헤드로 액세스 토큰을 'Bearer 액세스 토큰' 형식으로 보냈는지 확인 ( Bearer가 없으면 null로 처리되서 인증 x )
     private String getAccessToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith(TOKEN_PREFIX)) {
             return authorizationHeader.substring(TOKEN_PREFIX.length());

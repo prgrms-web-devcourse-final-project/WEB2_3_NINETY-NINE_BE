@@ -1,4 +1,4 @@
-package com.example.onculture.domain.user.domain;
+package com.example.onculture.domain.user.model;
 
 public enum Social {
     Local,

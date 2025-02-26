@@ -1,14 +1,13 @@
 package com.example.onculture.domain.user.domain;
 
+import com.example.onculture.domain.user.model.Interest;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -39,7 +38,7 @@ public class Profile {
     @CollectionTable(name = "profile_interests", joinColumns = @JoinColumn(name = "profile_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "interests")
-    private List<Interest> interests;
+    private Set<Interest> interests = new HashSet<>();
 
     // 연관 관계 편의 메서드 추가 ( 사용 보류 )
 //    public void setUser(User user) {

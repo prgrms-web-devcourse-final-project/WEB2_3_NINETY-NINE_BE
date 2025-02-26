@@ -1,9 +1,10 @@
 package com.example.onculture.global.config;
 
-import com.example.onculture.domain.user.service.UserService;
-import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.domain.oauth.handler.OAuth2SuccessHandler;
+import com.example.onculture.domain.oauth.service.OAuth2UserCustomService;
 import com.example.onculture.global.utils.jwt.JwtAuthenticationFilter;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
+import com.example.onculture.domain.oauth.service.OAuth2AuthorizationRequestOnCookieRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,13 +13,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,15 +30,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class WebSecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final OAuth2UserCustomService oAuth2UserCustomService;
+    private final OAuth2AuthorizationRequestOnCookieRepository oAuth2AuthorizationRequestOnCookieRepository;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     // 특정 HTTP 요청에 대한 웹 기반 보안 구성 ( 버전2 - Restful API용 )
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // 인증, 인가 설정
-                // csrf 설정 비활성화 ( 개발 중에는 비활성화 )
+                // csrf, 세션 비활성화
                 .csrf(AbstractHttpConfigurer::disable)
-                // JWT 사용 시, 세션을 사용하지 않음
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 특정 경로에 대한 액세스 설정
@@ -53,12 +53,14 @@ public class WebSecurityConfig {
 
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/login.html").permitAll()
+                        .requestMatchers("/index.html").permitAll()
                         // 정적 리소스
                         .requestMatchers(
                                 "/",
                                 "/imgs/**",
-                                "/index.html",
-                                "/static/**",
+                                "/static/index.html",
+                                "/templates/**",
                                 "/assets/**",
                                 "/css/**",
                                 "/js/**",
@@ -77,6 +79,20 @@ public class WebSecurityConfig {
 
         // JWT 기반 인증 추가
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
+        // OAuth 로그인
+        http.oauth2Login(oauth2 -> oauth2
+                // OAuth2의 인가 요청을 저장하는 저장소 ??
+                .authorizationEndpoint(authorizationEndpoint ->
+                        // OAuth2 로그인 요청 정보를 쿠키에 저장하는 커스텀 저장소 사용 (JWT 기반 인증 사용 시, 쿠키를 많이씀)
+                        authorizationEndpoint.authorizationRequestRepository(oAuth2AuthorizationRequestOnCookieRepository))
+                // userInfoEndpoint() : OAuth2 로그인 후 사용자 정보를 가져오는 엔드포인트 설정
+                // userService() : 사용자 정보를 처리하는 서비스 지정 ( 사용자 정보 DB 저장 및 JWT 토큰 생성 )
+                .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint.userService(oAuth2UserCustomService))
+                // OAuth2 로그인 성공 시, 실행할 핸들러 ( JWT 토큰 발급 및 쿠키 저장, 특정 페이지로 리다이렉트 )
+                .successHandler(oAuth2SuccessHandler));
+                // OAuth2 로그인 실패 시, 실행할 핸들러 ( 에러 메세지 포함 및 특정 페이지 이동 )
+//                .failureHandler(oAuth2FailureHandler()));
 
         //에러처리
         http.exceptionHandling(exception -> exception
@@ -102,9 +118,7 @@ public class WebSecurityConfig {
     // 사용자 정보를 가져올 서비스 재정의, 인증 방법(LDAP, JDBC 기반 인증) 등 설정
     // 사용자 인증(Authentication)을 처리하는 AuthenticationManager 빈을 설정하는 코드
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http,
-                                                       PasswordEncoder passwordEncoder,
-                                                       UserDetailsService userDetailsService ) throws Exception {
+    public AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder, UserDetailsService userDetailsService ) throws Exception {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();       // 기본 인증 제공자( UserDetailsService를 이용해 사용자 정보를 가져오고, 비밀번호 검증을 수행)
         authProvider.setUserDetailsService(userDetailsService);    // 사용자 정보 로딩 서비스 설정 ( 반드시 UserDetailsService를 상속 받은 클래스 )
         authProvider.setPasswordEncoder(passwordEncoder);   // 비밀번호 암호화 방식 설정
@@ -117,74 +131,10 @@ public class WebSecurityConfig {
         return new ProviderManager(authProvider);
     }
 
-
-
     // 패스워드 인코더로 사용할 빈 등록
-    // pring Security 5 이상에서 기본적으로 제공하는 비밀번호 인코더
+    // Spring Security 5 이상에서 기본적으로 제공하는 비밀번호 인코더
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
-
-    // 스프링 시큐리티 기능 비활성화 ( 사용 x )
-    // 정적 리소스, h2-console의 url은 인증, 인가 서비스를 적용하지 않는다.
-    /*
-    @Bean
-    public WebSecurityCustomizer configure() {
-        return (web) -> web.ignoring()
-                .requestMatchers("/h2-console/**")      // h2-console를 사용하지 않지만 일단 설정
-                .requestMatchers("/static/**", "/styles/**", "/imgs/**", "/scripts/**");
-    }
-     */
-
-    // 특정 HTTP 요청에 대한 웹 기반 보안 구성 ( 버전 1 - Thymeleaf용 )
-    /*
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        return http
-                // 인증, 인가 설정
-                // 특정 경로에 대한 액세스 설정
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/static/**", "/styles/**", "/images/**", "/css/**", "/scripts/**").permitAll()
-//                        .requestMatchers("/h2-console/**").permitAll()      // h2-console를 사용하지 않지만 일단 설정
-                        .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/login").permitAll()
-                        .requestMatchers("/signup").permitAll()
-                        // 다른 요청들은 거부
-                        .anyRequest().authenticated())
-                // 폼 기반 로그인 설정
-                .formLogin(formLogin -> formLogin
-                        .loginPage("/login")            // 로그인 페이지 경로 설정
-                        .defaultSuccessUrl("/")     // 로그인 완료 시, 이동 경로
-                )
-                // 로그아웃 설정
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/login")     // 로그아웃 완료 시, 이동 경로
-                        .invalidateHttpSession(true)    // 로그아웃 이후에 세션 전체 삭제 여부 설정
-                )
-                // csrf 설정 비활성화 ( 개발 중에는 비활성화 )
-                .csrf(AbstractHttpConfigurer::disable)
-                .build();
-    }
-     */
-
-    // 인증 관리자 권한 설정 ( 버전 2 / 간편한 방식 )
-    /*
-    @Bean
-    public AuthenticationManager authenticationManagerBean(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-     */
-
-    // BCrypt 알고리즘만 사용하는 비밀번호 인코더 ( 사용 x )
-    /*
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-     */
 }

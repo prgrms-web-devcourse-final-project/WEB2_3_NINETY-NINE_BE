@@ -27,17 +27,13 @@ public class RefreshTokenService {
 
     // 리프레시 토큰 DB 저장 및 반환 메서드
     @Transactional
-    public String createRefreshToken(Authentication authentication) {
+    public String createRefreshToken(Long userId) {
 
-        // Authentication 객체에서 UserDetails 가져오기
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        // 리프레시 토큰 생성
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
 
         try {
             // RefreshToken 테이블에서 현재 사용자의 RefreshToken 조회
-            Optional<RefreshToken> userRefreshToken = refreshTokenRepository.findByUserId(userDetails.getUserId());
+            Optional<RefreshToken> userRefreshToken = refreshTokenRepository.findByUserId(userId);
 
             RefreshToken savedToken;
             if (userRefreshToken.isPresent()) {
@@ -48,7 +44,7 @@ public class RefreshTokenService {
             } else {
                 // 기존 토큰이 없으면 새로 저장
                 savedToken = refreshTokenRepository.save(RefreshToken.builder()
-                        .userId(userDetails.getUserId())
+                        .userId(userId)
                         .refreshToken(refreshToken)
                         .build());
             }
@@ -91,7 +87,6 @@ public class RefreshTokenService {
             log.error("쿠키 리프레시 토큰과 DB 리프레시 토큰이 일치하지 않습니다.");
             throw new CustomException.CustomInvalidTokenException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
-        System.out.println("동작확인4");
 
         return jwtTokenProvider.reGenerateToken(refreshToken);
     }
