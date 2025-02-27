@@ -9,8 +9,8 @@ import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.repository.CommentRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.Profile;
-import com.example.onculture.domain.user.domain.Role;
-import com.example.onculture.domain.user.domain.Social;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +59,6 @@ public class CommentServiceTest {
                 .password("password")
                 .nickname("TestUser")
                 .role(Role.USER)
-                .social(Social.Local)
                 .build();
 
         Profile testProfile = Profile.builder().build();

@@ -4,8 +4,8 @@ import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.Profile;
-import com.example.onculture.domain.user.domain.Role;
-import com.example.onculture.domain.user.domain.Social;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -52,7 +52,6 @@ public class SocialPostServiceTest {
                 .password("password")
                 .nickname("TestUser")
                 .role(Role.USER)
-                .social(Social.Local)
                 .build();
 
         Profile testProfile = new Profile();
@@ -284,7 +283,6 @@ public class SocialPostServiceTest {
                 .password("password")
                 .nickname("Other")
                 .role(Role.USER)
-                .social(Social.Local)
                 .build();
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         SocialPost otherPost = SocialPost.builder()
@@ -333,8 +331,8 @@ public class SocialPostServiceTest {
                 .password("password")
                 .nickname("Other")
                 .role(Role.USER)
-                .social(Social.Local)
                 .build();
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         SocialPost otherPost = SocialPost.builder()
                 .id(socialPostId)

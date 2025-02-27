@@ -6,10 +6,12 @@ import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.service.CommentService;
 import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -36,10 +38,10 @@ public class CommentController {
     @PostMapping("/socialPosts/{socialPostId}/comments")
     public ResponseEntity<SuccessResponse<CommentResponseDTO>> createCommentByPost(
             @PathVariable Long socialPostId,
-            @RequestBody CreateCommentRequestDTO requestDTO) {
+            @RequestBody CreateCommentRequestDTO requestDTO,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         CommentResponseDTO responseDTO = commentService.createCommentByPost(
-                // 1L은 임시 유저 아이디 입니다.
-                1L, socialPostId, requestDTO);
+                userDetails.getUserId(), socialPostId, requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.success(HttpStatus.CREATED, responseDTO));
     }
 
@@ -48,19 +50,20 @@ public class CommentController {
     public ResponseEntity<SuccessResponse<CommentResponseDTO>> updateCommentByPost(
             @PathVariable Long socialPostId,
             @PathVariable Long commentId,
-            @RequestBody UpdateCommentRequestDTO requestDTO) {
+            @RequestBody UpdateCommentRequestDTO requestDTO,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         CommentResponseDTO responseDTO = commentService.updateCommentByPost(
-                // 1L은 임시 유저 아이디 입니다.
-                1L, socialPostId, commentId, requestDTO);
+                userDetails.getUserId(), socialPostId, commentId, requestDTO);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 댓글 삭제", description = "socialPostId에 해당하는 게시글의 댓글 삭제 API 입니다")
     @DeleteMapping("/socialPosts/{socialPostId}/comments/{commentId}")
-    public ResponseEntity<SuccessResponse<String>> deleteCommentByPost(@PathVariable Long socialPostId, @PathVariable Long commentId) {
-        String result  = commentService.deleteCommentByPost(
-                // 1L은 임시 유저 아이디 입니다.
-                1L, socialPostId, commentId);
+    public ResponseEntity<SuccessResponse<String>> deleteCommentByPost(
+            @PathVariable Long socialPostId, @PathVariable Long commentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        String result = commentService.deleteCommentByPost(
+                userDetails.getUserId(), socialPostId, commentId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
     }
 }
