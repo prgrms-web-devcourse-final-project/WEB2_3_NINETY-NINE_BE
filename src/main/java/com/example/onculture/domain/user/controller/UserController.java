@@ -2,6 +2,7 @@ package com.example.onculture.domain.user.controller;
 
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
+import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
@@ -20,8 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,26 +30,14 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    @Value("${jwt.refresh-token-expiration}")
-
-
-    // 성공 응답 생성
-    public Map<String, Object> successResponse(String message, Object data) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", 200);
-        response.put("message", message);
-        response.put("data", data);
-
-        return response;
-    }
 
     // 회원가입 API
     @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
     @PostMapping("/signup")
-    public ResponseEntity<SuccessResponse<Void>> signup(@RequestBody SignupRequestDTO request) {
-        User user = userService.save(request);
+    public ResponseEntity<SuccessResponse<String>> signup(@RequestBody SignupRequestDTO request) {
+        userService.save(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다.", null));
+                .body(SuccessResponse.success(HttpStatus.CREATED, "회원가입에 성공하였습니다."));
     }
 
     // 로그인 API
@@ -90,17 +77,19 @@ public class UserController {
     @GetMapping("/user")
     public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
         UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getEmail());
-        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "조회 성공", userProfileResponse));
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 조회 성공", userProfileResponse));
     }
 
     // 사용자 정보 수정 Mock API
-//    @Operation( summary = "사용자 정보 수정 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
-//    @PutMapping( "/user" )
-//    public ResponseEntity<Map<String, Object>> updateUser(@RequestBody ModifyRequestDTO dto, HttpServletRequest request ) {
-//
-//        // 사용자 데이터 업데이트 로직 실행
-//
-//        // 응답 반환
-//        return ResponseEntity.ok(successResponse("사용자 정보가 수정되었습니다.", dto));
-//    }
+    @Operation( summary = "사용자 정보 수정 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
+    @PutMapping( "/user" )
+    public ResponseEntity<SuccessResponse<String>> updateUser(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestBody ModifyRequestDTO dto) {
+
+        // 사용자 데이터 업데이트 로직 실행
+        userService.modifyUserProfile(customUserDetails, dto);
+
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 수정 성공"));
+    }
 }

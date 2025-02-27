@@ -1,6 +1,7 @@
 package com.example.onculture.domain.user.service;
 
 import com.example.onculture.domain.user.domain.Profile;
+import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.model.Interest;
@@ -49,41 +50,45 @@ public class UserService {
 
     // 회원가입 메서드
     @Transactional
-    public User save(SignupRequestDTO dto) {
+    public void save(SignupRequestDTO dto) {
+        System.out.println("dto: " + dto);
 
         String email = dto.getEmail();
         String nickname = dto.getNickname();
 
         // 중복 이메일 검증 로직 추가
         // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
-        if (userRepository.findByEmail(email).isPresent()) throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
+        if (userRepository.findByEmail(email).isPresent())
+            throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
         // 중복 닉네임 검증 로직 추가
-        if (userRepository.findByNickname(nickname).isPresent()) throw new CustomException.DuplicateNicknameException();        // 커스텀한 중복 닉네임 예외
+        if (userRepository.findByNickname(nickname).isPresent())
+            throw new CustomException.DuplicateNicknameException();        // 커스텀한 중복 닉네임 예외
         // 동일한 이메일의 소셜 가입자가 있을 경우 고려 ( 보류 )
-        /*
-        // 이미 등록된 사용자 확인
-        Optional<User> existingUser = userRepository.findByEmail(email);
+            /*
+            // 이미 등록된 사용자 확인
+            Optional<User> existingUser = userRepository.findByEmail(email);
 
-        // 기존에 해당 이메일이 등록된 경우
-        if (existingUser.isPresent()) {
-            // 기존 사용자에 대해 socialUpdate 호출
-            User user = existingUser.get();
-            user.socialUpdate(Social.LOCAL, user.getSocials());  // 소셜 로그인 정보 업데이트
-            return userRepository.save(user);
+            // 기존에 해당 이메일이 등록된 경우
+            if (existingUser.isPresent()) {
+                // 기존 사용자에 대해 socialUpdate 호출
+                User user = existingUser.get();
+                user.socialUpdate(Social.LOCAL, user.getSocials());  // 소셜 로그인 정보 업데이트
+                return userRepository.save(user);
+            }
+             */
+
+        try {
+            // DTO -> Entity 변환
+            User user = modelMapper.map(dto, User.class);
+            // 비밀번호 암호화
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            // 회원가입 처리
+            userRepository.save(user);
+
+        } catch (Exception e) {
+            log.error("사용자 저장 실패: {}", e.getMessage());
+            throw new CustomException.CustomJpaSaveException(ErrorCode.USER_SAVE_FAILED);
         }
-         */
-        // 신규 사용자 생성
-        User user = User.builder()
-                .email(dto.getEmail())
-                .password(passwordEncoder.encode(dto.getPassword()))
-                .nickname(dto.getNickname())
-                .role(Role.USER)
-                .loginType(LoginType.LOCAL_ONLY)  // 기본적으로 LOCAL_ONLY로 설정
-                .socials(new HashSet<>(Set.of(Social.LOCAL)))  // 기본 소셜 로그인 상태
-                .build();
-
-        // 회원가입 처리
-        return userRepository.save(user);
     }
 
     // 로컬 로그인 메서드
@@ -153,6 +158,11 @@ public class UserService {
                 .build();
     }
 
+    // 현재 사용자 정보 수정 메서드
+    public void modifyUserProfile(CustomUserDetails userDetails, ModifyRequestDTO dto) {
+        // 구현 예정
+    }
+
     // 로그인 인증 후 인증 객체 반환 메서드
     public Authentication authenticate(LoginRequestDTO dto) {
 
@@ -189,20 +199,6 @@ public class UserService {
                 .orElseThrow(() -> new CustomException.CustomJpaReadException(ErrorCode.USER_NOT_FOUND));
     }
 
-    // 현재 사용자 인증 정보 조회 ( JWT 인증이 완료된 사용자 정보 조회 )
-    public UserSimpleResponse userSimpleData(HttpServletRequest request, String accessToken) {
-
-        // 현재 로그인된 사용자의 인증 정보를 가져올 때 사용
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) throw new IllegalArgumentException("인증되지 않은 사용자입니다.");
-
-        // 현재 로그인한 사용자 정보 가져오기
-        UserSimpleResponse userDetails = (UserSimpleResponse) authentication.getPrincipal();
-
-        return userDetails;
-    }
-
     // request 에 있는 쿠키에서 refreshToken 값 가져오기
     public String extractRefreshToken(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
@@ -217,5 +213,15 @@ public class UserService {
             }
         }
         return null;
+    }
+
+    // 현재 사용자 인증 정보 조회 ( JWT 인증이 완료된 사용자 정보 조회 )
+    public CustomUserDetails userSimpleData(HttpServletRequest request, String accessToken) {
+        // 현재 로그인된 사용자의 인증 객체 가져오기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // 인증 객체 존재 여부 확인
+        if (authentication == null || !authentication.isAuthenticated()) throw new IllegalArgumentException("인증되지 않은 사용자입니다.");
+        // 인증 객체에서 사용자 정보 추출하기 ( userId, nickname, role )
+        return (CustomUserDetails) authentication.getPrincipal();
     }
 }
