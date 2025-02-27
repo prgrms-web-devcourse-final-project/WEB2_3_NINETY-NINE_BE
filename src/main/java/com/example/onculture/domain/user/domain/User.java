@@ -1,16 +1,15 @@
 package com.example.onculture.domain.user.domain;
 
+import com.example.onculture.domain.user.model.LoginType;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.model.Social;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -40,12 +39,15 @@ public class User {
     private Role role;
 
     @Column(nullable = false)
-    @ColumnDefault("false")
-    private boolean socialFlag = false;
-
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Social social;
+    private LoginType loginType;
+
+    // 기본값 : Null
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "socials", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "socials")
+    private Set<Social> socials = new HashSet<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
@@ -53,7 +55,8 @@ public class User {
 
     @PrePersist
     public void prePersist() {
-        this.social = this.social == null ? Social.Local : this.social;
+        this.loginType = this.loginType == null ? LoginType.LOCAL_ONLY : this.loginType;
+        this.socials = this.socials == null || this.socials.isEmpty() ? new HashSet<>(Set.of(Social.LOCAL)) : this.socials;
         this.role = this.role == null ? Role.USER : this.role;
     }
 
@@ -66,4 +69,23 @@ public class User {
 //        this.profile = profile;
 //        profile.setUser(this);
 //    }
+
+    // 동일한 이메일로 2가지 이상의 로그인 방식을 사용할 경우
+    public User socialUpdate(Social social, Set<Social> socials) {
+        if (this.socials == null || this.socials.isEmpty()) {
+            // socials가 null이거나 비어있을 경우 기본값으로 초기화
+            this.socials = new HashSet<>(Set.of(Social.LOCAL));
+        }
+
+        if ( social == Social.LOCAL && !socials.contains(Social.GOOGLE) && !socials.contains(Social.KAKAO) ) {
+            this.loginType = LoginType.LOCAL_ONLY;
+        } else if (!socials.contains(Social.LOCAL) && socials.contains(Social.GOOGLE) || socials.contains(Social.KAKAO) ) {
+            this.loginType = LoginType.SOCIAL_ONLY;
+            this.socials.add(social);
+        } else {
+            this.loginType = LoginType.BOTH;
+            this.socials.add(social);
+        }
+        return this;
+    }
 }

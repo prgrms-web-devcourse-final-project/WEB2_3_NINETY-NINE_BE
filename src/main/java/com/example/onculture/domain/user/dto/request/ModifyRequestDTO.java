@@ -1,6 +1,6 @@
 package com.example.onculture.domain.user.dto.request;
 
-import com.example.onculture.domain.user.domain.Interest;
+import com.example.onculture.domain.user.model.Interest;
 import lombok.*;
 
 import java.util.List;
