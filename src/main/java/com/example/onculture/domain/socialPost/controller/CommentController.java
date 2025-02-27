@@ -8,6 +8,7 @@ import com.example.onculture.domain.socialPost.service.CommentService;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +22,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @AllArgsConstructor
+@Tag(name = "소셜 게시판 댓글 API", description = "소셜 게시판의 댓글을 관리하는 API")
 public class CommentController {
     private final CommentService commentService;
 
-    @Operation(summary = "소셜 게시판 댓글 전체 조회", description = "socialPostId에 해당하는 게시글의 댓글 전체 조회 API 입니다")
+    @Operation(summary = "소셜 게시판 댓글 전체 조회",
+            description = "socialPostId에 해당하는 게시글의 댓글 전체 조회 API 입니다. pageNum과 pageSize의 기본값은 각각 0, 9입니다.")
     @GetMapping("/socialPosts/{socialPostId}/comments")
     public ResponseEntity<SuccessResponse<CommentListResponseDTO>> getCommentsByPost(
             @PathVariable Long socialPostId,
