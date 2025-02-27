@@ -3,6 +3,7 @@ package com.example.onculture.domain.event.controller;
 import com.example.onculture.domain.event.DTO.ExhibitDTO;
 import com.example.onculture.domain.event.DTO.ExhibitDetailDTO;
 import com.example.onculture.domain.event.service.ExhibitService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,8 @@ public class ExhibitController {
     private final ExhibitService exhibitService;
 
     // 공공 데이터 API 저장
+    @Operation(summary = "전시회 공공 데이터 저장",
+            description = "전시회 공공 데이터 저장")
     @GetMapping("/fetchXmlAndSave")
     public ResponseEntity<String> fetchXmlAndSave() {
         exhibitService.fetchXmlAndSaveWithPagination();
@@ -24,6 +27,8 @@ public class ExhibitController {
     }
 
     // 기간별 전시 목록 조회
+    @Operation(summary = "전시회 데이터 목록 조회",
+            description = "전시회 데이터 목록 조회")
     @GetMapping("/period")
     public ResponseEntity<List<ExhibitDTO>> getExhibitionsByPeriod(
             @RequestParam String from,
@@ -36,6 +41,8 @@ public class ExhibitController {
     }
 
     // 지역별 전시 목록 조회
+    @Operation(summary = "지역별 전시회 데이터 목록 조회",
+            description = "지역별 전시회 데이터 목록 조회")
     @GetMapping("/area")
     public ResponseEntity<List<ExhibitDTO>> getExhibitionsByArea(
             @RequestParam String sido,  // 시/도 (예: 서울)
@@ -50,6 +57,8 @@ public class ExhibitController {
     }
 
     // 분야별 전시 목록 조회
+    @Operation(summary = "분야별 전시회 데이터 목록 조회",
+            description = "분야별 전시회 데이터 목록 조회")
     @GetMapping("/realm")
     public ResponseEntity<List<ExhibitDTO>> getExhibitionsByRealm(
             @RequestParam String realmCode,  // 분야 "전시"
@@ -63,6 +72,8 @@ public class ExhibitController {
     }
 
     // 전시 상세 정보 조회
+    @Operation(summary = "전시회 데이터 상세 정보 조회",
+            description = "전시회 데이터 상세 정보 조회")
     @GetMapping("/detail")
     public ResponseEntity<ExhibitDetailDTO> getExhibitionDetail(@RequestParam Long seq) {
         ExhibitDetailDTO detail = exhibitService.getExhibitDetail(seq);
