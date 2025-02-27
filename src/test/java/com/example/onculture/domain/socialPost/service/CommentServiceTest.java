@@ -1,8 +1,5 @@
 package com.example.onculture.domain.socialPost.service;
 
-
-public class CommentServiceTest {
-
 import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
