@@ -1,7 +1,5 @@
 package com.example.onculture.domain.socialPost.service;
 
-public class SocialPostServiceTest {
-
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
