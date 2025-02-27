@@ -1,5 +1,8 @@
 package com.example.onculture.domain.socialPost.service;
 
+
+public class CommentServiceTest {
+
 import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
@@ -171,4 +174,5 @@ public class CommentServiceTest {
         verify(commentRepository, times(1)).deleteById(commentId);
         verify(socialPostRepository, times(1)).save(testSocialPost);
     }
+
 }
