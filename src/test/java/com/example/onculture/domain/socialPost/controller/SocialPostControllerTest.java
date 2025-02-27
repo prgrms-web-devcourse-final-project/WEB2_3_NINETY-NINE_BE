@@ -110,47 +110,47 @@ public class SocialPostControllerTest {
         verify(socialPostService, times(1)).getSocialPost(socialPostId);
     }
 
-    @Test
-    @DisplayName("유저의 게시판 전체 조회 요청")
-    void testGetSocialPostsByUser() {
-        // given
-        Long userId = 1L;
-        int pageNum = 0;
-        int pageSize = 9;
-        when(socialPostService.getSocialPostsByUser(userId, pageNum, pageSize))
-                .thenReturn(mockUserPostListResponseDTO);
-
-        // when
-        ResponseEntity<SuccessResponse<UserPostListResponseDTO>> response =
-                socialPostController.getSocialPostsByUser(userId, pageNum, pageSize);
-
-        // then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockUserPostListResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).getSocialPostsByUser(userId, pageNum, pageSize);
-    }
-
 //    @Test
-//    @DisplayName("소셜 게시판 생성 요청 - 인증 정보 포함")
-//    void testCreateSocialPost() {
+//    @DisplayName("유저의 게시판 전체 조회 요청")
+//    void testGetSocialPostsByUser() {
 //        // given
-//        CreatePostRequestDTO requestDTO = new CreatePostRequestDTO();
-//        requestDTO.setTitle("제목");
-//        requestDTO.setContent("내용");
-//        requestDTO.setImageUrl("image.jpg");
-//
-//        when(socialPostService.createSocialPost(1L, requestDTO))
-//                .thenReturn(mockPostResponseDTO);
+//        Long userId = 1L;
+//        int pageNum = 0;
+//        int pageSize = 9;
+//        when(socialPostService.getSocialPostsByUser(userId, pageNum, pageSize))
+//                .thenReturn(mockUserPostListResponseDTO);
 //
 //        // when
-//        ResponseEntity<SuccessResponse<PostResponseDTO>> response =
-//                socialPostController.createSocialPost(requestDTO, customUserDetails);
+//        ResponseEntity<SuccessResponse<UserPostListResponseDTO>> response =
+//                socialPostController.getSocialPostsByUser(userId, pageNum, pageSize);
 //
 //        // then
-//        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-//        assertEquals(mockPostResponseDTO, response.getBody().getData());
-//        verify(socialPostService, times(1)).createSocialPost(1L, requestDTO);
+//        assertEquals(HttpStatus.OK, response.getStatusCode());
+//        assertEquals(mockUserPostListResponseDTO, response.getBody().getData());
+//        verify(socialPostService, times(1)).getSocialPostsByUser(userId, pageNum, pageSize);
 //    }
+
+    @Test
+    @DisplayName("소셜 게시판 생성 요청 - 인증 정보 포함")
+    void testCreateSocialPost() {
+        // given
+        CreatePostRequestDTO requestDTO = new CreatePostRequestDTO();
+        requestDTO.setTitle("제목");
+        requestDTO.setContent("내용");
+        requestDTO.setImageUrl("image.jpg");
+
+        when(socialPostService.createSocialPost(1L, requestDTO))
+                .thenReturn(mockPostResponseDTO);
+
+        // when
+        ResponseEntity<SuccessResponse<PostResponseDTO>> response =
+                socialPostController.createSocialPost(requestDTO, customUserDetails);
+
+        // then
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(mockPostResponseDTO, response.getBody().getData());
+        verify(socialPostService, times(1)).createSocialPost(1L, requestDTO);
+    }
 
     @Test
     @DisplayName("소셜 게시판 수정 요청 - 인증 정보 포함")

@@ -39,17 +39,6 @@ public class SocialPostController {
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
-    @Operation(summary = "유저의 게시판 전체 조회",
-            description = "userId에 해당하는 게시글을 불러옵니다. pageNum과 pageSize의 기본값은 각각 0, 9입니다.")
-    @GetMapping("/users/{userId}/socialPosts")
-    public ResponseEntity<SuccessResponse<UserPostListResponseDTO>> getSocialPostsByUser(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "0") int pageNum,
-            @RequestParam(defaultValue = "9") int pageSize) {
-        UserPostListResponseDTO responseDTO = socialPostService.getSocialPostsByUser(userId, pageNum, pageSize);
-        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
-    }
-
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
     @PostMapping("/socialPosts")
     public ResponseEntity<SuccessResponse<PostResponseDTO>> createSocialPost(
