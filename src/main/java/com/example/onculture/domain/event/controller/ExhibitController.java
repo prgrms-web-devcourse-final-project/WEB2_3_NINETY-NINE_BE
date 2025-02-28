@@ -27,8 +27,8 @@ public class ExhibitController {
     }
 
     // 기간별 전시 목록 조회
-    @Operation(summary = "전시회 데이터 목록 조회",
-            description = "전시회 데이터 목록 조회")
+    @Operation(summary = "기간 내의 전시회 데이터 목록 조회",
+            description = "기간 내의 전시회 데이터 목록 조회")
     @GetMapping("/period")
     public ResponseEntity<List<ExhibitDTO>> getExhibitionsByPeriod(
             @RequestParam String from,
