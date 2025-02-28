@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/socialPosts")
 @AllArgsConstructor
 @Tag(name = "소셜 게시판 댓글 API", description = "소셜 게시판의 댓글을 관리하는 API")
 public class CommentController {
@@ -28,7 +28,7 @@ public class CommentController {
 
     @Operation(summary = "소셜 게시판 댓글 전체 조회",
             description = "socialPostId에 해당하는 게시글의 댓글 전체 조회 API 입니다. pageNum과 pageSize의 기본값은 각각 0, 9입니다.")
-    @GetMapping("/socialPosts/{socialPostId}/comments")
+    @GetMapping("/{socialPostId}/comments")
     public ResponseEntity<SuccessResponse<CommentListResponseDTO>> getCommentsByPost(
             @PathVariable Long socialPostId,
             @RequestParam(defaultValue = "0") int pageNum,
@@ -38,7 +38,7 @@ public class CommentController {
     }
 
     @Operation(summary = "소셜 게시판 댓글 생성", description = "socialPostId에 해당하는 게시글의 댓글 생성 API 입니다")
-    @PostMapping("/socialPosts/{socialPostId}/comments")
+    @PostMapping("/{socialPostId}/comments")
     public ResponseEntity<SuccessResponse<CommentResponseDTO>> createCommentByPost(
             @PathVariable Long socialPostId,
             @RequestBody CreateCommentRequestDTO requestDTO,
@@ -49,7 +49,7 @@ public class CommentController {
     }
 
     @Operation(summary = "소셜 게시판 댓글 수정", description = "socialPostId에 해당하는 게시글의 댓글 생성 API 입니다")
-    @PutMapping("/socialPosts/{socialPostId}/comments/{commentId}")
+    @PutMapping("/{socialPostId}/comments/{commentId}")
     public ResponseEntity<SuccessResponse<CommentResponseDTO>> updateCommentByPost(
             @PathVariable Long socialPostId,
             @PathVariable Long commentId,
@@ -61,7 +61,7 @@ public class CommentController {
     }
 
     @Operation(summary = "소셜 게시판 댓글 삭제", description = "socialPostId에 해당하는 게시글의 댓글 삭제 API 입니다")
-    @DeleteMapping("/socialPosts/{socialPostId}/comments/{commentId}")
+    @DeleteMapping("/{socialPostId}/comments/{commentId}")
     public ResponseEntity<SuccessResponse<String>> deleteCommentByPost(
             @PathVariable Long socialPostId, @PathVariable Long commentId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {

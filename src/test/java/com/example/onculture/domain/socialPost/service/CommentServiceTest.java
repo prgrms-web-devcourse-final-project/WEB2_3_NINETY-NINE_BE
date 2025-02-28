@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.service;
 
+import com.example.onculture.domain.notification.service.NotificationService;
 import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +43,9 @@ public class CommentServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -50,8 +55,12 @@ public class CommentServiceTest {
     private CreateCommentRequestDTO createCommentRequestDTO;
     private UpdateCommentRequestDTO updateCommentRequestDTO;
 
+    private List<String> images = new ArrayList<>();
+
     @BeforeEach
     void setUp() {
+        images.add("image.jpg");
+        images.add("image2.jpg");
 
         testUser = User.builder()
                 .id(1L)
@@ -70,7 +79,7 @@ public class CommentServiceTest {
                 .user(testUser)
                 .title("Test Post")
                 .content("Test Content")
-                .imageUrl("post.jpg")
+                .imageUrls("post.jpg")
                 .build();
 
         testComment = Comment.builder()

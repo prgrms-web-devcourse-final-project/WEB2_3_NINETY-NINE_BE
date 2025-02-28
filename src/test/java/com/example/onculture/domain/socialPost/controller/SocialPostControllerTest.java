@@ -16,7 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -37,13 +39,16 @@ public class SocialPostControllerTest {
     private PostResponseDTO mockPostResponseDTO;
     private UserPostListResponseDTO mockUserPostListResponseDTO;
 
-        private CustomUserDetails customUserDetails;
+    private CustomUserDetails customUserDetails;
+    private List<String> images = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
+        images.add("image.jpg");
+        images.add("image2.jpg");
 
         mockPostResponseDTO = new PostResponseDTO(
-                1L, 1L, "제목", "내용", "image.jpg",
+                1L, 1L, "제목", "내용", images,
                 0, 0, 0,
                 "닉네임", "profile.jpg",
                 LocalDateTime.now(), LocalDateTime.now()
@@ -137,7 +142,7 @@ public class SocialPostControllerTest {
         CreatePostRequestDTO requestDTO = new CreatePostRequestDTO();
         requestDTO.setTitle("제목");
         requestDTO.setContent("내용");
-        requestDTO.setImageUrl("image.jpg");
+        requestDTO.setImageUrls(images);
 
         when(socialPostService.createSocialPost(1L, requestDTO))
                 .thenReturn(mockPostResponseDTO);
@@ -160,7 +165,7 @@ public class SocialPostControllerTest {
         UpdatePostRequestDTO requestDTO = new UpdatePostRequestDTO();
         requestDTO.setTitle("수정 제목");
         requestDTO.setContent("수정 내용");
-        requestDTO.setImageUrl("updated_image.jpg");
+        requestDTO.setImageUrls(images);
 
         when(socialPostService.updateSocialPost(1L, requestDTO, socialPostId))
                 .thenReturn(mockPostResponseDTO);

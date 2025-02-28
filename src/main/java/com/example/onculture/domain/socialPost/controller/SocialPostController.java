@@ -14,7 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/socialPosts")
 @AllArgsConstructor
 @Tag(name = "소셜 게시판 API", description = "소셜 게시판을 관리하는 API")
 public class SocialPostController {
@@ -23,7 +23,7 @@ public class SocialPostController {
 
     @Operation(summary = "소셜 게시판 전체 조회",
             description = "sort 종류는 popular, latest, comments가 있고 기본값은 latest입니다. pageNum과 pageSize의 기본값은 각각 0, 9입니다.")
-    @GetMapping("/socialPosts")
+    @GetMapping
     public ResponseEntity<SuccessResponse<PostListResponseDTO>> getSocialPosts(
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int pageNum,
@@ -33,14 +33,14 @@ public class SocialPostController {
     }
 
     @Operation(summary = "소셜 게시판 상세 조회", description = "socialPostId에 해당하는 게시글의 상세 조회 API 입니다")
-    @GetMapping("/socialPosts/{socialPostId}")
+    @GetMapping("/{socialPostId}")
     public ResponseEntity<SuccessResponse<PostResponseDTO>> getSocialPost(@PathVariable Long socialPostId) {
         PostResponseDTO responseDTO = socialPostService.getSocialPost(socialPostId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
-    @PostMapping("/socialPosts")
+    @PostMapping
     public ResponseEntity<SuccessResponse<PostResponseDTO>> createSocialPost(
             @RequestBody CreatePostRequestDTO requestDTO,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -50,7 +50,7 @@ public class SocialPostController {
     }
 
     @Operation(summary = "소셜 게시판 수정", description = "socialPostId에 해당하는 게시글의 수정 API 입니다")
-    @PutMapping("/socialPosts/{socialPostId}")
+    @PutMapping("/{socialPostId}")
     public ResponseEntity<SuccessResponse<PostResponseDTO>> updateSocialPost(
             @RequestBody UpdatePostRequestDTO requestDTO,
             @PathVariable Long socialPostId,
@@ -61,7 +61,7 @@ public class SocialPostController {
     }
 
     @Operation(summary = "소셜 게시판 삭제", description = "socialPostId에 해당하는 게시글의 삭제 API 입니다")
-    @DeleteMapping("/socialPosts/{socialPostId}")
+    @DeleteMapping("/{socialPostId}")
     public ResponseEntity<SuccessResponse<String>> deleteSocialPost(
             @PathVariable Long socialPostId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -72,7 +72,7 @@ public class SocialPostController {
 
     @Operation(summary = "소셜 게시판 좋아요 토글",
             description = "좋아요를 누른 유저가 요청하면 삭제, 누르지 않은 유저가 요청하면 추가됩니다.")
-    @PostMapping("/socialPosts/{socialPostId}/likes")
+    @PostMapping("/{socialPostId}/likes")
     public ResponseEntity<SuccessResponse<String>> toggleLike(
             @PathVariable Long socialPostId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
