@@ -66,6 +66,9 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.15.2'
     testImplementation 'org.assertj:assertj-core:3.27.3'
 
+    // AWS S3 Bucket
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
     implementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
 
     // Jsoup 라이브러리 추가

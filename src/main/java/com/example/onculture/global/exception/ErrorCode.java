@@ -33,6 +33,7 @@ public enum ErrorCode {
 
 	DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "중복 이메일 입니다."),
 	DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "중복 닉네임 입니다."),
+	NICKNAME_CANNOT_BE_NULL(HttpStatus.BAD_REQUEST, "닉네임을 입력해주세요."),
 	INVALID_GENDER(HttpStatus.BAD_REQUEST, "M OR F"),
 	INVALID_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 올바르지 않습니다."),
 	PASSWORD_CANNOT_BE_NULL(HttpStatus.BAD_REQUEST, "비밀번호를 입력해주세요."),
@@ -40,6 +41,8 @@ public enum ErrorCode {
 	PASSWORD_MISSING_LETTER(HttpStatus.BAD_REQUEST, "비밀번호 글자를 확인해주세요."),
 	PASSWORD_MISSING_NUMBER(HttpStatus.BAD_REQUEST, "비밀번호 숫자를 확인해주세요."),
 	PASSWORD_MISSING_SPECIAL_CHARACTER(HttpStatus.BAD_REQUEST, "비밀번호 특수문자를 확인해주세요."),
+	FILE_EXTENSION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 파일 확장자입니다."),
+	FILE_MIME_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 파일 MIME 타입입니다."),
 
 	/*
 	 * 401 UNAUTHORIZED
