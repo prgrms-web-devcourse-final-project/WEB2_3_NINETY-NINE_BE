@@ -54,5 +54,6 @@ public class EventController {
     @GetMapping("/festival-posts/search")
     public List<FestivalPost> searchFestivalPosts(@RequestParam("keyword") String keyword) {
         return festivalPostService.searchByLocation(keyword);
+
     }
 }

@@ -25,7 +25,7 @@ public enum ErrorCode {
 	INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호는 1 이상, 페이지 크기는 1 이상이어야 합니다."),
 	INVALID_SORT_REQUEST(HttpStatus.BAD_REQUEST, "정렬은 popular, latest, comments만 가능합니다."),
 	INVALID_PASSWORD_EXCEPTION(HttpStatus.BAD_REQUEST, "비밀번호를 다시 확인해주새요."),
-
+	INVALID_GENRE_REQUEST(HttpStatus.BAD_REQUEST, "장르는 theater 또는 musical이어야 합니다 ."),
 	INVALID_APPLICATION_STATUS(HttpStatus.BAD_REQUEST, "신청 상태가 유효하지 않습니다."),
 
 	COMPANION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "해당 게시글의 동행이 존재합니다."),
