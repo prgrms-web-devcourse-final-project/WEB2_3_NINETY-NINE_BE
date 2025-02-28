@@ -28,14 +28,21 @@ public class PopupStorePost {
     @Column(name = "operating_date", length = 2000)
     private Date operatingDate;
 
+    @Column(name = "popups_end_date")
+    private Date popupsEndDate; // 종료 일자 추가
+
     @Column(name = "operating_time", length = 50)
     private String operatingTime;
+
 
     @Column(name = "location",length = 255)
     private String location;
 
     @Column(name = "details",length = 2000)
     private String details;
+
+    @Column(name = "status")
+    private String status;
 
     // JPA 매핑: popup_store_post_images 테이블에 이미지 URL들을 저장
     @ElementCollection
