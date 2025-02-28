@@ -65,7 +65,7 @@ public class CommentControllerTest {
                 .user(testUser)
                 .title("Test Post")
                 .content("Test Content")
-                .imageUrl("post.jpg")
+                .imageUrls("post.jpg, post2.jpg")
                 .build();
 
         Comment dummyComment = Comment.builder()

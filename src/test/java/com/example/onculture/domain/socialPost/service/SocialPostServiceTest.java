@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,8 +44,12 @@ public class SocialPostServiceTest {
     private CreatePostRequestDTO createPostRequestDTO;
     private UpdatePostRequestDTO updatePostRequestDTO;
 
+    private List<String> images = new ArrayList<>();
+
     @BeforeEach
     void setUp() {
+        images.add("image.jpg");
+        images.add("image2.jpg");
 
         testUser = User.builder()
                 .id(1L)
@@ -63,18 +68,18 @@ public class SocialPostServiceTest {
                 .user(testUser)
                 .title("제목")
                 .content("내용")
-                .imageUrl("image.jpg")
+                .imageUrls("image.jpg")
                 .build();
 
         createPostRequestDTO = new CreatePostRequestDTO();
         createPostRequestDTO.setTitle("제목");
         createPostRequestDTO.setContent("내용");
-        createPostRequestDTO.setImageUrl("image.jpg");
+        createPostRequestDTO.setImageUrls(images);
 
         updatePostRequestDTO = new UpdatePostRequestDTO();
         updatePostRequestDTO.setTitle("제목");
         updatePostRequestDTO.setContent("내용");
-        updatePostRequestDTO.setImageUrl("image.jpg");
+        updatePostRequestDTO.setImageUrls(images);
     }
 
     @Test
@@ -207,7 +212,7 @@ public class SocialPostServiceTest {
                     .user(sp.getUser())
                     .title(sp.getTitle())
                     .content(sp.getContent())
-                    .imageUrl(sp.getImageUrl())
+                    .imageUrls(sp.getImageUrls())
                     .build();
         });
 
@@ -290,7 +295,7 @@ public class SocialPostServiceTest {
                 .user(otherUser)
                 .title("Title")
                 .content("Content")
-                .imageUrl("img.jpg")
+                .imageUrls("img.jpg")
                 .build();
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(otherPost));
 
@@ -339,7 +344,7 @@ public class SocialPostServiceTest {
                 .user(otherUser)
                 .title("Title")
                 .content("Content")
-                .imageUrl("img.jpg")
+                .imageUrls("img.jpg")
                 .build();
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(otherPost));
 
