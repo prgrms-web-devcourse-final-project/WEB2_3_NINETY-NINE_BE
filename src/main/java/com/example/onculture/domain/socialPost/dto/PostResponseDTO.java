@@ -34,7 +34,7 @@ public class PostResponseDTO {
         this.commentCount = socialPost.getCommentCount();
         this.createdAt = socialPost.getCreatedAt();
         this.updatedAt = socialPost.getUpdatedAt();
-        this.userNickname = socialPost.getUser().getProfile().getUser().getNickname();
+        this.userNickname = socialPost.getUser().getNickname();
         this.userProfileImage = socialPost.getUser().getProfile().getProfileImage();
     }
 }

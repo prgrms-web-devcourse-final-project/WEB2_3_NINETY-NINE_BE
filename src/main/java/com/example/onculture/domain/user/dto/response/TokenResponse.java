@@ -5,10 +5,13 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
 public class TokenResponse {
 
     private String accessToken;
     private String refreshToken;
+
+    public TokenResponse(String accessToken, String refreshToken) {
+        this.accessToken = "Bearer " + accessToken;
+        this.refreshToken = refreshToken;
+    }
 }

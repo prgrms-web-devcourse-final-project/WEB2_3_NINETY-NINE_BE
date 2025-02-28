@@ -1,13 +1,17 @@
 package com.example.onculture.domain.socialPost.controller;
 
-import com.example.onculture.domain.socialPost.dto.*;
+import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
+import com.example.onculture.domain.socialPost.dto.CommentResponseDTO;
+import com.example.onculture.domain.socialPost.dto.CreateCommentRequestDTO;
+import com.example.onculture.domain.socialPost.dto.UpdateCommentRequestDTO;
 import com.example.onculture.domain.socialPost.service.CommentService;
 import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.user.domain.Profile;
-import com.example.onculture.domain.user.domain.Role;
-import com.example.onculture.domain.user.domain.Social;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +40,7 @@ public class CommentControllerTest {
 
     private CommentListResponseDTO mockCommentListResponseDTO;
     private CommentResponseDTO mockCommentResponseDTO;
+    private CustomUserDetails customUserDetails;
 
     @BeforeEach
     void setUp() {
@@ -45,11 +51,14 @@ public class CommentControllerTest {
                 .password("password")
                 .nickname("TestUser")
                 .role(Role.USER)
-                .social(Social.Local)
                 .build();
         Profile testProfile = Profile.builder().build();
         testProfile.setUser(testUser);
         testUser.setProfile(testProfile);
+
+        customUserDetails = CustomUserDetails.builder()
+                .userId(1L)
+                .build();
 
         SocialPost testSocialPost = SocialPost.builder()
                 .id(1L)
@@ -85,12 +94,11 @@ public class CommentControllerTest {
         Long socialPostId = 1L;
         int pageNum = 0;
         int pageSize = 9;
-        when(commentService.getCommentsByPost(pageNum, pageSize, socialPostId)).thenReturn(mockCommentListResponseDTO);
-
+        when(commentService.getCommentsByPost(pageNum, pageSize, socialPostId))
+                .thenReturn(mockCommentListResponseDTO);
         // when
         ResponseEntity<SuccessResponse<CommentListResponseDTO>> response =
                 commentController.getCommentsByPost(socialPostId, pageNum, pageSize);
-
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockCommentListResponseDTO, response.getBody().getData());
@@ -98,18 +106,17 @@ public class CommentControllerTest {
     }
 
     @Test
-    @DisplayName("createCommentByPost - 댓글 생성 요청")
+    @DisplayName("createCommentByPost - 댓글 생성 요청 (인증 정보 포함)")
     void testCreateCommentByPost() {
         // given
         Long socialPostId = 1L;
         CreateCommentRequestDTO requestDTO = new CreateCommentRequestDTO();
         requestDTO.setContent("댓글 내용");
-        when(commentService.createCommentByPost(1L, socialPostId, requestDTO)).thenReturn(mockCommentResponseDTO);
-
+        when(commentService.createCommentByPost(1L, socialPostId, requestDTO))
+                .thenReturn(mockCommentResponseDTO);
         // when
         ResponseEntity<SuccessResponse<CommentResponseDTO>> response =
-                commentController.createCommentByPost(socialPostId, requestDTO);
-
+                commentController.createCommentByPost(socialPostId, requestDTO, customUserDetails);
         // then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(mockCommentResponseDTO, response.getBody().getData());
@@ -117,19 +124,18 @@ public class CommentControllerTest {
     }
 
     @Test
-    @DisplayName("updateCommentByPost - 댓글 수정 요청")
+    @DisplayName("updateCommentByPost - 댓글 수정 요청 (인증 정보 포함)")
     void testUpdateCommentByPost() {
         // given
         Long socialPostId = 1L;
         Long commentId = 1L;
         UpdateCommentRequestDTO requestDTO = new UpdateCommentRequestDTO();
         requestDTO.setContent("수정된 댓글 내용");
-        when(commentService.updateCommentByPost(1L, socialPostId, commentId, requestDTO)).thenReturn(mockCommentResponseDTO);
-
+        when(commentService.updateCommentByPost(1L, socialPostId, commentId, requestDTO))
+                .thenReturn(mockCommentResponseDTO);
         // when
         ResponseEntity<SuccessResponse<CommentResponseDTO>> response =
-                commentController.updateCommentByPost(socialPostId, commentId, requestDTO);
-
+                commentController.updateCommentByPost(socialPostId, commentId, requestDTO, customUserDetails);
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockCommentResponseDTO, response.getBody().getData());
@@ -137,18 +143,17 @@ public class CommentControllerTest {
     }
 
     @Test
-    @DisplayName("deleteCommentByPost - 댓글 삭제 요청")
+    @DisplayName("deleteCommentByPost - 댓글 삭제 요청 (인증 정보 포함)")
     void testDeleteCommentByPost() {
         // given
         Long socialPostId = 1L;
         Long commentId = 1L;
         String expectedResult = "삭제 완료";
-        when(commentService.deleteCommentByPost(1L, socialPostId, commentId)).thenReturn(expectedResult);
-
+        when(commentService.deleteCommentByPost(1L, socialPostId, commentId))
+                .thenReturn(expectedResult);
         // when
         ResponseEntity<SuccessResponse<String>> response =
-                commentController.deleteCommentByPost(socialPostId, commentId);
-
+                commentController.deleteCommentByPost(socialPostId, commentId, customUserDetails);
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedResult, response.getBody().getData());

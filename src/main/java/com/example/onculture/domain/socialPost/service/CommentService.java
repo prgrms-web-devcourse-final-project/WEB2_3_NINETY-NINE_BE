@@ -1,5 +1,8 @@
 package com.example.onculture.domain.socialPost.service;
 
+import com.example.onculture.domain.notification.domain.Notification;
+import com.example.onculture.domain.notification.dto.NotificationRequestDTO;
+import com.example.onculture.domain.notification.service.NotificationService;
 import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.CommentListResponseDTO;
@@ -27,6 +30,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final SocialPostRepository socialPostRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public CommentListResponseDTO getCommentsByPost(int pageNum, int pageSize, Long socialPostId) {
         findSocialPostOrThrow(socialPostId);
@@ -67,6 +71,20 @@ public class CommentService {
         socialPost.increaseCommentCount();
 
         socialPostRepository.save(socialPost);
+
+        // 게시글 작성자 ID 가져오기
+        Long postOwnerId = socialPost.getUser().getId();
+
+        // 알림 생성
+        NotificationRequestDTO notificationDTO = new NotificationRequestDTO(
+            postOwnerId,           // 알림 받을 사용자 ID (게시글 작성자)
+            userId,                // 알림 보낸 사용자 ID (댓글 작성자)
+            Notification.NotificationType.COMMENT,
+            "회원님 게시글에 새로운 댓글이 달렸습니다.",
+            socialPostId,
+            Notification.RelatedType.COMMENT
+        );
+        notificationService.createNotification(notificationDTO);
 
         return new CommentResponseDTO(comment);
     }

@@ -1,5 +1,9 @@
 package com.example.onculture.domain.socialPost.service;
 
+import com.example.onculture.domain.notification.domain.Notification;
+import com.example.onculture.domain.notification.dto.NotificationRequestDTO;
+import com.example.onculture.domain.notification.repository.NotificationRepository;
+import com.example.onculture.domain.notification.service.NotificationService;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.domain.SocialPostLike;
 import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
@@ -19,6 +23,7 @@ public class SocialPostLikeService {
     private final SocialPostLikeRepository socialPostLikeRepository;
     private final UserRepository userRepository;
     private final SocialPostRepository socialPostRepository;
+    private final NotificationService notificationService;
 
     public String toggleLike(Long userId, Long socialPostId) {
         User user = findUserOrThrow(userId);
@@ -42,6 +47,20 @@ public class SocialPostLikeService {
             socialPost.increaseLikeCount();
 
             socialPostRepository.save(socialPost);
+
+            // 게시글 작성자에게 알림 보내기 (자기 자신의 게시글이면 알림 못 가게끔)
+            Long postOwnerId = socialPost.getUser().getId();
+            if (!postOwnerId.equals(userId)) {  // 자기 자신의 게시글에 대한 좋아요는 알림 안 보냄
+                NotificationRequestDTO notificationDTO = new NotificationRequestDTO(
+                    postOwnerId,           // 알림 받을 사용자 ID (게시글 작성자)
+                    userId,                // 알림 보낸 사용자 ID (좋아요 누른 사람)
+                    Notification.NotificationType.LIKE,
+                    "회원님 게시글에 새로운 좋아요가 추가되었습니다.",
+                    socialPostId,
+                    Notification.RelatedType.POST
+                );
+                notificationService.createNotification(notificationDTO);
+            }
 
             return "좋아요 추가";
         }

@@ -1,5 +1,6 @@
 package com.example.onculture.domain.user.dto.response;
 
+import com.example.onculture.domain.user.model.Role;
 import lombok.*;
 
 @Getter
@@ -11,4 +12,5 @@ public class UserSimpleResponse {
 
     private String email;
     private String nickname;
+    private Role role;
 }
