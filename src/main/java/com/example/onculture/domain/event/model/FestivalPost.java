@@ -25,8 +25,11 @@ public class FestivalPost {
     @Column(name = "festival_content")
     private String festivalContent;
 
-    @Column(name = "festival_operating_date")
-    private Date festivalOperatingDate;
+    @Column(name = "festival_start_date")
+    private Date festivalStartDate;
+
+    @Column(name = "festival_end_date")
+    private Date festivalEndDate; // 종료 일자 추가
 
     @Column(name = "festival_location")
     private String festivalLocation;
@@ -36,6 +39,9 @@ public class FestivalPost {
 
     @Column(name = "festival_ticket_price")
     private String festivalTicketPrice;
+
+    @Column(name = "festival_status")
+    private String festivalStatus;
 
     // JPA 매핑: festival_post_images 테이블에 이미지 URL들을 저장
     @ElementCollection
