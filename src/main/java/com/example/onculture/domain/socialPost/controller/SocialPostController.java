@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -19,173 +20,60 @@ public class SocialPostController {
         @RequestParam(defaultValue = "latest") String sort,
         @RequestParam(defaultValue = "0") int pageNum,
         @RequestParam(defaultValue = "3") int pageSize) {
-        PostResponseDTO post1 = new PostResponseDTO();
-        post1.setId(1L);
-        post1.setContent("내용1");
-        post1.setTitle("제목1");
-        post1.setImageUrl("이미지1");
-        post1.setCommentCount(3);
-        post1.setLikeCount(3);
-        post1.setViewCount(3);
-        post1.setUserId(1L);
-        post1.setCreatedAt(LocalDateTime.now().minusDays(1));
-        post1.setUpdatedAt(LocalDateTime.now().minusDays(1));
 
-        PostResponseDTO post2 = new PostResponseDTO();
-        post2.setId(2L);
-        post2.setContent("내용2");
-        post2.setTitle("제목2");
-        post2.setImageUrl("이미지2");
-        post2.setCommentCount(2);
-        post2.setLikeCount(2);
-        post2.setViewCount(2);
-        post2.setUserId(2L);
-        post2.setCreatedAt(LocalDateTime.now().minusDays(2));
-        post2.setUpdatedAt(LocalDateTime.now().minusDays(2));
+        // 게시물 생성 (예시로 12개의 게시물 생성)
+        List<PostResponseDTO> allPosts = new ArrayList<>();
 
-        PostResponseDTO post3 = new PostResponseDTO();
-        post3.setId(3L);
-        post3.setContent("내용3");
-        post3.setTitle("제목3");
-        post3.setImageUrl("이미지3");
-        post3.setCommentCount(1);
-        post3.setLikeCount(1);
-        post3.setViewCount(1);
-        post3.setUserId(3L);
-        post3.setCreatedAt(LocalDateTime.now().minusDays(3));
-        post3.setUpdatedAt(LocalDateTime.now().minusDays(3));
+        // 더미 데이터 생성
+        for (long i = 1; i <= 15; i++) {
+            PostResponseDTO post = new PostResponseDTO();
+            post.setId(i);
+            post.setContent("내용" + i);
+            post.setTitle("제목" + i);
+            post.setImageUrl("이미지" + i);
+            post.setCommentCount((int) i);
+            post.setLikeCount(20 - (int) i);
+            post.setViewCount((int) i);
+            post.setUserId(i);
+            post.setCreatedAt(LocalDateTime.now().minusDays((int) i));
+            post.setUpdatedAt(LocalDateTime.now().minusDays((int) i));
+            allPosts.add(post);
+        }
 
-        PostResponseDTO post4 = new PostResponseDTO();
-        post4.setId(4L);
-        post4.setContent("내용4");
-        post4.setTitle("제목4");
-        post4.setImageUrl("이미지4");
-        post4.setCommentCount(4);
-        post4.setLikeCount(4);
-        post4.setViewCount(4);
-        post4.setUserId(4L);
-        post4.setCreatedAt(LocalDateTime.now().minusDays(4));
-        post4.setUpdatedAt(LocalDateTime.now().minusDays(4));
+        // 정렬
+        switch (sort) {
+            case "popular":
+                // likeCount 기준 내림차순 정렬
+                allPosts.sort(Comparator.comparingInt(PostResponseDTO::getLikeCount).reversed());
+                break;
+            case "comments":
+                // commentCount 기준 내림차순 정렬
+                allPosts.sort(Comparator.comparingInt(PostResponseDTO::getCommentCount).reversed());
+                break;
+            case "latest":
+            default:
+                // createdAt 기준 내림차순 정렬 (기본값)
+                allPosts.sort(Comparator.comparing(PostResponseDTO::getCreatedAt).reversed());
+                break;
+        }
 
-        PostResponseDTO post5 = new PostResponseDTO();
-        post5.setId(5L);
-        post5.setContent("내용5");
-        post5.setTitle("제목5");
-        post5.setImageUrl("이미지5");
-        post5.setCommentCount(5);
-        post5.setLikeCount(5);
-        post5.setViewCount(5);
-        post5.setUserId(5L);
-        post5.setCreatedAt(LocalDateTime.now().minusDays(5));
-        post5.setUpdatedAt(LocalDateTime.now().minusDays(5));
+        // 페이징 처리
+        int startIndex = pageNum * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, allPosts.size());
 
-        PostResponseDTO post6 = new PostResponseDTO();
-        post6.setId(6L);
-        post6.setContent("내용6");
-        post6.setTitle("제목6");
-        post6.setImageUrl("이미지6");
-        post6.setCommentCount(6);
-        post6.setLikeCount(6);
-        post6.setViewCount(6);
-        post6.setUserId(6L);
-        post6.setCreatedAt(LocalDateTime.now().minusDays(6));
-        post6.setUpdatedAt(LocalDateTime.now().minusDays(6));
+        List<PostResponseDTO> pagedPosts = allPosts.subList(startIndex, endIndex);
 
-        PostResponseDTO post7 = new PostResponseDTO();
-        post7.setId(7L);
-        post7.setContent("내용7");
-        post7.setTitle("제목7");
-        post7.setImageUrl("이미지7");
-        post7.setCommentCount(7);
-        post7.setLikeCount(7);
-        post7.setViewCount(7);
-        post7.setUserId(7L);
-        post7.setCreatedAt(LocalDateTime.now().minusDays(7));
-        post7.setUpdatedAt(LocalDateTime.now().minusDays(7));
-
-        PostResponseDTO post8 = new PostResponseDTO();
-        post8.setId(8L);
-        post8.setContent("내용8");
-        post8.setTitle("제목8");
-        post8.setImageUrl("이미지8");
-        post8.setCommentCount(8);
-        post8.setLikeCount(8);
-        post8.setViewCount(8);
-        post8.setUserId(8L);
-        post8.setCreatedAt(LocalDateTime.now().minusDays(8));
-        post8.setUpdatedAt(LocalDateTime.now().minusDays(8));
-
-        PostResponseDTO post9 = new PostResponseDTO();
-        post9.setId(9L);
-        post9.setContent("내용9");
-        post9.setTitle("제목9");
-        post9.setImageUrl("이미지9");
-        post9.setCommentCount(9);
-        post9.setLikeCount(9);
-        post9.setViewCount(9);
-        post9.setUserId(9L);
-        post9.setCreatedAt(LocalDateTime.now().minusDays(9));
-        post9.setUpdatedAt(LocalDateTime.now().minusDays(9));
-
-        PostResponseDTO post10 = new PostResponseDTO();
-        post10.setId(10L);
-        post10.setContent("내용10");
-        post10.setTitle("제목10");
-        post10.setImageUrl("이미지10");
-        post10.setCommentCount(10);
-        post10.setLikeCount(10);
-        post10.setViewCount(10);
-        post10.setUserId(10L);
-        post10.setCreatedAt(LocalDateTime.now().minusDays(10));
-        post10.setUpdatedAt(LocalDateTime.now().minusDays(10));
-
-        PostResponseDTO post11 = new PostResponseDTO();
-        post11.setId(11L);
-        post11.setContent("내용11");
-        post11.setTitle("제목11");
-        post11.setImageUrl("이미지11");
-        post11.setCommentCount(11);
-        post11.setLikeCount(11);
-        post11.setViewCount(11);
-        post11.setUserId(11L);
-        post11.setCreatedAt(LocalDateTime.now().minusDays(11));
-        post11.setUpdatedAt(LocalDateTime.now().minusDays(11));
-
-        PostResponseDTO post12 = new PostResponseDTO();
-        post12.setId(12L);
-        post12.setContent("내용12");
-        post12.setTitle("제목12");
-        post12.setImageUrl("이미지12");
-        post12.setCommentCount(12);
-        post12.setLikeCount(12);
-        post12.setViewCount(12);
-        post12.setUserId(12L);
-        post12.setCreatedAt(LocalDateTime.now().minusDays(12));
-        post12.setUpdatedAt(LocalDateTime.now().minusDays(12));
-
-        List<PostResponseDTO> posts = new ArrayList<>();
-        posts.add(post1);
-        posts.add(post2);
-        posts.add(post3);
-        posts.add(post4);
-        posts.add(post5);
-        posts.add(post6);
-        posts.add(post7);
-        posts.add(post8);
-        posts.add(post9);
-        posts.add(post10);
-        posts.add(post11);
-        posts.add(post12);
-
+        // 응답 객체 설정
         PostListResponseDTO responseDTO = new PostListResponseDTO();
-        responseDTO.setPosts(posts);
-        responseDTO.setNumberOfElements(12);
+        responseDTO.setPosts(pagedPosts);
+        responseDTO.setNumberOfElements(pagedPosts.size());
         responseDTO.setPageNum(pageNum);
         responseDTO.setPageSize(pageSize);
-        responseDTO.setTotalPages(4); // 총 12개의 데이터가 있으므로 페이지는 4페이지
-        responseDTO.setTotalElements(12L);
+        responseDTO.setTotalPages((int) Math.ceil((double) allPosts.size() / pageSize));
+        responseDTO.setTotalElements((long) allPosts.size());
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDTO);
+
     }
 
     @Operation(summary = "소셜 게시판 상세 조회", description = "socialPostId에 해당하는 게시글의 상세 조회 API 입니다")

@@ -2,12 +2,18 @@ package com.example.onculture.domain.event;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+
+import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
 
 @Tag(name = "event", description = "행사 API")
 @RestController
@@ -130,6 +136,43 @@ public class EventController {
         return concert;
     }
 
+    // 팝업스토어 상세 조회
+    @Operation(summary = "팝업스토어 상세 조회", description = "주어진 팝업스토어의 상세 정보를 조회합니다.")
+    @GetMapping("/popup/{eventId}")
+    public ResponseEntity<EventDTO> getPopupStoreDetail(@PathVariable Long eventId) {
+        // 첫 번째 팝업스토어 이벤트 반환
+        EventDTO event = new EventDTO(1L, "팝업스토어1", "팝업스토어", "2025-02-15", "2025-02-17", 127.0276, 37.4979, 10, "진행중", "10:00 AM - 08:00 PM", "팝업스토어 설명");
+        return ResponseEntity.status(HttpStatus.OK).body(event);
+    }
+
+    // 전시회 상세 조회
+    @Operation(summary = "전시회 상세 조회", description = "주어진 전시회의 상세 정보를 조회합니다.")
+    @GetMapping("/exhibition/{eventId}")
+    public ResponseEntity<EventDTO> getExhibitionDetail(@PathVariable Long eventId) {
+        // 첫 번째 전시회 이벤트 반환
+        EventDTO event = new EventDTO(11L, "전시회1", "전시회", "2025-02-16", "2025-02-18", 127.0300, 37.4990, 20, "오픈예정", "09:00 AM - 06:00 PM", "전시회 설명");
+        return ResponseEntity.status(HttpStatus.OK).body(event);
+    }
+
+    // 뮤지컬 상세 조회
+    @Operation(summary = "뮤지컬 상세 조회", description = "주어진 뮤지컬의 상세 정보를 조회합니다.")
+    @GetMapping("/musical/{eventId}")
+    public ResponseEntity<EventDTO> getMusicalDetail(@PathVariable Long eventId) {
+        // 첫 번째 뮤지컬 이벤트 반환
+        EventDTO event = new EventDTO(21L, "뮤지컬1", "뮤지컬", "2025-02-18", "2025-02-20", 127.0320, 37.4950, 30, "진행중", "12:00 PM - 10:00 PM", "뮤지컬 설명");
+        return ResponseEntity.status(HttpStatus.OK).body(event);
+    }
+
+    // 콘서트 상세 조회
+    @Operation(summary = "콘서트 상세 조회", description = "주어진 콘서트의 상세 정보를 조회합니다.")
+    @GetMapping("/concert/{eventId}")
+    public ResponseEntity<EventDTO> getConcertDetail(@PathVariable Long eventId) {
+        // 첫 번째 콘서트 이벤트 반환
+        EventDTO event = new EventDTO(31L, "콘서트1", "콘서트", "2025-02-20", "2025-02-22", 127.0290, 37.4980, 40, "진행종료", "08:00 PM - 11:00 PM", "콘서트 설명");
+        return ResponseEntity.status(HttpStatus.OK).body(event);
+    }
+
+
     //북마크 목록 조회
     private List<Long> bookmarkList = new ArrayList<>();
 
@@ -185,7 +228,7 @@ public class EventController {
 
     //상태별, 지역별 정렬 (현재는 위도 기준 - 지도 API 를 사용해서 **동 or **구 등으로 변경)
     @Operation(summary = "상태별, 지역별 정렬",
-            description = "상태별, 지역별 정렬합니다.")
+            description = "상태별(진행중, 오픈예정) , 지역별 정렬합니다.")
     @GetMapping("/sort")
     public List<EventDTO> sortEvents(@RequestParam(required = false) String status,
                                      @RequestParam(required = false) String sortBy) {
