@@ -110,7 +110,7 @@ public class NotificationService {
 
 }
 
-//		// createNotification 사용 방법
+//	  // createNotification 사용 방법
 //    // 게시글 작성자에게 알림 전송
 //     Long postOwnerId = getPostOwner(postId);
 //     NotificationRequestDTO notificationDTO = new NotificationRequestDTO(

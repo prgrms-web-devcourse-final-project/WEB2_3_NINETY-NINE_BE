@@ -1,0 +1,31 @@
+package com.example.onculture.domain.event.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(name = "exhibit")
+public class ExhibitEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long seq; // 공연/전시 일련번호
+
+    private String title;       // 제목
+    private String startDate;   // 시작일 (YYYYMMDD 형식)
+    private String endDate;     // 종료일 (YYYYMMDD 형식)
+    private String place;       // 공연 장소
+    private String realmName;   // 분야명 (예: 연극, 콘서트, 전시 등)
+    private String area;        // 지역 (예: 서울)
+    private String thumbnail;   // 썸네일 URL/ 포스터
+    private Double gpsX;        // 경도
+    private Double gpsY;        // 위도
+
+}

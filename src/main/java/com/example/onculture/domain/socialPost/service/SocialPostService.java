@@ -62,24 +62,6 @@ public class SocialPostService {
         return new PostResponseDTO(socialPost);
     }
 
-    public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize) {
-        findUserOrThrow(userId);
-
-        validatePageInput(pageNum, pageSize);
-
-        Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
-        Page<PostResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(PostResponseDTO::new);
-
-        return UserPostListResponseDTO.builder()
-                .posts(posts.getContent())
-                .totalPages(posts.getTotalPages())
-                .pageNum(posts.getNumber())
-                .pageSize(posts.getSize())
-                .totalElements(posts.getTotalElements())
-                .numberOfElements(posts.getNumberOfElements())
-                .build();
-    }
-
     public PostResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
         User user = findUserOrThrow(userId);
 

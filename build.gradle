@@ -68,6 +68,16 @@ dependencies {
     // AWS S3 Bucket
     implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
+    implementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
+
+    // Jsoup 라이브러리 추가
+    implementation 'org.jsoup:jsoup:1.15.3'
+
+    // WebDriverManager (ChromeDriver 자동 관리)
+    implementation 'io.github.bonigarcia:webdrivermanager:5.3.0'
+
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.0' // 최신 버전 사용
+
 }
 
 tasks.named('test') {
