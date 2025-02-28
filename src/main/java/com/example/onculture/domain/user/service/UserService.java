@@ -184,7 +184,6 @@ public class UserService {
         // 소개글 업데이트 (필요 시)
         if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) user.getProfile().setDescription(dto.getDescription().trim());
         // 관심사 업데이트 (필요 시)
-        // TODO: DTO 단계에서 관심사 풀네임을 약어로 변경 고려 ( 풀네임 -> 약어 )
         if (dto.getInterests() != null && !dto.getInterests().isEmpty()) user.getProfile().setInterests(dto.getInterests());
         // 이미지 파일명 업데이트 (필요 시)
         if (imageData != null && !imageData.isEmpty()) {
@@ -192,7 +191,6 @@ public class UserService {
             String newImageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
             // DB에 이미지 파일명 저장
             user.getProfile().setProfileImage(newImageFileName);
-            // TODO: S3에 이미지 데이터 저장 ( 추후 추가 예정 )
             awsS3Util.uploadFile(imageData, newImageFileName);
 
         } else {
@@ -202,7 +200,6 @@ public class UserService {
             } else {
                 // 프로필 이미지 삭제 시, DB에 빈값 처리
                 user.getProfile().setProfileImage("");
-                // TODO: S3에 프로필 이미지 데이터 삭제 ( 추후 추가 예정 )
             }
         }
 
