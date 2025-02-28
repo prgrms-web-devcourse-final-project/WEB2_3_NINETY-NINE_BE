@@ -4,7 +4,7 @@ import com.example.onculture.domain.oauth.handler.OAuth2SuccessHandler;
 import com.example.onculture.domain.oauth.service.OAuth2UserCustomService;
 import com.example.onculture.global.utils.jwt.JwtAuthenticationFilter;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
-import com.example.onculture.domain.oauth.service.OAuth2AuthorizationRequestOnCookieRepository;
+import com.example.onculture.domain.oauth.repository.OAuth2AuthorizationRequestOnCookieRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

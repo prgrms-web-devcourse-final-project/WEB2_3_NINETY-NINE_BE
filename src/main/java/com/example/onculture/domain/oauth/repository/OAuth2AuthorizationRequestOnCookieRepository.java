@@ -1,4 +1,4 @@
-package com.example.onculture.domain.oauth.service;
+package com.example.onculture.domain.oauth.repository;
 
 import com.example.onculture.global.utils.CookieUtil;
 import jakarta.servlet.http.Cookie;

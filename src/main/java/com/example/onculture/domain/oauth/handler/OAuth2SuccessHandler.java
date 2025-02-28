@@ -1,14 +1,13 @@
 package com.example.onculture.domain.oauth.handler;
 
 import com.example.onculture.domain.oauth.dto.CustomOAuth2User;
-import com.example.onculture.domain.oauth.service.OAuth2AuthorizationRequestOnCookieRepository;
+import com.example.onculture.domain.oauth.repository.OAuth2AuthorizationRequestOnCookieRepository;
 import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.domain.user.service.TokenService;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
-import com.example.onculture.global.utils.CookieUtil;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,8 +19,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-
-import static com.example.onculture.global.utils.CookieUtil.*;
 
 @RequiredArgsConstructor
 @Component

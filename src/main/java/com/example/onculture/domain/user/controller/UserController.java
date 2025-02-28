@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Slf4j
@@ -72,24 +73,30 @@ public class UserController {
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, isAlreadyNickname));
     }
 
-    // 로그인한 사용자 정보 반환 Mock API
-    @Operation( summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회" )
-    @GetMapping("/user")
-    public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
-        UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getEmail());
+    // 다른 사용자 프로필 정보 API
+    @Operation( summary = "다른 사용자 프로필 조회", description = "다른 사용자의 프로필 정보를 조회" )
+    @GetMapping("/user/{userId}/profile")
+    public ResponseEntity<SuccessResponse<UserProfileResponse>> otherUser(@PathVariable Long userId, HttpServletRequest request) {
+        UserProfileResponse userProfileResponse = userService.getUserProfile(userId);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 조회 성공", userProfileResponse));
     }
 
-    // 사용자 정보 수정 Mock API
-    @Operation( summary = "사용자 정보 수정 Mock API", description = "현재 로그인한 유저의 정보를 수정하는 API" )
-    @PutMapping( "/user" )
+    // 로그인한 사용자 프로필 정보 API
+    @Operation( summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회" )
+    @GetMapping("/profile")
+    public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getUserId());
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 조회 성공", userProfileResponse));
+    }
+
+    // 로그인한 사용자 정보 수정 API
+    @Operation( summary = "현재 사용자 프로필 수정", description = "현재 로그인한 유저의 정보를 수정하는 API" )
+    @PutMapping( "/profile" )
     public ResponseEntity<SuccessResponse<String>> updateUser(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
-            @RequestBody ModifyRequestDTO dto) {
-
-        // 사용자 데이터 업데이트 로직 실행
-        userService.modifyUserProfile(customUserDetails, dto);
-
+            @ModelAttribute ModifyRequestDTO dto,
+            @RequestPart(name = "image_data", required = false) MultipartFile imageData) {
+        userService.modifyUserProfile(customUserDetails.getUserId(), dto, imageData);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 수정 성공"));
     }
 }

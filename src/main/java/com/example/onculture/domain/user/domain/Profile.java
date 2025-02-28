@@ -23,15 +23,15 @@ public class Profile {
     @Column(name = "profile_id", updatable = false)
     private Long id;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn( name = "user_id", nullable = false )    // FK 매핑
     @OnDelete(action = OnDeleteAction.CASCADE)      // 해당 유저가 삭제되면 프로필도 자동 삭제되게 설정
     private User user;
 
-    private String description;
+    private String description = "";
 
     @Column(name = "profile_image")
-    private String profileImage;
+    private String profileImage ="";
 
     // 기본값 : Null
     @ElementCollection(fetch = FetchType.EAGER)
