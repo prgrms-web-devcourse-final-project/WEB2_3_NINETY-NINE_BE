@@ -1,6 +1,5 @@
 package com.example.onculture.domain.event.service;
 
-
 import com.example.onculture.domain.event.model.PopupStorePost;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -14,7 +13,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -25,35 +23,11 @@ import java.util.Set;
 @Service
 public class PopupStorePostService {
 
-    @Value("${spring.datasource.url}")
-    private String dbUrl;
-
-    @Value("${spring.datasource.username}")
-    private String dbUser;
-
-    @Value("${spring.datasource.password}")
-    private String dbPassword;
-
     @Value("${instagram.username}")
     private String username;
 
     @Value("${instagram.password}")
     private String password;
-
-    // 기존 ParsedContent 헬퍼 클래스
-    private static class ParsedContent {
-        String location;
-        java.sql.Date operatingDate;
-        String operatingTime;
-        String details;
-
-        ParsedContent(String location, java.sql.Date operatingDate, String operatingTime, String details) {
-            this.location = location;
-            this.operatingDate = operatingDate;
-            this.operatingTime = operatingTime;
-            this.details = details;
-        }
-    }
 
     private final PopupStorePostRepository repository;
 
@@ -71,44 +45,6 @@ public class PopupStorePostService {
 
     public List<PopupStorePost> searchByLocation(String keyword) {
         return repository.findByLocationContaining(keyword);
-    }
-
-    public void runCrawling() {
-        try (Connection dbConnection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
-            WebDriver driver = setupWebDriver();
-            try {
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
-                // 인스타그램 로그인
-                loginToInstagram(driver, wait, username, password);
-                // 크롤링할 인스타 계정 주소
-                driver.get("https://www.instagram.com/pops.official_/");
-                Set<String> postLinks = collectPostLinks(driver, 5);
-                System.out.println("총 수집된 게시글 개수: " + postLinks.size());
-
-                for (String postUrl : postLinks) {
-                    driver.get(postUrl);
-                    System.out.println("\n게시글 URL: " + postUrl);
-                    String postContent = fetchPostContent(wait);
-                    List<String> imageUrls = fetchImageUrls(wait);
-
-                    // 파싱 (필요에 따라 수정)
-                    ParsedContent pc = parseContent(postContent);
-
-                    // 필수 데이터 체크 (예: 운영일자, 운영시간, 장소, 상세내용)
-                    if (pc.operatingDate == null || pc.operatingTime == null || pc.location == null || pc.details == null || postContent.isEmpty()) {
-                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
-                        continue;
-                    }
-                    savePost(dbConnection, postUrl, postContent, imageUrls);
-                }
-            } finally {
-                driver.quit();
-            }
-        } catch (SQLException e) {
-            System.out.println("데이터베이스 연결 실패: " + e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private WebDriver setupWebDriver() {
@@ -141,7 +77,7 @@ public class PopupStorePostService {
                 postLinks.add(post.getAttribute("href"));
             }
             js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
-            Thread.sleep(3000);
+            Thread.sleep(5000);
         }
         return postLinks;
     }
@@ -178,9 +114,28 @@ public class PopupStorePostService {
         return imageUrls;
     }
 
+    // ParsedContent 헬퍼 클래스 (종료일자 필드 추가)
+    private static class ParsedContent {
+        String location;
+        java.sql.Date operatingDate;
+        java.sql.Date popupsEndDate;
+        String operatingTime;
+        String details;
+
+        ParsedContent(String location, java.sql.Date operatingDate, java.sql.Date popupsEndDate, String operatingTime, String details) {
+            this.location = location;
+            this.operatingDate = operatingDate;
+            this.popupsEndDate = popupsEndDate;
+            this.operatingTime = operatingTime;
+            this.details = details;
+        }
+    }
+
+    // 운영일자 문자열(예: "📆2025년 4월 19일-20일 (토~일)")를 파싱하여 정보를 추출
     private ParsedContent parseContent(String content) {
         String location = null;
         String operatingDateStr = null;
+        String popupsEndDateStr = null;
         String operatingTime = null;
         StringBuilder detailsBuilder = new StringBuilder();
 
@@ -192,7 +147,15 @@ public class PopupStorePostService {
                 int emojiCharCount = Character.charCount(cp);
                 location = line.substring(emojiCharCount).trim();
             } else if (line.startsWith("📆")) {
-                operatingDateStr = line.substring(1).trim();
+                // "📆" 라벨 뒤의 문자열에서 "-"가 있으면 시작일과 종료일을 분리
+                String dateLine = line.substring(1).trim();
+                if (dateLine.contains("-")) {
+                    String[] dateParts = dateLine.split("-");
+                    operatingDateStr = dateParts[0].trim();
+                    popupsEndDateStr = dateParts[1].trim();
+                } else {
+                    operatingDateStr = dateLine;
+                }
             } else if (line.startsWith("⏰")) {
                 operatingTime = line.substring(1).trim();
             } else {
@@ -201,7 +164,8 @@ public class PopupStorePostService {
         }
         String details = detailsBuilder.toString().trim();
         java.sql.Date operatingDate = parseOperatingDate(operatingDateStr);
-        return new ParsedContent(location, operatingDate, operatingTime, details);
+        java.sql.Date popupsEndDate = parsepopupsEndDate(popupsEndDateStr);
+        return new ParsedContent(location, operatingDate, popupsEndDate, operatingTime, details);
     }
 
     private java.sql.Date parseOperatingDate(String operatingDateStr) {
@@ -216,7 +180,7 @@ public class PopupStorePostService {
         SimpleDateFormat sdf = null;
         String dateStr = null;
         if (startDatePart.contains("/")) {
-            dateStr = "2025/" + startDatePart; // 현재는 2025년 고정 (자동 연도 판별 로직으로 변경 가능)
+            dateStr = "2025/" + startDatePart; // 연도 고정 처리 (필요시 동적 연도 처리)
             sdf = new SimpleDateFormat("yyyy/MM/dd");
         } else if (startDatePart.matches("\\d{8,}")) {
             dateStr = startDatePart.substring(0, 8);
@@ -227,50 +191,96 @@ public class PopupStorePostService {
                 java.util.Date parsedDate = sdf.parse(dateStr);
                 return new java.sql.Date(parsedDate.getTime());
             } catch (Exception e) {
-                System.out.println("날짜 파싱 실패: " + e.getMessage());
+                System.out.println("시작일자 파싱 실패: " + e.getMessage());
             }
         }
         return null;
     }
 
-    private void savePost(Connection connection, String postUrl, String content, List<String> imageUrls) {
-        ParsedContent pc = parseContent(content);
-        String insertPostSql = "INSERT INTO popup_store_post (post_url, content, operating_date, operating_time, location, details) VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement postStmt = connection.prepareStatement(insertPostSql, Statement.RETURN_GENERATED_KEYS)) {
-            postStmt.setString(1, postUrl);
-            postStmt.setString(2, content);
-            postStmt.setDate(3, pc.operatingDate);
-            postStmt.setString(4, pc.operatingTime);
-            postStmt.setString(5, pc.location);
-            postStmt.setString(6, pc.details);
-
-            if (postStmt.executeUpdate() == 0) {
-                throw new SQLException("게시글 삽입 실패");
-            }
-            try (ResultSet generatedKeys = postStmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    long postId = generatedKeys.getLong(1);
-                    savePostImages(connection, postId, imageUrls);
-                } else {
-                    throw new SQLException("게시글 삽입 실패");
-                }
-            }
-        } catch (SQLException e) {
-            System.out.println("데이터베이스 저장 실패: " + e.getMessage());
-            e.printStackTrace();
+    private java.sql.Date parsepopupsEndDate(String popupsEndDateStr) {
+        if (popupsEndDateStr == null || popupsEndDateStr.isEmpty()) {
+            return null;
         }
+        String[] parts = popupsEndDateStr.split("-");
+        if (parts.length == 0) {
+            return null;
+        }
+        String endDatePart = parts[0].trim().replaceAll("\\(.*?\\)", "").replaceAll("[^0-9/]", "").trim();
+        SimpleDateFormat sdf = null;
+        String dateStr = null;
+        if (endDatePart.contains("/")) {
+            dateStr = "2025/" + endDatePart; // 연도 고정 처리
+            sdf = new SimpleDateFormat("yyyy/MM/dd");
+        } else if (endDatePart.matches("\\d{8,}")) {
+            dateStr = endDatePart.substring(0, 8);
+            sdf = new SimpleDateFormat("yyyyMMdd");
+        }
+        if (sdf != null && dateStr != null) {
+            try {
+                java.util.Date parsedDate = sdf.parse(dateStr);
+                return new java.sql.Date(parsedDate.getTime());
+            } catch (Exception e) {
+                System.out.println("종료일자 파싱 실패: " + e.getMessage());
+            }
+        }
+        return null;
     }
 
-    private void savePostImages(Connection connection, long postId, List<String> imageUrls) throws SQLException {
-        Set<String> uniqueImageUrls = new HashSet<>(imageUrls);
-        String insertImageSql = "INSERT INTO popup_store_post_images (post_id, image_url) VALUES (?, ?)";
-        try (PreparedStatement imageStmt = connection.prepareStatement(insertImageSql)) {
-            for (String imageUrl : uniqueImageUrls) {
-                imageStmt.setLong(1, postId);
-                imageStmt.setString(2, imageUrl);
-                imageStmt.addBatch();
+    // 공연 상태 결정 로직: 현재 날짜와 시작/종료일 비교
+    private String determineStatus(java.sql.Date startDate, java.sql.Date endDate) {
+        java.util.Date today = new java.util.Date();
+        if (endDate != null && today.after(endDate)) {
+            return "진행 종료";
+        } else if (startDate != null && today.before(startDate)) {
+            return "진행 예정";
+        } else if (startDate != null && endDate != null &&
+                (!today.before(startDate) && !today.after(endDate))) {
+            return "진행중";
+        }
+        return "상태 미정";
+    }
+
+    // 전체 크롤링 실행 로직 (JPA 방식으로 저장)
+    public void runCrawling() {
+        try {
+            WebDriver driver = setupWebDriver();
+            try {
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+                loginToInstagram(driver, wait, username, password);
+                driver.get("https://www.instagram.com/pops.official_/");
+                Set<String> postLinks = collectPostLinks(driver, 10);
+                System.out.println("총 수집된 게시글 개수: " + postLinks.size());
+                for (String postUrl : postLinks) {
+                    driver.get(postUrl);
+                    System.out.println("\n게시글 URL: " + postUrl);
+                    String postContent = fetchPostContent(wait);
+                    List<String> imageUrls = fetchImageUrls(wait);
+                    ParsedContent pc = parseContent(postContent);
+                    if (pc.operatingDate == null || pc.operatingTime == null ||
+                            pc.location == null || pc.details == null || postContent.isEmpty()) {
+                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
+                        continue;
+                    }
+                    PopupStorePost post = new PopupStorePost();
+                    post.setPostUrl(postUrl);
+                    post.setContent(postContent);
+                    post.setOperatingDate(pc.operatingDate);
+                    post.setOperatingTime(pc.operatingTime);
+                    post.setPopupsEndDate(pc.popupsEndDate);
+                    post.setLocation(pc.location);
+                    post.setDetails(pc.details);
+                    post.setImageUrls(imageUrls);
+                    // 상태 결정 (현재 날짜와 운영/종료일 비교)
+                    String status = determineStatus(pc.operatingDate, pc.popupsEndDate);
+                    post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
+                    PopupStorePost savedPost = repository.save(post);
+                    System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
+                }
+            } finally {
+                driver.quit();
             }
-            imageStmt.executeBatch();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
