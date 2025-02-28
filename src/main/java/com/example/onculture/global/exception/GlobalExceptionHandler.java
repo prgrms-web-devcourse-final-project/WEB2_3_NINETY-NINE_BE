@@ -37,14 +37,21 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ex.getErrorCode().getStatus()).body(errorResponse);
 	}
 
+	// 커스텀 JPA Read 예외 핸들러 ( try~catch 구문에서 원하는 에러코드 지정 가능 )
+	@ExceptionHandler(CustomException.CustomJpaReadException.class)
+	public ResponseEntity<ErrorResponse> handleCustomJpaReadException(CustomException.CustomJpaReadException ex) {
+		ErrorResponse errorResponse = new ErrorResponse(ex.getErrorCode());
+		return ResponseEntity.status(ex.getErrorCode().getStatus()).body(errorResponse);
+	}
+
 	// 커스텀 JPA Delete 예외 핸들러 ( try~catch 구문에서 원하는 에러코드 지정 가능 )
-	// 사용방법 : throw new CustomException.CustomJpaDeleteException(ErrorCode.사용할 에러코드);
 	@ExceptionHandler(CustomException.CustomJpaDeleteException.class)
 	public ResponseEntity<ErrorResponse> handleCustomJpaDeleteException(CustomException.CustomJpaDeleteException ex) {
 		ErrorResponse errorResponse = new ErrorResponse(ex.getErrorCode());
 		return ResponseEntity.status(ex.getErrorCode().getStatus()).body(errorResponse);
 	}
 
+	// 커스텀 토큰 인증 예외 핸들러 ( try~catch 구문에서 원하는 에러코드 지정 가능 )
 	@ExceptionHandler(CustomException.CustomInvalidTokenException.class)
 	public ResponseEntity<ErrorResponse> handleCustomInvalidTokenException(CustomException.CustomInvalidTokenException ex) {
 		ErrorResponse errorResponse = new ErrorResponse(ex.getErrorCode());
