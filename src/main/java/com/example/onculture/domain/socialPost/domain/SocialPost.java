@@ -2,6 +2,7 @@ package com.example.onculture.domain.socialPost.domain;
 
 import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
 import com.example.onculture.domain.user.domain.User;
+import com.example.onculture.global.utils.image.ImageUrlUtil;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -31,7 +32,7 @@ public class SocialPost {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    private String imageUrl;
+    private String imageUrls;
 
     @Column(nullable = false)
     private int viewCount = 0;
@@ -64,7 +65,7 @@ public class SocialPost {
     public void updateSocialPost(UpdatePostRequestDTO requestDTO) {
         this.title = requestDTO.getTitle();
         this.content = requestDTO.getContent();
-        this.imageUrl = requestDTO.getImageUrl();
+        this.imageUrls = ImageUrlUtil.joinImageUrls(requestDTO.getImageUrls());
     }
 
     public void increaseViewCount() {

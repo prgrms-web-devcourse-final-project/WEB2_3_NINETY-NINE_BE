@@ -8,6 +8,7 @@ import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
+import com.example.onculture.global.utils.image.ImageUrlUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -69,7 +70,7 @@ public class SocialPostService {
                 .user(user)
                 .title(requestDTO.getTitle())
                 .content(requestDTO.getContent())
-                .imageUrl(requestDTO.getImageUrl())
+                .imageUrls(ImageUrlUtil.joinImageUrls(requestDTO.getImageUrls()))
                 .build();
 
         socialPostRepository.save(socialPost);

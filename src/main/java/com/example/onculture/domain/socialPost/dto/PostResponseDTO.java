@@ -1,9 +1,11 @@
 package com.example.onculture.domain.socialPost.dto;
 
 import com.example.onculture.domain.socialPost.domain.SocialPost;
+import com.example.onculture.global.utils.image.ImageUrlUtil;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,7 +16,7 @@ public class PostResponseDTO {
     private Long userId;
     private String title;
     private String content;
-    private String imageUrl;
+    private List<String> imageUrls;
     private int viewCount;
     private int commentCount;
     private int likeCount;
@@ -28,7 +30,7 @@ public class PostResponseDTO {
         this.userId = socialPost.getUser().getId();
         this.title = socialPost.getTitle();
         this.content = socialPost.getContent();
-        this.imageUrl = socialPost.getImageUrl();
+        this.imageUrls = ImageUrlUtil.splitImageUrls(socialPost.getImageUrls());
         this.likeCount = socialPost.getLikeCount();
         this.viewCount = socialPost.getViewCount();
         this.commentCount = socialPost.getCommentCount();
