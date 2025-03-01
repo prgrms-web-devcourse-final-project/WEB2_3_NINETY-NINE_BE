@@ -1,14 +1,12 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.Performance;
-import com.example.onculture.domain.event.dto.PerformanceDTO;
-import com.example.onculture.domain.event.dto.PerformanceDetailDTO;
-import com.example.onculture.domain.event.dto.PerformanceDetailListDTO;
-import com.example.onculture.domain.event.dto.PerformanceListDTO;
+import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.repository.PerformanceRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,14 +18,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class KopisService {
+public class PerformanceService {
     private final RestTemplate restTemplate;
     private final PerformanceRepository performanceRepository;
     private final XmlMapper xmlMapper;
     private static final String BASE_URL = "http://www.kopis.or.kr/openApi/restful/pblprfr";
-    private static final String SERVICE_KEY = "5c98e680b5fc421693f8a6b32bf04d9f";
+    @Value("${KOPIS_SERVICE_KEY}")
+    private String SERVICE_KEY;
 
-    public KopisService(PerformanceRepository performanceRepository) {
+    public PerformanceService(PerformanceRepository performanceRepository) {
         this.restTemplate = new RestTemplate();
         this.performanceRepository = performanceRepository;
         this.xmlMapper = new XmlMapper();
@@ -51,6 +50,17 @@ public class KopisService {
         }
         // Performance 엔터티 통합 저장
         performanceRepository.saveAll(performanceList);
+    }
+
+    public List<EventResponseDTO> getRandomPerformances(int randomSize) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        return performanceRepository.findRandomPerformances(randomSize)
+                .stream()
+                .map(EventResponseDTO::new)
+                .toList();
     }
 
     private List<String> fetchPerformanceIds(String from, String to, String genreCode, String status) {
