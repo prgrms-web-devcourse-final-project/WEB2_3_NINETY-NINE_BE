@@ -80,4 +80,13 @@ public class ExhibitController {
         return ResponseEntity.ok(detail);
     }
 
+    // 제목 검색
+    @GetMapping("/title")
+    public List<ExhibitDTO> getExhibitByTitle(@RequestParam String title) {
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("검색어는 필수입니다.");
+        }
+        return exhibitService.getExhibitByTitle(title.trim());
+    }
+
 }

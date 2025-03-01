@@ -16,6 +16,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +61,24 @@ public class ExhibitService {
 
     // 클라이언트로부터 전달받은 공공데이터(JSON)를 DB에 저장하는 메서드
     public void savePublicData(PublicDataRequestDTO requestDTO) {
+        // 날짜 파싱 (문자열 "YYYYMMDD" -> java.util.Date)
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        java.util.Date start = null;
+        java.util.Date end = null;
+        try {
+            start = sdf.parse(requestDTO.getStartDate());
+            end = sdf.parse(requestDTO.getEndDate());
+        } catch (ParseException e) {
+            e.printStackTrace();
+            // 파싱 실패 시 기본값 또는 예외 처리 로직 추가 가능
+        }
+
+        // determineStatus 메서드는 java.sql.Date 타입을 받으므로 변환
+        String status = determineStatus(
+                start != null ? new java.sql.Date(start.getTime()) : null,
+                end != null ? new java.sql.Date(end.getTime()) : null
+        );
+
         ExhibitEntity entity = ExhibitEntity.builder()
                 .title(requestDTO.getTitle())
                 .startDate(requestDTO.getStartDate())
@@ -69,7 +89,7 @@ public class ExhibitService {
                 .thumbnail(requestDTO.getThumbnail())
                 .gpsX(requestDTO.getGpsX())
                 .gpsY(requestDTO.getGpsY())
-                // 상세 정보 필드가 필요하면 여기서 추가할 수 있습니다.
+                .exhibitStatus(status) // 계산된 상태 저장
                 .build();
         exhibitRepository.save(entity);
     }
@@ -169,6 +189,20 @@ public class ExhibitService {
         }
     }
 
+
+    // 공연 상태 결정 로직: 현재 날짜와 시작/종료일 비교
+    private String determineStatus(java.sql.Date startDate, java.sql.Date endDate) {
+        java.util.Date today = new java.util.Date();
+        if (endDate != null && today.after(endDate)) {
+            return "진행 종료";
+        } else if (startDate != null && today.before(startDate)) {
+            return "진행 예정";
+        } else if (startDate != null && endDate != null && (!today.before(startDate) && !today.after(endDate))) {
+            return "진행중";
+        }
+        return "상태 미정";
+    }
+
     // Entity -> ListDTO 변환
     private ExhibitDTO toListDTO(ExhibitEntity p) {
         return ExhibitDTO.builder()
@@ -200,4 +234,12 @@ public class ExhibitService {
                 .gpsY(p.getGpsY())
                 .build();
     }
+
+    // 제목 검색 기능
+    public List<ExhibitDTO> getExhibitByTitle(String title) {
+        String keyword = title.trim();
+        List<ExhibitEntity> exhibits = exhibitRepository.findByTitleContaining(keyword);
+        return exhibits.stream().map(this::toListDTO).collect(Collectors.toList());
+    }
+
 }

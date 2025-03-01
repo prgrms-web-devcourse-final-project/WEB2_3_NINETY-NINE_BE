@@ -17,4 +17,7 @@ public interface ExhibitRepository extends JpaRepository<ExhibitEntity, Long> {
 
     // 분야별 조회 (realmName 혹은 별도의 분류코드)
     List<ExhibitEntity> findByRealmNameAndStartDateGreaterThanEqualAndEndDateLessThanEqual(String realmName, String from, String to);
+
+    // 제목 검색 메서드 추가 (제목의 일부 단어 포함)
+    List<ExhibitEntity> findByTitleContaining(String title);
 }
