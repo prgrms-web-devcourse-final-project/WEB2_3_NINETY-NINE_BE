@@ -45,6 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.example.onculture.global.utils.CookieUtil.*;
 
@@ -110,6 +111,7 @@ public class UserService {
 
     // 로컬 로그인 메서드
     public TokenResponse login(LoginRequestDTO dto, HttpServletRequest request, HttpServletResponse response) {
+
         // 사용자 인증 메서드 실행 및 인증 객체 반환
         Authentication authentication = authenticate(dto);
         // 인증 객체에서 사용자 데이터 가져오기
@@ -165,6 +167,13 @@ public class UserService {
         User user = findUserAndProfileByuserId(userId);
         Profile profile = user.getProfile();
 
+        Set<String> interests = new HashSet<>();
+        if (profile.getInterests() != null) {
+            interests = profile.getInterests().stream()
+                    .map(Interest::getKor)
+                    .collect(Collectors.toSet());
+        }
+
         String s3ImageFileUrl = "";
         if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
             // S3에서 실제 프로필 이미지 URL 가져오기 (예: S3 프리사인 URL 생성 방식)
@@ -175,7 +184,7 @@ public class UserService {
                 .nickname(user.getNickname())
                 .loginType(user.getLoginType())
                 .description(profile.getDescription() != null ? profile.getDescription() : "")
-                .interests(profile.getInterests() != null ? profile.getInterests() : new HashSet<>())
+                .interests(interests)
                 .profileImage(profile.getProfileImage() != null ? profile.getProfileImage() : "")
                 .s3Bucket(s3ImageFileUrl) // 필요하면 S3 버킷 이름 설정
                 .build();
@@ -196,7 +205,23 @@ public class UserService {
         // 소개글 업데이트 (필요 시)
         if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) user.getProfile().setDescription(dto.getDescription().trim());
         // 관심사 업데이트 (필요 시)
-        if (dto.getInterests() != null && !dto.getInterests().isEmpty()) user.getProfile().setInterests(dto.getInterests());
+        if (dto.getInterests() != null && !dto.getInterests().isEmpty()) {
+            // Set<한글>을 Set<ENUM>으로 변환 (stream 방식)
+            user.getProfile().setInterests(
+                    dto.getInterests().stream()
+                            .map(Interest::getInterestByKor)
+                            .collect(Collectors.toSet())
+            );
+
+            // Set<한글>을 Set<ENUM>으로 변환 (for문 방식)
+            /*
+            Set<Interest> interests = new HashSet<>();
+            for (String interest : dto.getInterests()) {
+                interests.add(Interest.getInterestByKor(interest));
+            }
+            user.getProfile().setInterests(interests);
+             */
+        }
         // 이미지 파일명 업데이트 (필요 시)
         if (imageData != null && !imageData.isEmpty()) {
             // 이미지 파일 유효성 검사 및 파일명 변경
@@ -214,7 +239,6 @@ public class UserService {
                 user.getProfile().setProfileImage("");
             }
         }
-
         // 변경사항 저장
         userRepository.save(user);
     }
