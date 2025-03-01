@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Entity
 @Data
-public class Theater {
+public class Performance {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,25 +23,19 @@ public class Theater {
     private String startDate;
     private String endDate;
     private String facilityName;
-    private String cast;
-    private String crew;
     private String runtime;
     private String ageRating;
     private String ticketPrice;
     private String posterUrl;
+    private String area;
+    private String genre;
+    private String updateDate;
+    private String performanceState;
 
     @Lob
     @Column(columnDefinition = "TEXT")
     private String introduction;
 
-    private String area;
-    private String genre;
-    private String openRun;
-    private String childPolicy;
-    private String daehakro;
-    private String festivalFlag;
-    private String updateDate;
-    private String performanceState;
     @Column(name = "show_times", length = 500)
     private String showTimes;
 
@@ -52,9 +46,4 @@ public class Theater {
     @Lob
     @Column(columnDefinition = "TEXT")
     private String relatedLinks;
-
-    private String productionCompany;
-    private String planningCompany;
-    private String presenter;
-    private String organizer;
 }

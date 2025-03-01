@@ -1,4 +1,4 @@
-package com.example.onculture.domain.event.model;
+package com.example.onculture.domain.event.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

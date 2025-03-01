@@ -1,4 +1,4 @@
-package com.example.onculture.domain.event.DTO;
+package com.example.onculture.domain.event.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExhibitDTO {
+public class ExhibitDetailDTO {
     private Long seq;
     private String title;
     private String startDate;
@@ -20,4 +20,5 @@ public class ExhibitDTO {
     private String thumbnail;
     private Double gpsX;
     private Double gpsY;
+
 }

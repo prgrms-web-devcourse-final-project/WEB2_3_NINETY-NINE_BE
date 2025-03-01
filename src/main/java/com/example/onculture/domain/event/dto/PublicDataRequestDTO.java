@@ -1,4 +1,4 @@
-package com.example.onculture.domain.event.DTO;
+package com.example.onculture.domain.event.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
