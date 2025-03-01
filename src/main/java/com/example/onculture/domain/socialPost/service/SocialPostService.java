@@ -3,6 +3,7 @@ package com.example.onculture.domain.socialPost.service;
 
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
+import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 public class SocialPostService {
     private final UserRepository userRepository;
     private final SocialPostRepository socialPostRepository;
+    private final SocialPostLikeRepository socialPostLikeRepository;
 
     public PostListResponseDTO getSocialPosts(String sort, int pageNum, int pageSize) {
         if (!(sort.equals("latest") || sort.equals("comments") || sort.equals("popular"))) {
@@ -52,7 +54,7 @@ public class SocialPostService {
                 .build();
     }
 
-    public PostResponseDTO getSocialPost(Long socialPostId) {
+    public PostWithLikeResponseDTO getSocialPostWithLikeStatus(Long socialPostId, Long userId) {
         SocialPost socialPost = socialPostRepository.findById(socialPostId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
@@ -60,7 +62,14 @@ public class SocialPostService {
 
         socialPostRepository.save(socialPost);
 
-        return new PostResponseDTO(socialPost);
+        if (userId != null) {
+            User user = findUserOrThrow(userId);
+            boolean likeStatus = socialPostLikeRepository.existsByUserAndSocialPost(user,socialPost);
+            return new PostWithLikeResponseDTO(socialPost, likeStatus);
+        }
+        else {
+            return new PostWithLikeResponseDTO(socialPost, false);
+        }
     }
 
     public PostResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
