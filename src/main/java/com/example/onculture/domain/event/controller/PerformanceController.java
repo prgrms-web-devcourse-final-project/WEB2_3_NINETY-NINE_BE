@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @AllArgsConstructor
-public class KopisController {
+public class PerformanceController {
     private final KopisService kopisService;
 
-    @PostMapping("api/kopis/performances/save")
+    @PostMapping("api//performances/save")
     public void saveKOPISPerformances(@RequestParam String from, @RequestParam String to, @RequestParam String genre, @RequestParam String status) {
         kopisService.savePerformances(from, to, genre, status);
     }
