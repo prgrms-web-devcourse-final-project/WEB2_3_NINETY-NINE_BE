@@ -43,8 +43,8 @@ public class PopupStorePostService {
         return repository.findAll();
     }
 
-    public List<PopupStorePost> searchByLocation(String keyword) {
-        return repository.findByLocationContaining(keyword);
+    public List<PopupStorePost> searchByTitle(String title) {
+        return repository.findByContentContaining(title);
     }
 
     private WebDriver setupWebDriver() {

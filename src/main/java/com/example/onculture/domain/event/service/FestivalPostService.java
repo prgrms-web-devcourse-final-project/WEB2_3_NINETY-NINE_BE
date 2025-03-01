@@ -33,8 +33,8 @@ public class FestivalPostService {
         return festivalPostRepository.findAll();
     }
 
-    public List<FestivalPost> searchByLocation(String keyword) {
-        return festivalPostRepository.findByFestivalLocationContaining(keyword);
+    public List<FestivalPost> searchByTitle(String title) {
+        return festivalPostRepository.findByFestivalContentContaining(title);
     }
 
     // 크롬 드라이버 설정 (버전 133으로 하드코딩)
