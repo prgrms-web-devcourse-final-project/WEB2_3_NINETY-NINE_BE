@@ -1,7 +1,7 @@
 package com.example.onculture.domain.event.controller;
 
-import com.example.onculture.domain.event.DTO.ExhibitDTO;
-import com.example.onculture.domain.event.DTO.ExhibitDetailDTO;
+import com.example.onculture.domain.event.dto.ExhibitDTO;
+import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.service.ExhibitService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
