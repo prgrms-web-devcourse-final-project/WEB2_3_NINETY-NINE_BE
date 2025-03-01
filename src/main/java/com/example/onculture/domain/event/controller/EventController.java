@@ -25,35 +25,40 @@ public class EventController {
     }
 
     // 전체 PopupStore 목록 조회
-    @Operation(summary = "전체 PopStore 목록 조회",
-            description = "전체 PopStore 목록 조회.")
+    @Operation(summary = "전체 PopupStore 목록 조회",
+            description = "전체 PopupStore 목록을 조회합니다.")
     @GetMapping("/popup-store-posts")
     public List<PopupStorePost> listAllPopupStorePosts() {
         return popupStorePostService.listAll();
     }
 
-    // 위치(keyword)를 이용한 PopupStore 검색 (서울 , 고양 검색 가능)
-    @Operation(summary = "위치(keyword)를 이용한 PopupStore 검색",
-            description = "위치(keyword)를 이용한 PopupStore 검색. 요청 항목 : keyword(서울, 경기)")
-    @GetMapping("/popup-store-posts/search")
-    public List<PopupStorePost> searchPopupStorePosts(@RequestParam("keyword") String keyword) {
-        return popupStorePostService.searchByLocation(keyword);
+    // 제목(title)를 이용한 PopupStore 검색 (실제로 content 필드를 검색)
+    @Operation(summary = "제목(title)를 이용한 PopupStore 검색",
+            description = "제목(title)를 이용하여 PopupStore 게시글을 검색합니다. 요청 항목: title(검색어)")
+    @GetMapping("/popup-store-posts/title")
+    public List<PopupStorePost> searchPopupStorePosts(@RequestParam("title") String title) {
+        if(title == null || title.trim().isEmpty()){
+            throw new IllegalArgumentException("검색어는 필수입니다.");
+        }
+        return popupStorePostService.searchByTitle(title);
     }
 
     // 전체 Festival 목록 조회
     @Operation(summary = "전체 Festival 목록 조회",
-            description = "전체 Festival 목록 조회.")
+            description = "전체 Festival 게시글 목록을 조회합니다.")
     @GetMapping("/festival-posts")
     public List<FestivalPost> listAllFestivalPosts() {
         return festivalPostService.listAll();
     }
 
-    // 위치(keyword)를 이용한 Festival 검색 (킨텍스, 지역 검색이 안됨..)
-    @Operation(summary = "위치(keyword)를 이용한 Festival 검색",
-            description = "위치(keyword)를 이용한 Festival 검색. 요청 항목 : keyword(서울, 경기)")
-    @GetMapping("/festival-posts/search")
-    public List<FestivalPost> searchFestivalPosts(@RequestParam("keyword") String keyword) {
-        return festivalPostService.searchByLocation(keyword);
-
+    // 제목(title)를 이용한 Festival 검색 (festival_content 필드 검색)
+    @Operation(summary = "제목(title)를 이용한 Festival 검색",
+            description = "제목(title)를 이용하여 Festival 게시글을 검색합니다. 요청 항목: title(검색어)")
+    @GetMapping("/festival-posts/title")
+    public List<FestivalPost> searchFestivalPosts(@RequestParam("title") String title) {
+        if(title == null || title.trim().isEmpty()){
+            throw new IllegalArgumentException("검색어는 필수입니다.");
+        }
+        return festivalPostService.searchByTitle(title);
     }
 }
