@@ -3,7 +3,7 @@ package com.example.onculture.domain.event.service;
 import com.example.onculture.domain.event.dto.ExhibitDTO;
 import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.dto.PublicDataRequestDTO;
-import com.example.onculture.domain.event.model.ExhibitEntity;
+import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;

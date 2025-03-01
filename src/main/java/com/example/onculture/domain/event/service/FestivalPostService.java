@@ -1,6 +1,6 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.model.FestivalPost;
+import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;

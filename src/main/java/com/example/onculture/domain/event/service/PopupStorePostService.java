@@ -1,6 +1,6 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.model.PopupStorePost;
+import com.example.onculture.domain.event.domain.PopupStorePost;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;

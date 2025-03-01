@@ -1,7 +1,7 @@
 package com.example.onculture.domain.event.controller;
 
-import com.example.onculture.domain.event.model.FestivalPost;
-import com.example.onculture.domain.event.model.PopupStorePost;
+import com.example.onculture.domain.event.domain.FestivalPost;
+import com.example.onculture.domain.event.domain.PopupStorePost;
 import com.example.onculture.domain.event.service.FestivalPostService;
 import com.example.onculture.domain.event.service.PopupStorePostService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,6 +1,6 @@
 package com.example.onculture.domain.event.repository;
 
-import com.example.onculture.domain.event.model.PopupStorePost;
+import com.example.onculture.domain.event.domain.PopupStorePost;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
