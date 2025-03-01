@@ -117,14 +117,14 @@ public class PopupStorePostService {
     // ParsedContent 헬퍼 클래스 (종료일자 필드 추가)
     private static class ParsedContent {
         String location;
-        java.sql.Date operatingDate;
+        java.sql.Date popupsStartDate;
         java.sql.Date popupsEndDate;
         String operatingTime;
         String details;
 
-        ParsedContent(String location, java.sql.Date operatingDate, java.sql.Date popupsEndDate, String operatingTime, String details) {
+        ParsedContent(String location, java.sql.Date popupsStartDate, java.sql.Date popupsEndDate, String operatingTime, String details) {
             this.location = location;
-            this.operatingDate = operatingDate;
+            this.popupsStartDate = popupsStartDate;
             this.popupsEndDate = popupsEndDate;
             this.operatingTime = operatingTime;
             this.details = details;
@@ -134,7 +134,7 @@ public class PopupStorePostService {
     // 운영일자 문자열(예: "📆2025년 4월 19일-20일 (토~일)")를 파싱하여 정보를 추출
     private ParsedContent parseContent(String content) {
         String location = null;
-        String operatingDateStr = null;
+        String popupsStartDateStr = null;
         String popupsEndDateStr = null;
         String operatingTime = null;
         StringBuilder detailsBuilder = new StringBuilder();
@@ -151,10 +151,10 @@ public class PopupStorePostService {
                 String dateLine = line.substring(1).trim();
                 if (dateLine.contains("-")) {
                     String[] dateParts = dateLine.split("-");
-                    operatingDateStr = dateParts[0].trim();
+                    popupsStartDateStr = dateParts[0].trim();
                     popupsEndDateStr = dateParts[1].trim();
                 } else {
-                    operatingDateStr = dateLine;
+                    popupsStartDateStr = dateLine;
                 }
             } else if (line.startsWith("⏰")) {
                 operatingTime = line.substring(1).trim();
@@ -163,7 +163,7 @@ public class PopupStorePostService {
             }
         }
         String details = detailsBuilder.toString().trim();
-        java.sql.Date operatingDate = parseOperatingDate(operatingDateStr);
+        java.sql.Date operatingDate = parseOperatingDate(popupsStartDateStr);
         java.sql.Date popupsEndDate = parsepopupsEndDate(popupsEndDateStr);
         return new ParsedContent(location, operatingDate, popupsEndDate, operatingTime, details);
     }
@@ -256,7 +256,7 @@ public class PopupStorePostService {
                     String postContent = fetchPostContent(wait);
                     List<String> imageUrls = fetchImageUrls(wait);
                     ParsedContent pc = parseContent(postContent);
-                    if (pc.operatingDate == null || pc.operatingTime == null ||
+                    if (pc.popupsStartDate == null || pc.operatingTime == null ||
                             pc.location == null || pc.details == null || postContent.isEmpty()) {
                         System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
                         continue;
@@ -264,14 +264,14 @@ public class PopupStorePostService {
                     PopupStorePost post = new PopupStorePost();
                     post.setPostUrl(postUrl);
                     post.setContent(postContent);
-                    post.setOperatingDate(pc.operatingDate);
+                    post.setPopupsStartDate(pc.popupsStartDate);
                     post.setOperatingTime(pc.operatingTime);
                     post.setPopupsEndDate(pc.popupsEndDate);
                     post.setLocation(pc.location);
                     post.setDetails(pc.details);
                     post.setImageUrls(imageUrls);
                     // 상태 결정 (현재 날짜와 운영/종료일 비교)
-                    String status = determineStatus(pc.operatingDate, pc.popupsEndDate);
+                    String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
                     post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
                     PopupStorePost savedPost = repository.save(post);
                     System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);

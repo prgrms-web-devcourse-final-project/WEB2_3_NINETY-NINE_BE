@@ -25,8 +25,8 @@ public class PopupStorePost {
     @Column(name = "content", length = 2000)
     private String content;
 
-    @Column(name = "operating_date", length = 2000)
-    private Date operatingDate;
+    @Column(name = "popups_start_date", length = 2000)
+    private Date popupsStartDate;
 
     @Column(name = "popups_end_date")
     private Date popupsEndDate; // 종료 일자 추가
