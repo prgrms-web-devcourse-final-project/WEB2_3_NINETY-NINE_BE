@@ -10,11 +10,12 @@ import java.util.List;
 
 @Entity
 @Data
+@Getter
+@Setter
 @Table(name = "popup_store_post")
 public class PopupStorePost {
 
-    @Getter
-    @Setter
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
