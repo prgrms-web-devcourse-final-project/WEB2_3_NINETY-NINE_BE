@@ -1,5 +1,6 @@
 package com.example.onculture.domain.user.domain;
 
+import com.example.onculture.domain.user.model.Interest;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;

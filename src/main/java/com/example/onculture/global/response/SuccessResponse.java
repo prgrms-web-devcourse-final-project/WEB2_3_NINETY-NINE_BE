@@ -27,6 +27,11 @@ public class SuccessResponse<T> {
         return new SuccessResponse<>(true, httpStatus.value(), message, data);
     }
 
+    // 성공 응답 (httpStatus 코드 기입)
+    public static <T> SuccessResponse<T> success(HttpStatus httpStatus, T data) {
+        return new SuccessResponse<>(true, httpStatus.value(), "성공", data);
+    }
+
     // 에러 응답
 //    public static ApiResponse<Void> error(HttpStatus httpStatus) {
 //        return new ApiResponse<>(false, httpStatus.value(), "실패", null);
