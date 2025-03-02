@@ -24,7 +24,7 @@ public class PerformanceController {
     @GetMapping("api/performances/random")
     public ResponseEntity<SuccessResponse<List<EventResponseDTO>>> getPerformances(
             @RequestParam(defaultValue = "9") int randomSize) {
-        List<EventResponseDTO> responseDTOS = performanceService.getRandomPerformances(randomSize);
+        List<EventResponseDTO> responseDTOS = performanceService.getRandomPerformances(randomSize, 16L);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
@@ -36,7 +36,7 @@ public class PerformanceController {
             @RequestParam(required = false, defaultValue = "0") int pageNum,
             @RequestParam(required = false, defaultValue = "9") int pageSize) {
         EventPageResponseDTO responseDTOS = performanceService
-                .searchPerformances(region, status, titleKeyword, pageNum, pageSize);
+                .searchPerformances(region, status, titleKeyword, pageNum, pageSize, 16L);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
@@ -44,7 +44,7 @@ public class PerformanceController {
     public ResponseEntity<SuccessResponse<EventResponseDTO>> searchPerformances(
             @PathVariable Long performanceId) {
         EventResponseDTO responseDTO = performanceService
-                .getPerformance(performanceId);
+                .getPerformance(performanceId, 16L);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 }
