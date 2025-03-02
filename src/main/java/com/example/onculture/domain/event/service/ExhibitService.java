@@ -1,5 +1,6 @@
 package com.example.onculture.domain.event.service;
 
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.ExhibitDTO;
 import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.dto.PublicDataRequestDTO;
@@ -55,10 +56,12 @@ public class ExhibitService {
     }
 
     // 공연/전시 상세정보 조회
-    public ExhibitDetailDTO getExhibitDetail(Long seq) {
-        ExhibitEntity exhibit = exhibitRepository.findById(seq)
+    public EventResponseDTO getExhibitDetail(Long seq) {
+        EventResponseDTO eventResponseDTO = exhibitRepository.findById(seq)
+                .map(EventResponseDTO::new)
+
                 .orElseThrow(() -> new RuntimeException("Performance not found with seq: " + seq));
-        return toDetailDTO(exhibit);
+        return eventResponseDTO;
     }
 
     // 클라이언트로부터 전달받은 공공데이터(JSON)를 DB에 저장하는 메서드
@@ -221,21 +224,21 @@ public class ExhibitService {
                 .build();
     }
 
-    // Entity -> DetailDTO 변환
-    private ExhibitDetailDTO toDetailDTO(ExhibitEntity p) {
-        return ExhibitDetailDTO.builder()
-                .seq(p.getSeq())
-                .title(p.getTitle())
-                .startDate(p.getStartDate())
-                .endDate(p.getEndDate())
-                .place(p.getPlace())
-                .realmName(p.getRealmName())
-                .area(p.getArea())
-                .thumbnail(p.getThumbnail())
-                .gpsX(p.getGpsX())
-                .gpsY(p.getGpsY())
-                .build();
-    }
+//    // Entity -> DetailDTO 변환
+//    private ExhibitDetailDTO toDetailDTO(ExhibitEntity p) {
+//        return ExhibitDetailDTO.builder()
+//                .seq(p.getSeq())
+//                .title(p.getTitle())
+//                .startDate(p.getStartDate())
+//                .endDate(p.getEndDate())
+//                .place(p.getPlace())
+//                .realmName(p.getRealmName())
+//                .area(p.getArea())
+//                .thumbnail(p.getThumbnail())
+//                .gpsX(p.getGpsX())
+//                .gpsY(p.getGpsY())
+//                .build();
+//    }
 
     // 제목 검색 기능
     public List<ExhibitDTO> getExhibitByTitle(String title) {

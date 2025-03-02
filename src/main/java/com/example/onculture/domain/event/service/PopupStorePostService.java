@@ -1,6 +1,7 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.PopupStorePostDTO;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -294,5 +295,13 @@ public class PopupStorePostService {
                 .stream()
                 .map(PopupStorePostDTO::new)
                 .collect(Collectors.toList());
+    }
+
+    // 공연/전시 상세정보 조회
+    public EventResponseDTO getPopupStorePostDetail(Long id) {
+        EventResponseDTO eventResponseDTO = popupStorePostRepository.findById(id)
+                .map(EventResponseDTO::new)
+                .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
+        return eventResponseDTO;
     }
 }

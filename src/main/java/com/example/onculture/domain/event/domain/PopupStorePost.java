@@ -1,5 +1,6 @@
 package com.example.onculture.domain.event.domain;
 
+import com.example.onculture.domain.event.converter.StringListConverter;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
@@ -14,7 +15,6 @@ import java.util.List;
 @Setter
 @Table(name = "popup_store_post")
 public class PopupStorePost {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,19 +35,18 @@ public class PopupStorePost {
     @Column(name = "operating_time", length = 50)
     private String operatingTime;
 
-
-    @Column(name = "location",length = 255)
+    @Column(name = "location", length = 255)
     private String location;
 
-    @Column(name = "details",length = 2000)
+    @Column(name = "details", length = 2000)
     private String details;
 
     @Column(name = "status")
     private String status;
 
-    // JPA 매핑: popup_store_post_images 테이블에 이미지 URL들을 저장
-    @ElementCollection
-    @CollectionTable(name = "popup_store_post_images", joinColumns = @JoinColumn(name = "post_id"))
-    @Column(name = "image_url", columnDefinition = "LONGTEXT", nullable = false)
+    // 기존의 이미지 URL 목록 매핑 대신, 단일 컬럼에 저장 (쉼표 구분 문자열)
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "image_urls", columnDefinition = "LONGTEXT")
     private List<String> imageUrls;
+
 }

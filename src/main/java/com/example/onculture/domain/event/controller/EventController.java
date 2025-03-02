@@ -2,6 +2,7 @@ package com.example.onculture.domain.event.controller;
 
 import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.FestivalPostDTO;
 import com.example.onculture.domain.event.dto.PopupStorePostDTO;
 import com.example.onculture.domain.event.service.FestivalPostService;
@@ -48,12 +49,22 @@ public class EventController {
         return popupStorePostService.searchByTitle(title);
     }
 
+    //랜덤 조회
     @GetMapping("/popup-store-posts/random")
     public ResponseEntity<SuccessResponse<List<PopupStorePostDTO>>> getRandomPopupStorePosts(
             @RequestParam(defaultValue = "9") int randomSize) {
         List<PopupStorePostDTO> dtos = popupStorePostService.getRandomPopupStorePosts(randomSize);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, dtos));
     }
+    //상세 조회
+    @Operation(summary = "팝업 스토어 데이터 상세 정보 조회",
+            description = "팝업 스토어 데이터 상세 정보 조회")
+    @GetMapping("/popup-store/detail")
+    public ResponseEntity<EventResponseDTO> getPopupStorePostDetail(@RequestParam Long id) {
+        EventResponseDTO detail = popupStorePostService.getPopupStorePostDetail(id);
+        return ResponseEntity.ok(detail);
+    }
+
 
     // 전체 Festival 목록 조회
     @Operation(summary = "전체 Festival 목록 조회",
@@ -79,5 +90,13 @@ public class EventController {
             @RequestParam(defaultValue = "9") int randomSize) {
         List<FestivalPostDTO> dtos = festivalPostService.getRandomFestivalPosts(randomSize);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, dtos));
+    }
+    //상세 조회
+    @Operation(summary = "팝업 스토어 데이터 상세 정보 조회",
+            description = "팝업 스토어 데이터 상세 정보 조회")
+    @GetMapping("/festival/detail")
+    public ResponseEntity<EventResponseDTO> getFestivalPostDetail(@RequestParam Long id) {
+        EventResponseDTO detail = festivalPostService.getFestivalPostDetail(id);
+        return ResponseEntity.ok(detail);
     }
 }

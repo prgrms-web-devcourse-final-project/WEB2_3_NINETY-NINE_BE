@@ -1,5 +1,6 @@
 package com.example.onculture.domain.event.controller;
 
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.ExhibitDTO;
 import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.service.ExhibitService;
@@ -75,8 +76,8 @@ public class ExhibitController {
     @Operation(summary = "전시회 데이터 상세 정보 조회",
             description = "전시회 데이터 상세 정보 조회")
     @GetMapping("/detail")
-    public ResponseEntity<ExhibitDetailDTO> getExhibitionDetail(@RequestParam Long seq) {
-        ExhibitDetailDTO detail = exhibitService.getExhibitDetail(seq);
+    public ResponseEntity<EventResponseDTO> getExhibitionDetail(@RequestParam Long seq) {
+        EventResponseDTO detail = exhibitService.getExhibitDetail(seq);
         return ResponseEntity.ok(detail);
     }
 

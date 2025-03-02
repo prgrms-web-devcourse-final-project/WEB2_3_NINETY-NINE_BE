@@ -1,6 +1,7 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.FestivalPost;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.FestivalPostDTO;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -312,4 +313,14 @@ public class FestivalPostService {
             e.printStackTrace();
         }
     }
+
+    // 공연/전시 상세정보 조회
+    public EventResponseDTO getFestivalPostDetail(Long id) {
+        EventResponseDTO eventResponseDTO = festivalPostRepository.findById(id)
+                .map(EventResponseDTO::new)
+
+                .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
+        return eventResponseDTO;
+    }
+
 }

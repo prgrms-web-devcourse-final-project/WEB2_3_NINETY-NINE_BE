@@ -1,5 +1,6 @@
 package com.example.onculture.domain.event.domain;
 
+import com.example.onculture.domain.event.converter.StringListConverter;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
@@ -14,7 +15,6 @@ import java.util.List;
 @Setter
 @Table(name = "festival_post")
 public class FestivalPost {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,9 +44,8 @@ public class FestivalPost {
     @Column(name = "festival_status")
     private String festivalStatus;
 
-    // JPA 매핑: festival_post_images 테이블에 이미지 URL들을 저장
-    @ElementCollection
-    @CollectionTable(name = "festival_post_images", joinColumns = @JoinColumn(name = "festival_post_id"))
-    @Column(name = "image_url", columnDefinition = "LONGTEXT", nullable = false)
+    // 기존 @ElementCollection, @CollectionTable 대신 AttributeConverter 사용
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "image_urls", columnDefinition = "LONGTEXT")
     private List<String> imageUrls;
 }
