@@ -1,5 +1,6 @@
 package com.example.onculture.domain.event.controller;
 
+import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.service.PerformanceService;
 import com.example.onculture.global.response.SuccessResponse;
@@ -30,13 +31,15 @@ public class PerformanceController {
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
-//    @GetMapping("api/performances")
-//    public void getPerformances(
-//            @RequestParam String region,
-//            @RequestParam String status,
-//            @RequestParam String titleKeyword,
-//            @RequestParam String pageNum,
-//            @RequestParam String pageSize) {
-//        performanceService.getPerformances(region, status, titleKeyword, pageNum, pageSize);
-//    }
+    @GetMapping("api/performances")
+    public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchPerformances(
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String titleKeyword,
+            @RequestParam(required = false, defaultValue = "0") int pageNum,
+            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+        EventPageResponseDTO responseDTOS = performanceService
+                .searchPerformances(region, status, titleKeyword, pageNum, pageSize);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
+    }
 }
