@@ -2,6 +2,7 @@ package com.example.onculture.domain.event.repository;
 
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,4 +21,7 @@ public interface ExhibitRepository extends JpaRepository<ExhibitEntity, Long> {
 
     // 제목 검색 메서드 추가 (제목의 일부 단어 포함)
     List<ExhibitEntity> findByTitleContaining(String title);
+
+     @Query(value = "SELECT * FROM exhibit WHERE exhibit_status = '진행중' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
+    List<ExhibitEntity> findRandomExhibitions(int randomSize);
 }

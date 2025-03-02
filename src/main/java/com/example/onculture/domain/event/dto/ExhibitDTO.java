@@ -1,5 +1,6 @@
 package com.example.onculture.domain.event.dto;
 
+import com.example.onculture.domain.event.domain.ExhibitEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,4 +23,18 @@ public class ExhibitDTO {
     private Double gpsY;
     private String exhibitStatus; //전시회 상태 추가
 
+    // 엔티티를 받아 DTO로 변환하는 생성자 추가
+    public ExhibitDTO(ExhibitEntity entity) {
+        this.seq = entity.getSeq();
+        this.title = entity.getTitle();
+        this.startDate = entity.getStartDate();
+        this.endDate = entity.getEndDate();
+        this.place = entity.getPlace();
+        this.realmName = entity.getRealmName();
+        this.area = entity.getArea();
+        this.thumbnail = entity.getThumbnail();
+        this.gpsX = entity.getGpsX();
+        this.gpsY = entity.getGpsY();
+        this.exhibitStatus = entity.getExhibitStatus();
+    }
 }

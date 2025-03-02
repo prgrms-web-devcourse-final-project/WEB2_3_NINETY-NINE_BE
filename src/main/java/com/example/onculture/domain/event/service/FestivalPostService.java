@@ -1,7 +1,10 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.FestivalPost;
+import com.example.onculture.domain.event.dto.FestivalPostDTO;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FestivalPostService {
@@ -251,6 +255,17 @@ public class FestivalPostService {
             return "진행중";
         }
         return "상태 미정";
+    }
+
+    public List<FestivalPostDTO> getRandomFestivalPosts(int randomSize) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        // festivalPostRepository.findRandomFestivalPosts(randomSize)는 무작위로 festival 데이터를 조회하는 커스텀 메서드입니다.
+        return festivalPostRepository.findRandomFestivalPosts(randomSize)
+                .stream()
+                .map(FestivalPostDTO::new)  // 엔티티를 DTO로 변환
+                .collect(Collectors.toList());
     }
 
     // 전체 크롤링 실행 로직 (JPA 방식으로 엔티티 저장)

@@ -5,6 +5,8 @@ import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.dto.PublicDataRequestDTO;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.RequiredArgsConstructor;
@@ -241,5 +243,17 @@ public class ExhibitService {
         List<ExhibitEntity> exhibits = exhibitRepository.findByTitleContaining(keyword);
         return exhibits.stream().map(this::toListDTO).collect(Collectors.toList());
     }
+    //랜덤조회
+    public List<ExhibitDTO> getRandomExhibitions(int randomSize) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        // exhibitRepository.findRandomExhibitions(randomSize)는 무작위 전시 데이터를 조회하는 커스텀 메서드입니다.
+        return exhibitRepository.findRandomExhibitions(randomSize)
+                .stream()
+                .map(ExhibitDTO::new)
+                .collect(Collectors.toList());
+    }
+
 
 }

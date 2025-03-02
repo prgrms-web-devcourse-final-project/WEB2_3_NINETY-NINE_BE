@@ -1,7 +1,10 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.dto.PopupStorePostDTO;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class PopupStorePostService {
@@ -29,22 +33,18 @@ public class PopupStorePostService {
     @Value("${instagram.password}")
     private String password;
 
-    private final PopupStorePostRepository repository;
+    private final PopupStorePostRepository popupStorePostRepository;
 
-    public PopupStorePostService(PopupStorePostRepository repository) {
-        this.repository = repository;
-    }
-
-    public PopupStorePost savePost(PopupStorePost post) {
-        return repository.save(post);
+    public PopupStorePostService(PopupStorePostRepository popupStorePostRepository) {
+        this.popupStorePostRepository = popupStorePostRepository;
     }
 
     public List<PopupStorePost> listAll() {
-        return repository.findAll();
+        return popupStorePostRepository.findAll();
     }
 
     public List<PopupStorePost> searchByTitle(String title) {
-        return repository.findByContentContaining(title);
+        return popupStorePostRepository.findByContentContaining(title);
     }
 
     private WebDriver setupWebDriver() {
@@ -67,6 +67,7 @@ public class PopupStorePostService {
             System.out.println("로그인 실패: " + e.getMessage());
         }
     }
+
 
     private Set<String> collectPostLinks(WebDriver driver, int scrollCount) throws InterruptedException {
         Set<String> postLinks = new HashSet<>();
@@ -273,7 +274,7 @@ public class PopupStorePostService {
                     // 상태 결정 (현재 날짜와 운영/종료일 비교)
                     String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
                     post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
-                    PopupStorePost savedPost = repository.save(post);
+                    PopupStorePost savedPost = popupStorePostRepository.save(post);
                     System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
                 }
             } finally {
@@ -282,5 +283,16 @@ public class PopupStorePostService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public List<PopupStorePostDTO> getRandomPopupStorePosts(int randomSize) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        // repository.findRandomPopupStorePosts(randomSize)는 무작위로 팝업스토어 데이터를 조회하는 커스텀 메서드입니다.
+        return popupStorePostRepository.findRandomPopupStorePosts(randomSize)
+                .stream()
+                .map(PopupStorePostDTO::new)
+                .collect(Collectors.toList());
     }
 }

@@ -89,4 +89,12 @@ public class ExhibitController {
         return exhibitService.getExhibitByTitle(title.trim());
     }
 
+    //랜덤 조회
+    @GetMapping("/random")
+    public ResponseEntity<List<ExhibitDTO>> getRandomExhibitions(
+            @RequestParam(defaultValue = "9") int randomSize) {
+        List<ExhibitDTO> list = exhibitService.getRandomExhibitions(randomSize);
+        return ResponseEntity.ok(list);
+    }
+
 }
