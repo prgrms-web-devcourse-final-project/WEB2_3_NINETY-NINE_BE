@@ -71,13 +71,14 @@ public class PerformanceService {
         return performanceRepository.findRandomPerformances(randomSize)
                 .stream()
                 .map(performance -> {
-                    boolean isBookmarked = bookmarkRepository
-                            .findByUserIdAndPerformanceId(userId, performance.getId())
-                            .isPresent();
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, performance.getId())
+                                    .isPresent();
                     return new EventResponseDTO(performance, isBookmarked);
                 })
                 .toList();
     }
+
 
     public EventPageResponseDTO searchPerformances(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
         Specification<Performance> spec = (root, query, criteriaBuilder) -> {
@@ -112,9 +113,9 @@ public class PerformanceService {
         List<EventResponseDTO> posts = performancePage.getContent()
                 .stream()
                 .map(performance -> {
-                    boolean isBookmarked = bookmarkRepository
-                            .findByUserIdAndPerformanceId(userId, performance.getId())
-                            .isPresent();
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, performance.getId())
+                                    .isPresent();
                     return new EventResponseDTO(performance, isBookmarked);
                 })
                 .toList();
@@ -130,15 +131,18 @@ public class PerformanceService {
         return response;
     }
 
+
     public EventResponseDTO getPerformance(Long performanceId, Long userId) {
         Performance performance = performanceRepository.findById(performanceId)
                 .orElseThrow(() -> new CustomException(ErrorCode.NO_CONTENT));
 
-        boolean isBookmarked = bookmarkRepository.findByUserIdAndPerformanceId(userId, performanceId)
-                .isPresent();
+        boolean isBookmarked = userId != null &&
+                bookmarkRepository.findByUserIdAndPerformanceId(userId, performanceId)
+                        .isPresent();
 
         return new EventResponseDTO(performance, isBookmarked);
     }
+
 
     private List<String> fetchPerformanceIds(String from, String to, String genreCode, String status) {
         List<String> performanceIds = new ArrayList<>();
