@@ -125,7 +125,8 @@ public class UserService {
         // 리프레시 토큰 생성 및 DB 저장
         String refreshToken = tokenService.createRefreshToken(userId);
         // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
-        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+        tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+//        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
 
         // 테스트용 반환 DTO 및 응답 형식
         return new TokenResponse(accessToken, refreshToken);

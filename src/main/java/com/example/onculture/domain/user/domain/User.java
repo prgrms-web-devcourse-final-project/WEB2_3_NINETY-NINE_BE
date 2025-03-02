@@ -53,16 +53,16 @@ public class User {
     @Column(nullable = false, updatable = false, name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 
+    // 양방향 연관 관계
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Profile profile;
+
     @PrePersist
     public void prePersist() {
         this.loginType = this.loginType == null ? LoginType.LOCAL_ONLY : this.loginType;
         this.socials = this.socials == null || this.socials.isEmpty() ? new HashSet<>(Set.of(Social.LOCAL)) : this.socials;
         this.role = this.role == null ? Role.USER : this.role;
     }
-
-    // 양방향 연관 관계
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Profile profile;
 
     // 연관 관계 편의 메서드 추가 ( 사용 보류 )
 //    public void setProfile(Profile profile) {

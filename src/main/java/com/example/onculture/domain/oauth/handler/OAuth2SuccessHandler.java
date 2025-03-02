@@ -58,7 +58,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String refreshToken = tokenService.createRefreshToken(userId);
 
         // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
-        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+        tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+//        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
         // 인증 관련 설정값, 쿠키 제거
         clearAuthenticationAttributes(request, response);
         // application.properties 에서 리다이렉트 uri 변경 가능 ( 기본값 : 백엔드 테스트용 리다이렉트 uri
