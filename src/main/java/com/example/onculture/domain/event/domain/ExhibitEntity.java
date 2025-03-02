@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -28,4 +31,6 @@ public class ExhibitEntity {
     private Double gpsX;        // 경도
     private Double gpsY;        // 위도
 
+    @OneToMany(mappedBy = "exhibitEntity", cascade = CascadeType.ALL)
+    private List<Bookmark> bookmark = new ArrayList<>();
 }

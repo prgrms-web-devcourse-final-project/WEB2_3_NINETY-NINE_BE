@@ -3,6 +3,9 @@ package com.example.onculture.domain.event.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 public class Performance {
@@ -46,4 +49,7 @@ public class Performance {
     @Lob
     @Column(columnDefinition = "TEXT")
     private String relatedLinks;
+
+    @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL)
+    private List<Bookmark> bookmark = new ArrayList<>();
 }
