@@ -75,7 +75,6 @@ public class PerformanceService {
         Specification<Performance> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // 제목 키워드 검색 (대소문자 구분 없이)
             if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
                 Expression<String> titleExpression = root.get("performanceTitle").as(String.class);
                 Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
@@ -88,12 +87,10 @@ public class PerformanceService {
                 );
             }
 
-            // 지역 필터
             if (region != null && !region.trim().isEmpty()) {
                 predicates.add(criteriaBuilder.equal(root.get("area"), region));
             }
 
-            // 공연 상태(공연중, 공연예정) 필터
             if (status != null && !status.trim().isEmpty()) {
                 predicates.add(criteriaBuilder.equal(root.get("performanceState"), status));
             }
@@ -118,6 +115,12 @@ public class PerformanceService {
         response.setNumberOfElements(performancePage.getNumberOfElements());
 
         return response;
+    }
+
+    public EventResponseDTO getPerformance(Long performanceId) {
+        return performanceRepository.findById(performanceId)
+                .map(EventResponseDTO::new)
+                .orElseThrow(() -> new CustomException(ErrorCode.NO_CONTENT));
     }
 
 

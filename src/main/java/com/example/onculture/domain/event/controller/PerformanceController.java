@@ -7,10 +7,7 @@ import com.example.onculture.global.response.SuccessResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -41,5 +38,13 @@ public class PerformanceController {
         EventPageResponseDTO responseDTOS = performanceService
                 .searchPerformances(region, status, titleKeyword, pageNum, pageSize);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
+    }
+
+    @GetMapping("api/performances/{performanceId}")
+    public ResponseEntity<SuccessResponse<EventResponseDTO>> searchPerformances(
+            @PathVariable Long performanceId) {
+        EventResponseDTO responseDTO = performanceService
+                .getPerformance(performanceId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 }
