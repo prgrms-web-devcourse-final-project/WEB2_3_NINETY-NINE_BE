@@ -161,7 +161,7 @@ public class UserService {
         return userRepository.findByNickname(nickname).isPresent();
     }
 
-    // 현재 사용자 정보 조회 메서드
+    // UserId 기반 사용자 프로필 정보 조회 메서드
     @Transactional
     public UserProfileResponse getUserProfile(Long userId) {
 
@@ -244,7 +244,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // 이메일 기반 User 조회 및 Profile 존재 여부에 따른 처리
+    // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
     @Transactional
     public User findUserAndProfileByuserId(Long userId) {
         User user = userRepository.findById(userId)
