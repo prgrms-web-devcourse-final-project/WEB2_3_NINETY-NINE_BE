@@ -1,12 +1,16 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.*;
+import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.*;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,6 +38,34 @@ public class BookmarkService {
             default -> throw new CustomException(ErrorCode.INVALID_GENRE_REQUEST);
         }
         return "Toggled";
+    }
+
+    public BookmarkEventListDTO getBookmarkedEvents(Long userId, Pageable pageable) {
+        Page<Bookmark> bookmarkPage = bookmarkRepository.findAllByUserId(userId, pageable);
+
+        Page<EventResponseDTO> eventPage = bookmarkPage.map(bookmark -> {
+            if (bookmark.getPerformance() != null) {
+                return new EventResponseDTO(bookmark.getPerformance());
+            } else if (bookmark.getExhibitEntity() != null) {
+                return new EventResponseDTO(bookmark.getExhibitEntity());
+            } else if (bookmark.getFestivalPost() != null) {
+                return new EventResponseDTO(bookmark.getFestivalPost());
+            } else if (bookmark.getPopupStorePost() != null) {
+                return new EventResponseDTO(bookmark.getPopupStorePost());
+            } else {
+                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+        });
+
+        BookmarkEventListDTO response = new BookmarkEventListDTO();
+        response.setPosts(eventPage.getContent());
+        response.setTotalPages(eventPage.getTotalPages());
+        response.setTotalElements(eventPage.getTotalElements());
+        response.setPageNum(eventPage.getNumber());
+        response.setPageSize(eventPage.getSize());
+        response.setNumberOfElements(eventPage.getNumberOfElements());
+
+        return response;
     }
 
     private void togglePerformanceBookmark(User user, Long eventPostId) {
