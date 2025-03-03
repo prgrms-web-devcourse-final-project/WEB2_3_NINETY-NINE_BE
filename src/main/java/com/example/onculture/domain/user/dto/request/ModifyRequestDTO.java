@@ -18,6 +18,6 @@ public class ModifyRequestDTO {
     private String nickname;
     private String password;
     private String description = "";
-    private Set<Interest> interests = new HashSet<>();
+    private Set<String> interests = new HashSet<>();
     private String profileImage = "";
 }

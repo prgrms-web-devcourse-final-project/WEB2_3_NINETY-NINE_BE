@@ -72,6 +72,7 @@ public class UserController {
     }
 
     // 닉네임 중복 체크 API
+    @Operation( summary = "닉네임 중복 확인", description = "해당 닉네임으로 된 사용자가 존재하는지 확인" )
     @PostMapping("check-nickname")
     public ResponseEntity<SuccessResponse<Boolean>> nicknameOverlap(@RequestParam String nickname) {
         boolean isAlreadyNickname = userService.checkNickname(nickname);

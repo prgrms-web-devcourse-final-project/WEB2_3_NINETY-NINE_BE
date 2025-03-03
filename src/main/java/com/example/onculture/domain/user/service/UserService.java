@@ -45,6 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.example.onculture.global.utils.CookieUtil.*;
 
@@ -110,6 +111,7 @@ public class UserService {
 
     // 로컬 로그인 메서드
     public TokenResponse login(LoginRequestDTO dto, HttpServletRequest request, HttpServletResponse response) {
+
         // 사용자 인증 메서드 실행 및 인증 객체 반환
         Authentication authentication = authenticate(dto);
         // 인증 객체에서 사용자 데이터 가져오기
@@ -123,7 +125,8 @@ public class UserService {
         // 리프레시 토큰 생성 및 DB 저장
         String refreshToken = tokenService.createRefreshToken(userId);
         // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
-        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+        tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
+//        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
 
         // 테스트용 반환 DTO 및 응답 형식
         return new TokenResponse(accessToken, refreshToken);
@@ -158,12 +161,19 @@ public class UserService {
         return userRepository.findByNickname(nickname).isPresent();
     }
 
-    // 현재 사용자 정보 조회 메서드
+    // UserId 기반 사용자 프로필 정보 조회 메서드
     @Transactional
     public UserProfileResponse getUserProfile(Long userId) {
 
         User user = findUserAndProfileByuserId(userId);
         Profile profile = user.getProfile();
+
+        Set<String> interests = new HashSet<>();
+        if (profile.getInterests() != null) {
+            interests = profile.getInterests().stream()
+                    .map(Interest::getKor)
+                    .collect(Collectors.toSet());
+        }
 
         String s3ImageFileUrl = "";
         if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
@@ -175,7 +185,7 @@ public class UserService {
                 .nickname(user.getNickname())
                 .loginType(user.getLoginType())
                 .description(profile.getDescription() != null ? profile.getDescription() : "")
-                .interests(profile.getInterests() != null ? profile.getInterests() : new HashSet<>())
+                .interests(interests)
                 .profileImage(profile.getProfileImage() != null ? profile.getProfileImage() : "")
                 .s3Bucket(s3ImageFileUrl) // 필요하면 S3 버킷 이름 설정
                 .build();
@@ -196,7 +206,23 @@ public class UserService {
         // 소개글 업데이트 (필요 시)
         if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) user.getProfile().setDescription(dto.getDescription().trim());
         // 관심사 업데이트 (필요 시)
-        if (dto.getInterests() != null && !dto.getInterests().isEmpty()) user.getProfile().setInterests(dto.getInterests());
+        if (dto.getInterests() != null && !dto.getInterests().isEmpty()) {
+            // Set<한글>을 Set<ENUM>으로 변환 (stream 방식)
+            user.getProfile().setInterests(
+                    dto.getInterests().stream()
+                            .map(Interest::getInterestByKor)
+                            .collect(Collectors.toSet())
+            );
+
+            // Set<한글>을 Set<ENUM>으로 변환 (for문 방식)
+            /*
+            Set<Interest> interests = new HashSet<>();
+            for (String interest : dto.getInterests()) {
+                interests.add(Interest.getInterestByKor(interest));
+            }
+            user.getProfile().setInterests(interests);
+             */
+        }
         // 이미지 파일명 업데이트 (필요 시)
         if (imageData != null && !imageData.isEmpty()) {
             // 이미지 파일 유효성 검사 및 파일명 변경
@@ -214,12 +240,11 @@ public class UserService {
                 user.getProfile().setProfileImage("");
             }
         }
-
         // 변경사항 저장
         userRepository.save(user);
     }
 
-    // 이메일 기반 User 조회 및 Profile 존재 여부에 따른 처리
+    // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
     @Transactional
     public User findUserAndProfileByuserId(Long userId) {
         User user = userRepository.findById(userId)
