@@ -5,6 +5,7 @@ import com.example.onculture.domain.event.domain.PopupStorePost;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.FestivalPostDTO;
 import com.example.onculture.domain.event.dto.PopupStorePostDTO;
+import com.example.onculture.domain.event.service.FestivalPostAddressUpdateService;
 import com.example.onculture.domain.event.service.FestivalPostService;
 import com.example.onculture.domain.event.service.PopupStorePostService;
 import com.example.onculture.global.response.SuccessResponse;
@@ -24,10 +25,13 @@ public class EventController {
 
     private final PopupStorePostService popupStorePostService;
     private final FestivalPostService festivalPostService;
+    private final FestivalPostAddressUpdateService festivalPostAddressUpdateService;
 
-    public EventController(PopupStorePostService popupStorePostService, FestivalPostService festivalPostService) {
+
+    public EventController(PopupStorePostService popupStorePostService, FestivalPostService festivalPostService, FestivalPostAddressUpdateService festivalPostAddressUpdateService) {
         this.popupStorePostService = popupStorePostService;
         this.festivalPostService = festivalPostService;
+        this.festivalPostAddressUpdateService = festivalPostAddressUpdateService;
     }
 
     // 전체 PopupStore 목록 조회
@@ -99,4 +103,12 @@ public class EventController {
         EventResponseDTO detail = festivalPostService.getFestivalPostDetail(id);
         return ResponseEntity.ok(detail);
     }
+
+    //DB에 저장된 FestivalPost의 festivalLocation 필드를 업데이트한 후 전체 목록을 반환합니다.
+    @GetMapping("/update-addresses")
+    public ResponseEntity<List<FestivalPost>> updateAddresses() {
+        List<FestivalPost> updatedPosts = festivalPostAddressUpdateService.updateFestivalPostAddressesAndAreas();
+        return ResponseEntity.ok(updatedPosts);
+    }
+
 }

@@ -44,6 +44,9 @@ public class FestivalPost {
     @Column(name = "festival_status")
     private String festivalStatus;
 
+    @Column(name = "festival_area")
+    private String festivalArea;
+
     // 기존 @ElementCollection, @CollectionTable 대신 AttributeConverter 사용
     @Convert(converter = StringListConverter.class)
     @Column(name = "image_urls", columnDefinition = "LONGTEXT")

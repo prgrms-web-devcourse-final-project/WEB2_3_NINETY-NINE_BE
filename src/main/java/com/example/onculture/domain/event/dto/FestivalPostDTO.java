@@ -24,6 +24,7 @@ public class FestivalPostDTO {
     private String festivalTicketPrice;
     private String festivalStatus;
     private List<String> imageUrls;
+    private String festivalArea;
 
     // 엔티티를 받아 DTO로 변환하는 생성자 추가
     public FestivalPostDTO(FestivalPost festivalPost) {
@@ -37,5 +38,6 @@ public class FestivalPostDTO {
         this.festivalTicketPrice = festivalPost.getFestivalTicketPrice();
         this.festivalStatus = festivalPost.getFestivalStatus();
         this.imageUrls = festivalPost.getImageUrls();
+        this.festivalArea = festivalPost.getFestivalArea();
     }
 }

@@ -13,4 +13,7 @@ public interface FestivalPostRepository extends JpaRepository<FestivalPost, Long
 
     @Query(value = "SELECT * FROM festival_post WHERE festival_status = '진행중' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
     List<FestivalPost> findRandomFestivalPosts(int randomSize);
+
+    // festivalLocation 필드가 null이 아닌 항목들만 조회 (필요에 따라)
+    List<FestivalPost> findByFestivalLocationIsNotNull();
 }

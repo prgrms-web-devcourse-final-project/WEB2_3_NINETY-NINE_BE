@@ -72,7 +72,7 @@ public class EventResponseDTO {
         this.startDate = String.valueOf(popupStorePost.getPopupsStartDate());
         this.endDate = String.valueOf(popupStorePost.getPopupsEndDate());
         this.operatingHours = null;
-        this.location = null;
+        this.location = popupStorePost.getPopupsArea();
         this.venue = popupStorePost.getLocation();
         this.status = popupStorePost.getStatus();
         this.ticketingWebSite = null;
@@ -90,7 +90,7 @@ public class EventResponseDTO {
         this.startDate = String.valueOf(festivalPost.getFestivalStartDate());
         this.endDate = String.valueOf(festivalPost.getFestivalEndDate());
         this.operatingHours = null;
-        this.location = null;
+        this.location = festivalPost.getFestivalArea();
         this.venue = festivalPost.getFestivalLocation();
         this.status = festivalPost.getFestivalStatus();
         this.ticketingWebSite = null;
