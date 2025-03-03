@@ -45,13 +45,13 @@ public class BookmarkService {
 
         Page<EventResponseDTO> eventPage = bookmarkPage.map(bookmark -> {
             if (bookmark.getPerformance() != null) {
-                return new EventResponseDTO(bookmark.getPerformance());
+                return new EventResponseDTO(bookmark.getPerformance(), true);
             } else if (bookmark.getExhibitEntity() != null) {
-                return new EventResponseDTO(bookmark.getExhibitEntity());
+                return new EventResponseDTO(bookmark.getExhibitEntity(), true);
             } else if (bookmark.getFestivalPost() != null) {
-                return new EventResponseDTO(bookmark.getFestivalPost());
+                return new EventResponseDTO(bookmark.getFestivalPost(), true);
             } else if (bookmark.getPopupStorePost() != null) {
-                return new EventResponseDTO(bookmark.getPopupStorePost());
+                return new EventResponseDTO(bookmark.getPopupStorePost(), true);
             } else {
                 throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
@@ -67,6 +67,7 @@ public class BookmarkService {
 
         return response;
     }
+
 
     private void togglePerformanceBookmark(User user, Long eventPostId) {
         Performance performance = performanceRepository.findById(eventPostId)
