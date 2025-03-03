@@ -108,4 +108,8 @@ public class EventResponseDTO {
         this.description = popup.getDetails();
         this.isBookmarked = isBookmarked;
     }
+
+    public boolean getBookmarked() {
+        return this.isBookmarked;
+    }
 }
