@@ -2,6 +2,7 @@ package com.example.onculture.domain.socialPost.service;
 
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
+import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.Profile;
 import com.example.onculture.domain.user.model.Role;
@@ -35,6 +36,9 @@ public class SocialPostServiceTest {
 
     @Mock
     private SocialPostRepository socialPostRepository;
+
+    @Mock
+    private SocialPostLikeRepository socialPostLikeRepository;
 
     @InjectMocks
     private SocialPostService socialPostService;
@@ -138,10 +142,13 @@ public class SocialPostServiceTest {
     void testGetSocialPost_valid() {
         // given
         Long socialPostId = 1L;
+        Long userId = 1L;
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(testSocialPost));
+        when(socialPostLikeRepository.existsByUserAndSocialPost(testUser,testSocialPost)).thenReturn(true);
 
         // when
-        PostResponseDTO dto = socialPostService.getSocialPost(socialPostId);
+        PostWithLikeResponseDTO dto = socialPostService.getSocialPostWithLikeStatus(socialPostId, userId);
 
         // then
         assertNotNull(dto);
@@ -154,11 +161,12 @@ public class SocialPostServiceTest {
     void testGetSocialPost_notFound() {
         // given
         Long socialPostId = 999L;
+        Long userId = 1L;
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.empty());
 
         // when & then
         CustomException ex = assertThrows(CustomException.class, () ->
-                socialPostService.getSocialPost(socialPostId)
+                socialPostService.getSocialPostWithLikeStatus(socialPostId, userId)
         );
         assertEquals(ErrorCode.POST_NOT_FOUND, ex.getErrorCode());
     }
