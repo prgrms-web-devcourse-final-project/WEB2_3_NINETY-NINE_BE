@@ -1,27 +1,24 @@
 package com.example.onculture.domain.event.controller;
 
 import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
-import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.service.BookmarkService;
-import com.example.onculture.domain.socialPost.dto.PostListResponseDTO;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api")
+@Tag(name = "북마크 API", description = "공연 게시글 북마크를 관리하는 API")
 public class BookmarkController {
     private final BookmarkService bookmarkService;
 
@@ -37,6 +34,8 @@ public class BookmarkController {
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
     }
 
+    @Operation(summary = "유저가 북마크를 누른 공연 게시글 조회",
+            description = "로그인 필수 API 입니다.")
     @GetMapping("/bookmarks/my-events")
     public ResponseEntity<SuccessResponse<BookmarkEventListDTO>> getMyBookmarkedEvents(
             @AuthenticationPrincipal CustomUserDetails userDetails,

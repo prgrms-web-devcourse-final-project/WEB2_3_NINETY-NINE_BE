@@ -75,7 +75,7 @@ public class PerformanceControllerTest {
 
         // When
         ResponseEntity<SuccessResponse<java.util.List<EventResponseDTO>>> response =
-                performanceController.getPerformances(randomSize, testUser);
+                performanceController.getRandomPerformances(randomSize, testUser);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
