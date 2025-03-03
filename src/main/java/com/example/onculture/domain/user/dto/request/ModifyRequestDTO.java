@@ -14,7 +14,6 @@ import java.util.Set;
 @AllArgsConstructor
 @ToString
 public class ModifyRequestDTO {
-
     private String nickname;
     private String password;
     private String description = "";

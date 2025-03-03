@@ -143,8 +143,9 @@ public class UserService {
         String refreshToken = extractRefreshToken(request);
         // refreshToken 쿠키가 있을 경우, DB에서 삭제
         if (refreshToken != null) tokenService.deleteRefreshToken(refreshToken);
-        // 클라이언트 쿠키에서 RefreshToken 삭제 (Set-Cookie 헤더 사용)
+        // 클라이언트 쿠키에서 모든 토큰 삭제 (Set-Cookie 헤더 사용)
         CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
+        CookieUtil.deleteCookie(request, response, ACCESS_TOKEN_COOKIE_NAME);
     }
 
     // 재발급 메서드
@@ -187,6 +188,7 @@ public class UserService {
         }
 
         return UserProfileResponse.builder()
+                .id(userId)
                 .nickname(user.getNickname())
                 .loginType(user.getLoginType())
                 .description(profile.getDescription() != null ? profile.getDescription() : "")
@@ -207,7 +209,16 @@ public class UserService {
         user.setNickname(dto.getNickname().trim());
 
         // 비밀번호 업데이트 (필요 시)
-        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
+        if (user.getLoginType().equals(LoginType.SOCIAL_ONLY)) {
+            user.setPassword(null);
+        } else {
+            if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.PASSWORD_CANNOT_BE_NULL);
+            } else {
+                user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
+            }
+        }
+
         // 소개글 업데이트 (필요 시)
         if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) user.getProfile().setDescription(dto.getDescription().trim());
         // 관심사 업데이트 (필요 시)
