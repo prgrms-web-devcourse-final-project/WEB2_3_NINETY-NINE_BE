@@ -1,23 +1,24 @@
 package com.example.onculture.domain.user.dto.request;
 
-import com.example.onculture.domain.user.domain.Gender;
-import com.example.onculture.domain.user.domain.Interest;
+import com.example.onculture.domain.user.model.LoginType;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.model.Social;
 import lombok.*;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
+@RequiredArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@ToString
 public class SignupRequestDTO {
 
     private String email;
-    private String nickname;
     private String password;
-    private String birth;
-    private Gender gender;
-    private List<Interest> interests;
-    private String description;
+    private String nickname;
+    private Role role = Role.USER;
+    private LoginType loginType = LoginType.LOCAL_ONLY;
+    private Set<Social> socials = new HashSet<>(Set.of(Social.LOCAL));
 }
