@@ -50,6 +50,6 @@ public class Performance {
     @Column(columnDefinition = "TEXT")
     private String relatedLinks;
 
-    @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bookmark> bookmark = new ArrayList<>();
 }

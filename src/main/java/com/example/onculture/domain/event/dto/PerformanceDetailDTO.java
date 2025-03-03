@@ -89,7 +89,13 @@ public class PerformanceDetailDTO {
         performance.setArea(this.area);
         performance.setGenre(this.genre);
         performance.setUpdateDate(this.updateDate);
-        performance.setPerformanceState(this.performanceState);
+        if (this.performanceState.equals("공연예정")) {
+            performance.setPerformanceState("진행예정");
+        } else if (this.performanceState.equals("공연중")) {
+            performance.setPerformanceState("진행중");
+        } else {
+            performance.setPerformanceState("진행종료");
+        }
         performance.setShowTimes(this.showTimes);
 
         // 여러 개의 스타일 URL을 하나의 문자열로 변환
