@@ -275,6 +275,17 @@ public class PopupStorePostService {
                     // 상태 결정 (현재 날짜와 운영/종료일 비교)
                     String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
                     post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
+
+                    // 지역 추출 로직: location에서 앞의 두 단어를 추출하여 popupsArea에 저장
+                    String location = pc.location;
+                    if (location != null && !location.trim().isEmpty()) {
+                        String[] tokens = location.split("\\s+");
+                        if (tokens.length >= 2) {
+                            String popupsArea = tokens[0] + " " + tokens[1];
+                            post.setPopupsArea(popupsArea);
+                        }
+                    }
+
                     PopupStorePost savedPost = popupStorePostRepository.save(post);
                     System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
                 }
@@ -285,6 +296,7 @@ public class PopupStorePostService {
             e.printStackTrace();
         }
     }
+
 
     public List<PopupStorePostDTO> getRandomPopupStorePosts(int randomSize) {
         if (randomSize < 0) {

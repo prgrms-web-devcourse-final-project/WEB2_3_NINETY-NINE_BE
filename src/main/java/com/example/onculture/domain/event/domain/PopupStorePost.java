@@ -44,6 +44,9 @@ public class PopupStorePost {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "popups_area")
+    private String popupsArea;
+
     // 기존의 이미지 URL 목록 매핑 대신, 단일 컬럼에 저장 (쉼표 구분 문자열)
     @Convert(converter = StringListConverter.class)
     @Column(name = "image_urls", columnDefinition = "LONGTEXT")
