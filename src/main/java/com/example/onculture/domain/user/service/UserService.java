@@ -76,8 +76,8 @@ public class UserService {
     public void save(SignupRequestDTO dto) {
         System.out.println("dto: " + dto);
 
-        String email = dto.getEmail();
-        String nickname = dto.getNickname();
+        String email = dto.getEmail().trim();
+        String nickname = dto.getNickname().trim();
 
         // 중복 이메일 검증 로직 추가
         // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
@@ -164,7 +164,7 @@ public class UserService {
 
     // 닉네임 중복 여부 메서드
     public Boolean checkNickname(String nickname) {
-        return userRepository.findByNickname(nickname).isPresent();
+        return userRepository.findByNickname(nickname.trim()).isPresent();
     }
 
     // UserId 기반 사용자 프로필 정보 조회 메서드
@@ -208,15 +208,9 @@ public class UserService {
         // 닉네임 업데이트
         user.setNickname(dto.getNickname().trim());
 
-        // 비밀번호 업데이트 (필요 시)
-        if (user.getLoginType().equals(LoginType.SOCIAL_ONLY)) {
-            user.setPassword(null);
-        } else {
-            if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
-                throw new CustomException(ErrorCode.PASSWORD_CANNOT_BE_NULL);
-            } else {
-                user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
-            }
+        // 비밀번호 업데이트 (로컬 회원가입 사용자이면 비밀번호 입력 필수)
+        if (!user.getLoginType().equals(LoginType.SOCIAL_ONLY) && dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
         }
 
         // 소개글 업데이트 (필요 시)
