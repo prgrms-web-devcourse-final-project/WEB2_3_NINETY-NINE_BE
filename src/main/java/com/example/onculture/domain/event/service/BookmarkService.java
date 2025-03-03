@@ -40,35 +40,6 @@ public class BookmarkService {
         return "Toggled";
     }
 
-    public BookmarkEventListDTO getBookmarkedEvents(Long userId, Pageable pageable) {
-        Page<Bookmark> bookmarkPage = bookmarkRepository.findAllByUserId(userId, pageable);
-
-        Page<EventResponseDTO> eventPage = bookmarkPage.map(bookmark -> {
-            if (bookmark.getPerformance() != null) {
-                return new EventResponseDTO(bookmark.getPerformance(), true);
-            } else if (bookmark.getExhibitEntity() != null) {
-                return new EventResponseDTO(bookmark.getExhibitEntity(), true);
-            } else if (bookmark.getFestivalPost() != null) {
-                return new EventResponseDTO(bookmark.getFestivalPost(), true);
-            } else if (bookmark.getPopupStorePost() != null) {
-                return new EventResponseDTO(bookmark.getPopupStorePost(), true);
-            } else {
-                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
-            }
-        });
-
-        BookmarkEventListDTO response = new BookmarkEventListDTO();
-        response.setPosts(eventPage.getContent());
-        response.setTotalPages(eventPage.getTotalPages());
-        response.setTotalElements(eventPage.getTotalElements());
-        response.setPageNum(eventPage.getNumber());
-        response.setPageSize(eventPage.getSize());
-        response.setNumberOfElements(eventPage.getNumberOfElements());
-
-        return response;
-    }
-
-
     private void togglePerformanceBookmark(User user, Long eventPostId) {
         Performance performance = performanceRepository.findById(eventPostId)
                 .orElseThrow(() -> new CustomException(ErrorCode.NO_CONTENT));

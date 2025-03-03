@@ -1,5 +1,10 @@
 package com.example.onculture.domain.user.service;
 
+import com.example.onculture.domain.event.domain.Bookmark;
+import com.example.onculture.domain.event.domain.Performance;
+import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.user.domain.Profile;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
@@ -27,6 +32,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,6 +45,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,6 +83,8 @@ public class UserServiceTest {
     private ImageFileService imageFileService;
     @Mock
     private ProfileRepository profileRepository;
+    @Mock
+    private BookmarkRepository bookmarkRepository;
 
     @Spy    // spy로 일부 메서드를 Mocking
     @InjectMocks
@@ -348,5 +360,41 @@ public class UserServiceTest {
         // Then
         assertNotNull(result);
         assertEquals("valid_refresh_token", result);
+    }
+
+    @DisplayName("getBookmarkedEvents - 사용자 북마크 이벤트 목록 조회 요청")
+    @Test
+    void getBookmarkedEvents_returnsCorrectEventPageResponse() {
+        // given
+        Long userId = 1L;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Performance performance = new Performance();
+        performance.setId(200L);
+
+        Bookmark bookmark = Bookmark.builder()
+                .id(300L)
+                .performance(performance)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Page<Bookmark> bookmarkPage = new PageImpl<>(List.of(bookmark), pageable, 1);
+        when(bookmarkRepository.findAllByUserId(userId, pageable)).thenReturn(bookmarkPage);
+
+        // when
+        BookmarkEventListDTO response = userService.getBookmarkedEvents(userId, pageable);
+
+        // then
+        assertNotNull(response);
+        assertEquals(1, response.getTotalElements());
+        assertEquals(1, response.getTotalPages());
+        assertEquals(0, response.getPageNum());
+        assertEquals(10, response.getPageSize());
+        assertEquals(1, response.getNumberOfElements());
+
+        List<EventResponseDTO> posts = response.getPosts();
+        assertNotNull(posts);
+        assertEquals(1, posts.size());
+        assertTrue(posts.get(0).getBookmarked());
     }
 }

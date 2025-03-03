@@ -33,20 +33,5 @@ public class BookmarkController {
 
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, result));
     }
-
-    @Operation(summary = "유저가 북마크를 누른 공연 게시글 조회",
-            description = "로그인 필수 API 입니다.")
-    @GetMapping("/bookmarks/my-events")
-    public ResponseEntity<SuccessResponse<BookmarkEventListDTO>> getMyBookmarkedEvents(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "9") int pageSize) {
-
-        Pageable pageable = PageRequest.of(page, pageSize);
-        BookmarkEventListDTO responseDTO = bookmarkService.getBookmarkedEvents(userDetails.getUserId(), pageable);
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(SuccessResponse.success(HttpStatus.OK, responseDTO));
-    }
 }
 

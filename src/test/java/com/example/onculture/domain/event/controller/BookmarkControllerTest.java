@@ -106,31 +106,31 @@ public class BookmarkControllerTest {
         assertEquals(expectedMessage, response.getBody().getData());
     }
 
-    @Test
-    @DisplayName("getMyBookmarkedEvents - 유저가 북마크한 공연 목록 조회")
-    void testGetMyBookmarkedEvents() {
-        // Given
-        int page = 0;
-        int pageSize = 9;
-        Pageable pageable = PageRequest.of(page, pageSize);
-
-        BookmarkEventListDTO expectedDTO = new BookmarkEventListDTO();
-        expectedDTO.setPosts(Arrays.asList(event1, event2));
-        expectedDTO.setTotalPages(5);
-        expectedDTO.setTotalElements(2);
-        expectedDTO.setPageNum(page);
-        expectedDTO.setPageSize(pageSize);
-        expectedDTO.setNumberOfElements(2);
-
-        when(bookmarkService.getBookmarkedEvents(eq(1L), eq(pageable)))
-                .thenReturn(expectedDTO);
-
-        // When
-        ResponseEntity<SuccessResponse<BookmarkEventListDTO>> response =
-                bookmarkController.getMyBookmarkedEvents(testUser, page, pageSize);
-
-        // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedDTO, response.getBody().getData());
-    }
+//    @Test
+//    @DisplayName("getMyBookmarkedEvents - 유저가 북마크한 공연 목록 조회")
+//    void testGetMyBookmarkedEvents() {
+//        // Given
+//        int page = 0;
+//        int pageSize = 9;
+//        Pageable pageable = PageRequest.of(page, pageSize);
+//
+//        BookmarkEventListDTO expectedDTO = new BookmarkEventListDTO();
+//        expectedDTO.setPosts(Arrays.asList(event1, event2));
+//        expectedDTO.setTotalPages(5);
+//        expectedDTO.setTotalElements(2);
+//        expectedDTO.setPageNum(page);
+//        expectedDTO.setPageSize(pageSize);
+//        expectedDTO.setNumberOfElements(2);
+//
+//        when(bookmarkService.getBookmarkedEvents(eq(1L), eq(pageable)))
+//                .thenReturn(expectedDTO);
+//
+//        // When
+//        ResponseEntity<SuccessResponse<BookmarkEventListDTO>> response =
+//                bookmarkController.getMyBookmarkedEvents(testUser, page, pageSize);
+//
+//        // Then
+//        assertEquals(HttpStatus.OK, response.getStatusCode());
+//        assertEquals(expectedDTO, response.getBody().getData());
+//    }
 }

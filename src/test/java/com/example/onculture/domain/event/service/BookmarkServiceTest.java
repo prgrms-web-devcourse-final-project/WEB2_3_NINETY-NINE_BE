@@ -110,40 +110,4 @@ class BookmarkServiceTest {
         verify(bookmarkRepository).delete(bookmark);
         assertEquals("Toggled", result);
     }
-
-    @DisplayName("getBookmarkedEvents - 사용자 북마크 이벤트 목록 조회 요청")
-    @Test
-    void getBookmarkedEvents_returnsCorrectEventPageResponse() {
-        // given
-        Long userId = 1L;
-        Pageable pageable = PageRequest.of(0, 10);
-
-        Performance performance = new Performance();
-        performance.setId(200L);
-
-        Bookmark bookmark = Bookmark.builder()
-                .id(300L)
-                .performance(performance)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        Page<Bookmark> bookmarkPage = new PageImpl<>(List.of(bookmark), pageable, 1);
-        when(bookmarkRepository.findAllByUserId(userId, pageable)).thenReturn(bookmarkPage);
-
-        // when
-        BookmarkEventListDTO response = bookmarkService.getBookmarkedEvents(userId, pageable);
-
-        // then
-        assertNotNull(response);
-        assertEquals(1, response.getTotalElements());
-        assertEquals(1, response.getTotalPages());
-        assertEquals(0, response.getPageNum());
-        assertEquals(10, response.getPageSize());
-        assertEquals(1, response.getNumberOfElements());
-
-        List<EventResponseDTO> posts = response.getPosts();
-        assertNotNull(posts);
-        assertEquals(1, posts.size());
-        assertTrue(posts.get(0).getBookmarked());
-    }
 }
