@@ -124,7 +124,7 @@ public class PerformanceControllerTest {
 
         // When
         ResponseEntity<SuccessResponse<EventResponseDTO>> response =
-                performanceController.searchPerformances(performanceId, testUser);
+                performanceController.getPerformance(performanceId, testUser);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());

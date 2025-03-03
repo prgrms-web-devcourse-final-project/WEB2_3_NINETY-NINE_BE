@@ -1,5 +1,9 @@
 package com.example.onculture.domain.user.service;
 
+import com.example.onculture.domain.event.domain.Bookmark;
+import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
 import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
@@ -65,6 +69,7 @@ public class UserService {
     private final AwsS3Util awsS3Util;
     private final SocialPostLikeRepository socialPostLikeRepository;
     private final SocialPostRepository socialPostRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     // 회원가입 메서드
     @Transactional
@@ -340,5 +345,33 @@ public class UserService {
                 .totalElements(posts.getTotalElements())
                 .numberOfElements(posts.getNumberOfElements())
                 .build();
+    }
+
+    public BookmarkEventListDTO getBookmarkedEvents(Long userId, Pageable pageable) {
+        Page<Bookmark> bookmarkPage = bookmarkRepository.findAllByUserId(userId, pageable);
+
+        Page<EventResponseDTO> eventPage = bookmarkPage.map(bookmark -> {
+            if (bookmark.getPerformance() != null) {
+                return new EventResponseDTO(bookmark.getPerformance(), true);
+            } else if (bookmark.getExhibitEntity() != null) {
+                return new EventResponseDTO(bookmark.getExhibitEntity(), true);
+            } else if (bookmark.getFestivalPost() != null) {
+                return new EventResponseDTO(bookmark.getFestivalPost(), true);
+            } else if (bookmark.getPopupStorePost() != null) {
+                return new EventResponseDTO(bookmark.getPopupStorePost(), true);
+            } else {
+                throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+        });
+
+        BookmarkEventListDTO response = new BookmarkEventListDTO();
+        response.setPosts(eventPage.getContent());
+        response.setTotalPages(eventPage.getTotalPages());
+        response.setTotalElements(eventPage.getTotalElements());
+        response.setPageNum(eventPage.getNumber());
+        response.setPageSize(eventPage.getSize());
+        response.setNumberOfElements(eventPage.getNumberOfElements());
+
+        return response;
     }
 }

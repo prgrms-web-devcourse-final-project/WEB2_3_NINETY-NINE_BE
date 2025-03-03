@@ -1,5 +1,7 @@
 package com.example.onculture.domain.user.controller;
 
+import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
+import com.example.onculture.domain.event.service.BookmarkService;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
 import com.example.onculture.domain.socialPost.service.SocialPostService;
 import com.example.onculture.domain.user.domain.User;
@@ -19,6 +21,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,6 +40,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final BookmarkService bookmarkService;
 
     // 회원가입 API
     @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
@@ -123,5 +128,20 @@ public class UserController {
             @RequestParam(defaultValue = "9") int pageSize) {
         UserPostListResponseDTO responseDTO = userService.getSocialPostsByUser(userId, pageNum, pageSize);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
+    }
+
+    @Operation(summary = "유저가 북마크를 누른 공연 게시글 조회",
+            description = "로그인 필수 API 입니다.")
+    @GetMapping("/bookmarks/my-events")
+    public ResponseEntity<SuccessResponse<BookmarkEventListDTO>> getMyBookmarkedEvents(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int pageSize) {
+
+        Pageable pageable = PageRequest.of(page, pageSize);
+        BookmarkEventListDTO responseDTO = userService.getBookmarkedEvents(userDetails.getUserId(), pageable);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 }
