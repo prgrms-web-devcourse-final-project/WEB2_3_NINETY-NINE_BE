@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class KakaoAddressService {
 
-    @Value("${kakao.rest.api.key}")
+    @Value("${KAKAO_REST_API_KEY}")
     private String kakaoApiKey;
 
     private final String baseUrl = "https://dapi.kakao.com/v2/local/search/keyword.json";

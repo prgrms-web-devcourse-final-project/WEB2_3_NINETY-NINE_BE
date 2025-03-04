@@ -67,6 +67,7 @@ public class EventResponseDTO {
         this.price = null;
         this.detailImage = null;
         this.description = null;
+        this.isBookmarked = isBookmarked;
     }
 
     public EventResponseDTO(PopupStorePost popupStorePost, boolean isBookmarked) {
@@ -84,7 +85,8 @@ public class EventResponseDTO {
         this.ticketingWebSite = null;
         this.price = null;
         this.detailImage = null;
-        this.description = null;
+        this.description = popupStorePost.getDetails();
+        this.isBookmarked = isBookmarked;
     }
 
     public EventResponseDTO(FestivalPost festivalPost, boolean isBookmarked) {
@@ -102,7 +104,8 @@ public class EventResponseDTO {
         this.ticketingWebSite = null;
         this.price = null;
         this.detailImage = null;
-        this.description = null;
+        this.description = festivalPost.getFestivalContent();
+        this.isBookmarked = isBookmarked;
     }
 
 }

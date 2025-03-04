@@ -30,10 +30,10 @@ import java.util.stream.Collectors;
 @Service
 public class FestivalPostService {
 
-    @Value("${instagram.username}")
+    @Value("${INSTAGRAM_ID}")
     private String username;
 
-    @Value("${instagram.password}")
+    @Value("${INSTAGRAM_PASSWORD}")
     private String password;
 
     private final FestivalPostRepository festivalPostRepository;
@@ -269,15 +269,20 @@ public class FestivalPostService {
         return "상태 미정";
     }
 
-    public List<FestivalPostDTO> getRandomFestivalPosts(int randomSize) {
+    //랜덤 조회
+    public List<EventResponseDTO> getRandomFestivalPosts(int randomSize, Long userId) {
         if (randomSize < 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        // festivalPostRepository.findRandomFestivalPosts(randomSize)는 무작위로 festival 데이터를 조회하는 커스텀 메서드입니다.
         return festivalPostRepository.findRandomFestivalPosts(randomSize)
                 .stream()
-                .map(FestivalPostDTO::new)  // 엔티티를 DTO로 변환
-                .collect(Collectors.toList());
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndFestivalPostId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
+                .toList();
     }
 
     // 전체 크롤링 실행 로직 (JPA 방식으로 엔티티 저장)
@@ -391,5 +396,4 @@ public class FestivalPostService {
 
         return response;
     }
-
 }
