@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -51,5 +52,8 @@ public class PopupStorePost {
     @Convert(converter = StringListConverter.class)
     @Column(name = "image_urls", columnDefinition = "LONGTEXT")
     private List<String> imageUrls;
+
+    @OneToMany(mappedBy = "popupStorePost", cascade = CascadeType.ALL)
+    private List<Bookmark> bookmark = new ArrayList<>();
 
 }

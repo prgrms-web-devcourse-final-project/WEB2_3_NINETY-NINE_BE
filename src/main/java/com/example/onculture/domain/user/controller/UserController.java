@@ -1,5 +1,7 @@
 package com.example.onculture.domain.user.controller;
 
+import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
+import com.example.onculture.domain.event.service.BookmarkService;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
 import com.example.onculture.domain.socialPost.service.SocialPostService;
 import com.example.onculture.domain.user.domain.User;
@@ -10,6 +12,8 @@ import com.example.onculture.domain.user.dto.response.LikedSocialPostIdsResponse
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.service.UserService;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,7 +23,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +43,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final BookmarkService bookmarkService;
 
     // 회원가입 API
     @Operation( summary = "회원가입 API", description = "로컬 회원가입 API" )
@@ -72,6 +80,7 @@ public class UserController {
     }
 
     // 닉네임 중복 체크 API
+    @Operation( summary = "닉네임 중복 확인", description = "해당 닉네임으로 된 사용자가 존재하는지 확인" )
     @PostMapping("check-nickname")
     public ResponseEntity<SuccessResponse<Boolean>> nicknameOverlap(@RequestParam String nickname) {
         boolean isAlreadyNickname = userService.checkNickname(nickname);
@@ -90,6 +99,9 @@ public class UserController {
     @Operation( summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회" )
     @GetMapping("/profile")
     public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        if (customUserDetails == null) {
+            throw new CustomException.CustomAuthenticationException();
+        }
         UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getUserId());
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 조회 성공", userProfileResponse));
     }
@@ -122,5 +134,20 @@ public class UserController {
             @RequestParam(defaultValue = "9") int pageSize) {
         UserPostListResponseDTO responseDTO = userService.getSocialPostsByUser(userId, pageNum, pageSize);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
+    }
+
+    @Operation(summary = "유저가 북마크를 누른 공연 게시글 조회",
+            description = "로그인 필수 API 입니다.")
+    @GetMapping("/bookmarks/my-events")
+    public ResponseEntity<SuccessResponse<BookmarkEventListDTO>> getMyBookmarkedEvents(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int pageSize) {
+
+        Pageable pageable = PageRequest.of(page, pageSize);
+        BookmarkEventListDTO responseDTO = userService.getBookmarkedEvents(userDetails.getUserId(), pageable);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 }

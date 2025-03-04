@@ -37,6 +37,7 @@ public class SocialPostControllerTest {
 
     private PostListResponseDTO mockPostListResponseDTO;
     private PostResponseDTO mockPostResponseDTO;
+    private PostWithLikeResponseDTO mockPostWithLikeResponseDTO;
     private UserPostListResponseDTO mockUserPostListResponseDTO;
 
     private CustomUserDetails customUserDetails;
@@ -102,17 +103,18 @@ public class SocialPostControllerTest {
     void testGetSocialPost() {
         // given
         Long socialPostId = 1L;
-        when(socialPostService.getSocialPost(socialPostId))
-                .thenReturn(mockPostResponseDTO);
+        Long userId = customUserDetails.getUserId();
+        when(socialPostService.getSocialPostWithLikeStatus(socialPostId, userId))
+                .thenReturn(mockPostWithLikeResponseDTO);
 
         // when
-        ResponseEntity<SuccessResponse<PostResponseDTO>> response =
-                socialPostController.getSocialPost(socialPostId);
+        ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> response =
+                socialPostController.getSocialPost(socialPostId, customUserDetails);
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockPostResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).getSocialPost(socialPostId);
+        assertEquals(mockPostWithLikeResponseDTO, response.getBody().getData());
+        verify(socialPostService, times(1)).getSocialPostWithLikeStatus(socialPostId, userId);
     }
 
 //    @Test

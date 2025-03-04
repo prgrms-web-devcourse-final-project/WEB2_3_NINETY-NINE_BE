@@ -34,10 +34,14 @@ public class SocialPostController {
 
     @Operation(summary = "소셜 게시판 상세 조회", description = "socialPostId에 해당하는 게시글의 상세 조회 API 입니다")
     @GetMapping("/{socialPostId}")
-    public ResponseEntity<SuccessResponse<PostResponseDTO>> getSocialPost(@PathVariable Long socialPostId) {
-        PostResponseDTO responseDTO = socialPostService.getSocialPost(socialPostId);
+    public ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> getSocialPost(
+            @PathVariable Long socialPostId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        PostWithLikeResponseDTO responseDTO = socialPostService.getSocialPostWithLikeStatus(socialPostId, userId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
+
 
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
     @PostMapping
@@ -86,3 +90,4 @@ public class SocialPostController {
         }
     }
 }
+

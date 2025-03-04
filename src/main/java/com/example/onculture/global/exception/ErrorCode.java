@@ -23,6 +23,7 @@ public enum ErrorCode {
 	 */
 	BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
 	INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호는 1 이상, 페이지 크기는 1 이상이어야 합니다."),
+	INVALID_BOOKMARK_REQUEST(HttpStatus.BAD_REQUEST, "북마크는 오직 하나의 연관 엔티티만 참조해야 합니다."),
 	INVALID_SORT_REQUEST(HttpStatus.BAD_REQUEST, "정렬은 popular, latest, comments만 가능합니다."),
 	INVALID_PASSWORD_EXCEPTION(HttpStatus.BAD_REQUEST, "비밀번호를 다시 확인해주새요."),
 	INVALID_GENRE_REQUEST(HttpStatus.BAD_REQUEST, "장르는 theater 또는 musical이어야 합니다 ."),
