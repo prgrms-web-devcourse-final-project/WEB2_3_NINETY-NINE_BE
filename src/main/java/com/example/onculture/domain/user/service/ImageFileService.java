@@ -32,7 +32,6 @@ public class ImageFileService {
         if( !ALLOW_IMAGE_MIME_TYPES.contains(mimeType) ) throw new CustomException(ErrorCode.FILE_MIME_TYPE_NOT_ALLOWED);
 
         // 유니크 속성인 이메일을 추가
-//        String dataPath = new SimpleDateFormat("yyyyMMdd").format(new Date());
         fileName = email + "/" + UUID.randomUUID() + ext;
 
         return fileName;

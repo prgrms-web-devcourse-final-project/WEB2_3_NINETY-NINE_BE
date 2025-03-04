@@ -16,11 +16,9 @@ import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.model.Interest;
 import com.example.onculture.domain.user.model.LoginType;
 import com.example.onculture.domain.user.model.Role;
-import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
-import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
 import com.example.onculture.domain.user.repository.ProfileRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -43,7 +41,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,19 +81,6 @@ public class UserService {
         if (userRepository.existsByEmail(email)) throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
         // 중복 닉네임 검증 로직 추가
         if (userRepository.existsByNickname(nickname)) throw new CustomException.DuplicateNicknameException();      // 커스텀한 중복 닉네임 예외
-        // 동일한 이메일의 소셜 가입자가 있을 경우 고려 ( 보류 )
-            /*
-            // 이미 등록된 사용자 확인
-            Optional<User> existingUser = userRepository.findByEmail(email);
-
-            // 기존에 해당 이메일이 등록된 경우
-            if (existingUser.isPresent()) {
-                // 기존 사용자에 대해 socialUpdate 호출
-                User user = existingUser.get();
-                user.socialUpdate(Social.LOCAL, user.getSocials());  // 소셜 로그인 정보 업데이트
-                return userRepository.save(user);
-            }
-             */
 
         try {
             // DTO -> Entity 변환
@@ -129,7 +113,6 @@ public class UserService {
         String refreshToken = tokenService.createRefreshToken(userId);
         // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
         tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
-//        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
 
         // 테스트용 반환 DTO 및 응답 형식
         return new TokenResponse(accessToken, refreshToken);
@@ -221,14 +204,6 @@ public class UserService {
                             .map(Interest::getInterestByKor)
                             .collect(Collectors.toSet())
             );
-            // Set<한글>을 Set<ENUM>으로 변환 (for문 방식)
-            /*
-            Set<Interest> interests = new HashSet<>();
-            for (String interest : dto.getInterests()) {
-                interests.add(Interest.getInterestByKor(interest));
-            }
-            user.getProfile().setInterests(interests);
-             */
         }
 
         // 이미지 파일명 업데이트 (필요 시)
@@ -288,24 +263,10 @@ public class UserService {
     public Authentication authenticate(LoginRequestDTO dto) {
 
         // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
-        // authenticate 내부 구조
-        /*
-        // principal (사용자 정보) = 사용자 이메일
-        // credentials (비밀번호) = 입력한 비밀번호
-        // authorities (권한 정보) = 권한 정보
-        // authenticated (인증 여부) = false
-         */
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
 
         // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
-        // authenticate 내부 구조
-        /*
-         principal (사용자 정보) = DB에서 가져온 사용자 객체
-         credentials (비밀번호) = 보안상 제거됨 ( Null )
-         authorities (권한 정보) = [ROLE_USER] ( 사용자의 권한 목록 )
-         authenticated (인증 여부) = true
-         */
         return authenticationManager.authenticate(authenticationToken);
     }
 
