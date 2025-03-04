@@ -163,8 +163,8 @@ public class UserService {
     }
 
     // 닉네임 중복 여부 메서드
-    public Boolean checkNickname(String nickname) {
-        return userRepository.findByNickname(nickname.trim()).isPresent();
+    public boolean checkNickname(String nickname) {
+        return userRepository.existsByNickname(nickname);
     }
 
     // UserId 기반 사용자 프로필 정보 조회 메서드
