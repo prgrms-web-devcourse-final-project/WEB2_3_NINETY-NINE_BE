@@ -78,8 +78,10 @@ public enum ErrorCode {
 	POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
 	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),
 	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
-	REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."),
 	S3_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "S3에 해당 파일이 존재하지 않습니다."),
+	REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 후기를 찾을 수 없습니다."),
+	INVALID_EVENT_TYPE(HttpStatus.BAD_REQUEST, "하나의 이벤트 ID만 입력해야 합니다."),
+	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 이벤트를 찾을 수 없습니다."),
 
 	/*
 	 * 405 METHOD_NOT_ALLOWED: 허용되지 않은 Request Method 호출

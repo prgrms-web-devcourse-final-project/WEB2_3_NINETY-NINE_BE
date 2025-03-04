@@ -1,40 +1,56 @@
 package com.example.onculture.domain.event.service;
 
 import com.example.onculture.domain.event.domain.FestivalPost;
+import com.example.onculture.domain.event.dto.EventPageResponseDTO;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
+import com.example.onculture.domain.event.dto.FestivalPostDTO;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FestivalPostService {
 
-    @Value("${instagram.username}")
+    @Value("${INSTAGRAM_ID}")
     private String username;
 
-    @Value("${instagram.password}")
+    @Value("${INSTAGRAM_PASSWORD}")
     private String password;
 
     private final FestivalPostRepository festivalPostRepository;
 
-    public FestivalPostService(FestivalPostRepository festivalPostRepository) {
+    private final BookmarkRepository bookmarkRepository;
+
+    public FestivalPostService(FestivalPostRepository festivalPostRepository, BookmarkRepository bookmarkRepository) {
         this.festivalPostRepository = festivalPostRepository;
+        this.bookmarkRepository = bookmarkRepository;
     }
 
     public List<FestivalPost> listAll() {
         return festivalPostRepository.findAll();
     }
 
-    public List<FestivalPost> searchByLocation(String keyword) {
-        return festivalPostRepository.findByFestivalLocationContaining(keyword);
+    public List<FestivalPost> searchByTitle(String title) {
+        return festivalPostRepository.findByFestivalContentContaining(title);
     }
 
     // 크롬 드라이버 설정 (버전 133으로 하드코딩)
@@ -253,6 +269,22 @@ public class FestivalPostService {
         return "상태 미정";
     }
 
+    //랜덤 조회
+    public List<EventResponseDTO> getRandomFestivalPosts(int randomSize, Long userId) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return festivalPostRepository.findRandomFestivalPosts(randomSize)
+                .stream()
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndFestivalPostId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
+                .toList();
+    }
+
     // 전체 크롤링 실행 로직 (JPA 방식으로 엔티티 저장)
     public void runCrawling() {
         try {
@@ -296,5 +328,72 @@ public class FestivalPostService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // 공연/전시 상세정보 조회
+    public EventResponseDTO getFestivalPostDetail(Long id, Long userId) {
+        EventResponseDTO eventResponseDTO = festivalPostRepository.findById(id)
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
+                .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
+        return eventResponseDTO;
+    }
+
+    public EventPageResponseDTO searchFestivalPosts(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
+        Specification<FestivalPost> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 제목 키워드 검색 (대소문자 구분 없이)
+            if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
+                Expression<String> titleExpression = root.get("festivalContent").as(String.class);
+                Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
+
+                predicates.add(
+                        criteriaBuilder.like(
+                                lowerTitle,
+                                "%" + titleKeyword.toLowerCase() + "%"
+                        )
+                );
+            }
+
+            // 지역 필터
+            if (region != null && !region.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("festivalArea"), region));
+            }
+
+            // 공연 상태(공연중, 공연예정) 필터
+            if (status != null && !status.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("festivalStatus"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<FestivalPost> performancePage = festivalPostRepository.findAll(spec, pageable);
+
+        List<EventResponseDTO> posts = performancePage.getContent()
+                .stream()
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
+                .toList();
+
+        EventPageResponseDTO response = new EventPageResponseDTO();
+        response.setPosts(posts);
+        response.setTotalPages(performancePage.getTotalPages());
+        response.setTotalElements(performancePage.getTotalElements());
+        response.setPageNum(performancePage.getNumber());
+        response.setPageSize(performancePage.getSize());
+        response.setNumberOfElements(performancePage.getNumberOfElements());
+
+        return response;
     }
 }

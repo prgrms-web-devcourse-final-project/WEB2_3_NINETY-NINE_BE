@@ -48,68 +48,64 @@ public class EventResponseDTO {
         this.isBookmarked = isBookmarked;
     }
 
-    public EventResponseDTO(ExhibitEntity exhibit, boolean isBookmarked) {
-        this.id = exhibit.getSeq();
-        this.genre = exhibit.getRealmName();
-        this.postUrl = exhibit.getThumbnail();
+    public boolean getBookmarked() {
+        return this.isBookmarked;
+    }
+    public EventResponseDTO(ExhibitEntity exhibitEntity, boolean isBookmarked) {
+        this.id = exhibitEntity.getSeq();
+        this.genre = exhibitEntity.getArea();
+        this.postUrl = exhibitEntity.getThumbnail();
         this.ageRating = null;
-        this.title = exhibit.getTitle();
-        this.startDate = exhibit.getStartDate();
-        this.endDate = exhibit.getEndDate();
+        this.title = exhibitEntity.getTitle();
+        this.startDate = exhibitEntity.getStartDate();
+        this.endDate = exhibitEntity.getEndDate();
         this.operatingHours = null;
-        this.location = exhibit.getPlace();
-        this.venue = exhibit.getPlace();
-        this.status = null;
+        this.location = exhibitEntity.getArea();
+        this.venue = exhibitEntity.getPlace();
+        this.status = exhibitEntity.getExhibitStatus();
         this.ticketingWebSite = null;
         this.price = null;
-        this.detailImage = exhibit.getThumbnail();
+        this.detailImage = null;
         this.description = null;
         this.isBookmarked = isBookmarked;
     }
 
-    public EventResponseDTO(FestivalPost festival, boolean isBookmarked) {
-        this.id = festival.getId();
-        this.genre = "festival";
-        this.postUrl = festival.getFestivalPostUrl();
+    public EventResponseDTO(PopupStorePost popupStorePost, boolean isBookmarked) {
+        this.id = popupStorePost.getId();
+        this.genre = null;
+        this.postUrl = popupStorePost.getImageUrls().toString();
         this.ageRating = null;
-        this.title = festival.getFestivalContent();
-        this.startDate = festival.getFestivalStartDate() != null
-                ? festival.getFestivalStartDate().toString() : null;
-        this.endDate = festival.getFestivalEndDate() != null
-                ? festival.getFestivalEndDate().toString() : null;
+        this.title = popupStorePost.getContent();
+        this.startDate = String.valueOf(popupStorePost.getPopupsStartDate());
+        this.endDate = String.valueOf(popupStorePost.getPopupsEndDate());
         this.operatingHours = null;
-        this.location = festival.getFestivalLocation();
-        this.venue = null;
-        this.status = festival.getFestivalStatus();
-        this.ticketingWebSite = null;
-        this.price = festival.getFestivalTicketPrice();
-        this.detailImage = null;
-        this.description = festival.getFestivalDetails();
-        this.isBookmarked = isBookmarked;
-    }
-
-    public EventResponseDTO(PopupStorePost popup, boolean isBookmarked) {
-        this.id = popup.getId();
-        this.genre = "popupStore";
-        this.postUrl = popup.getPostUrl();
-        this.ageRating = null;
-        this.title = popup.getContent();
-        this.startDate = popup.getOperatingDate() != null
-                ? popup.getOperatingDate().toString() : null;
-        this.endDate = popup.getPopupsEndDate() != null
-                ? popup.getPopupsEndDate().toString() : null;
-        this.operatingHours = popup.getOperatingTime();
-        this.location = popup.getLocation();
-        this.venue = null;
-        this.status = popup.getStatus();
+        this.location = popupStorePost.getPopupsArea();
+        this.venue = popupStorePost.getLocation();
+        this.status = popupStorePost.getStatus();
         this.ticketingWebSite = null;
         this.price = null;
         this.detailImage = null;
-        this.description = popup.getDetails();
+        this.description = popupStorePost.getDetails();
         this.isBookmarked = isBookmarked;
     }
 
-    public boolean getBookmarked() {
-        return this.isBookmarked;
+    public EventResponseDTO(FestivalPost festivalPost, boolean isBookmarked) {
+        this.id = festivalPost.getId();
+        this.genre = null;
+        this.postUrl = festivalPost.getImageUrls().toString();
+        this.ageRating = null;
+        this.title = festivalPost.getFestivalContent();
+        this.startDate = String.valueOf(festivalPost.getFestivalStartDate());
+        this.endDate = String.valueOf(festivalPost.getFestivalEndDate());
+        this.operatingHours = null;
+        this.location = festivalPost.getFestivalArea();
+        this.venue = festivalPost.getFestivalLocation();
+        this.status = festivalPost.getFestivalStatus();
+        this.ticketingWebSite = null;
+        this.price = null;
+        this.detailImage = null;
+        this.description = festivalPost.getFestivalContent();
+        this.isBookmarked = isBookmarked;
     }
+
 }

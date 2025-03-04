@@ -12,4 +12,6 @@ public interface SocialPostLikeRepository extends JpaRepository<SocialPostLike, 
     Optional<SocialPostLike> findByUserIdAndSocialPostId(Long userId, Long socialPostId);
     List<Long> findSocialPostIdByUserId(Long userId);
     boolean existsByUserAndSocialPost(User user, SocialPost socialPost);
+    boolean existsByUserIdAndSocialPostId(Long userId, Long socialPostId);
+
 }

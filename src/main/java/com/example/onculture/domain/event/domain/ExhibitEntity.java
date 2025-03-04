@@ -30,6 +30,7 @@ public class ExhibitEntity {
     private String thumbnail;   // 썸네일 URL/ 포스터
     private Double gpsX;        // 경도
     private Double gpsY;        // 위도
+    private String exhibitStatus; //전시회 상태 추가
 
     @OneToMany(mappedBy = "exhibitEntity", cascade = CascadeType.ALL)
     private List<Bookmark> bookmark = new ArrayList<>();
