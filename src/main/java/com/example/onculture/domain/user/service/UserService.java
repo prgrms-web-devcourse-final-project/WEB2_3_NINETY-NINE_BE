@@ -221,7 +221,6 @@ public class UserService {
                             .map(Interest::getInterestByKor)
                             .collect(Collectors.toSet())
             );
-
             // Set<한글>을 Set<ENUM>으로 변환 (for문 방식)
             /*
             Set<Interest> interests = new HashSet<>();
@@ -231,25 +230,36 @@ public class UserService {
             user.getProfile().setInterests(interests);
              */
         }
-        // 이미지 파일명 업데이트 (필요 시)
-        if (imageData != null && !imageData.isEmpty()) {
-            // 이미지 파일 유효성 검사 및 파일명 변경
-            String newImageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
-            // DB에 이미지 파일명 저장
-            user.getProfile().setProfileImage(newImageFileName);
-            awsS3Util.uploadFile(imageData, newImageFileName);
 
-        } else {
-            if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()) {
-                // 기존 이미지 유지 시, 기존 이미지 파일명 저장
-                user.getProfile().setProfileImage(dto.getProfileImage());
-            } else {
-                // 프로필 이미지 삭제 시, DB에 빈값 처리
-                user.getProfile().setProfileImage("");
-            }
-        }
+        // 이미지 파일명 업데이트 (필요 시)
+        user.getProfile().setProfileImage(profileImageSave(dto, imageData, user));
+
         // 변경사항 저장
         userRepository.save(user);
+    }
+
+    // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드
+    public String profileImageSave(ModifyRequestDTO dto, MultipartFile imageData, User user) {
+
+        String imageFileName = "";
+
+        if (imageData != null && !imageData.isEmpty()) {
+
+            if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
+                // S3에 있는 기존 이미지 파일 삭제
+                awsS3Util.deleteFile(user.getProfile().getProfileImage());
+            }
+            // 이미지 파일 유효성 검사 및 파일명 변경
+            imageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
+            // S3에 이미지 파일명 저장
+            awsS3Util.uploadFile(imageData, imageFileName);
+
+        } else if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()){
+            // 기존 이미지 유지 시, 기존 이미지 파일명 저장
+            imageFileName = dto.getProfileImage();
+        }
+        // 프로필 이미지 삭제 시, DB에 빈값 처리
+        return imageFileName;
     }
 
     // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
