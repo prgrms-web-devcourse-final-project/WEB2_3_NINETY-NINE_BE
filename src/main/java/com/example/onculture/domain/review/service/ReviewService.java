@@ -1,15 +1,12 @@
 package com.example.onculture.domain.review.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import com.example.onculture.domain.event.domain.ExhibitEntity;
-import com.example.onculture.domain.event.domain.FestivalPost;
-import com.example.onculture.domain.event.domain.Performance;
-import com.example.onculture.domain.event.domain.PopupStorePost;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
 import com.example.onculture.domain.event.repository.PerformanceRepository;
@@ -21,6 +18,8 @@ import com.example.onculture.domain.review.dto.ReviewResponseDTO;
 import com.example.onculture.domain.review.repository.ReviewRepository;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,15 +35,16 @@ public class ReviewService {
 	private final PerformanceRepository performanceRepository;
 	private final PopupStorePostRepository popupStorePostRepository;
 	private final UserRepository userRepository;
+	private final ModelMapper modelMapper;
 
 	// 후기 작성
 	public ReviewResponseDTO createReview(Long userId, ReviewRequestDTO requestDTO) {
 		if (!requestDTO.isValidEventType()) {
-			throw new RuntimeException("하나의 이벤트 ID만 입력해야 합니다.");
+			throw new CustomException(ErrorCode.INVALID_EVENT_TYPE);
 		}
 
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new RuntimeException("해당 사용자를 찾을 수 없습니다."));
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
 		Review review = new Review();
 		review.setUser(user);
@@ -53,43 +53,38 @@ public class ReviewService {
 		review.setCreatedAt(LocalDateTime.now());
 		review.setUpdatedAt(LocalDateTime.now());
 
-		String eventTitle = "알 수 없음";
-
 		if (requestDTO.getExhibitId() != null) {
-			ExhibitEntity exhibit = exhibitRepository.findById(requestDTO.getExhibitId())
-				.orElseThrow(() -> new RuntimeException("해당 전시를 찾을 수 없습니다."));
-			review.setExhibit(exhibit);
-			eventTitle = exhibit.getTitle();
+			review.setExhibit(exhibitRepository.findById(requestDTO.getExhibitId())
+				.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND)));
 		} else if (requestDTO.getFestivalId() != null) {
-			FestivalPost festival = festivalPostRepository.findById(requestDTO.getFestivalId())
-				.orElseThrow(() -> new RuntimeException("해당 축제를 찾을 수 없습니다."));
-			review.setFestival(festival);
-			eventTitle = festival.getFestivalContent();
+			review.setFestival(festivalPostRepository.findById(requestDTO.getFestivalId())
+				.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND)));
 		} else if (requestDTO.getPerformanceId() != null) {
-			Performance performance = performanceRepository.findById(requestDTO.getPerformanceId())
-				.orElseThrow(() -> new RuntimeException("해당 공연을 찾을 수 없습니다."));
-			review.setPerformance(performance);
-			eventTitle = performance.getPerformanceTitle();
+			review.setPerformance(performanceRepository.findById(requestDTO.getPerformanceId())
+				.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND)));
 		} else if (requestDTO.getPopupStoreId() != null) {
-			PopupStorePost popupStore = popupStorePostRepository.findById(requestDTO.getPopupStoreId())
-				.orElseThrow(() -> new RuntimeException("해당 팝업스토어를 찾을 수 없습니다."));
-			review.setPopupStore(popupStore);
-			eventTitle = popupStore.getContent();
+			review.setPopupStore(popupStorePostRepository.findById(requestDTO.getPopupStoreId())
+				.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND)));
 		}
 
-		List<ReviewImage> images = requestDTO.getImageUrls().stream()
-			.map(url -> ReviewImage.builder().review(review).imageUrl(url).build())
-			.collect(Collectors.toList());
-
+		List<ReviewImage> images = new ArrayList<>();
+		for (String url : requestDTO.getImageUrls()) {
+			ReviewImage reviewImage = new ReviewImage();
+			reviewImage.setReview(review);
+			reviewImage.setImageUrl(url);
+			images.add(reviewImage);
+		}
 		review.setImages(images);
 		reviewRepository.save(review);
 
-		return ReviewResponseDTO.fromEntity(review, eventTitle);
+		ReviewResponseDTO responseDTO = modelMapper.map(review, ReviewResponseDTO.class);
+		responseDTO.setImageUrls(getImageUrls(review));
+		return responseDTO;
 	}
 
 	// 특정 이벤트의 후기 목록 조회
 	public List<ReviewResponseDTO> getReviewsByEvent(Long exhibitId, Long festivalId, Long performanceId, Long popupStoreId) {
-		List<Review> reviews;
+		List<Review> reviews = new ArrayList<>();
 
 		if (exhibitId != null) {
 			reviews = reviewRepository.findByExhibitSeq(exhibitId);
@@ -100,21 +95,26 @@ public class ReviewService {
 		} else if (popupStoreId != null) {
 			reviews = reviewRepository.findByPopupStoreId(popupStoreId);
 		} else {
-			throw new RuntimeException("이벤트 ID가 필요합니다.");
+			throw new CustomException(ErrorCode.INVALID_EVENT_TYPE);
 		}
 
-		return reviews.stream()
-			.map(review -> ReviewResponseDTO.fromEntity(review, getEventTitle(review)))
-			.collect(Collectors.toList());
+		List<ReviewResponseDTO> responseList = new ArrayList<>();
+		for (Review review : reviews) {
+			ReviewResponseDTO responseDTO = modelMapper.map(review, ReviewResponseDTO.class);
+			responseDTO.setImageUrls(getImageUrls(review));
+			responseList.add(responseDTO);
+		}
+
+		return responseList;
 	}
 
 	// 후기 수정
 	public ReviewResponseDTO updateReview(Long reviewId, Long userId, ReviewRequestDTO requestDTO) {
 		Review review = reviewRepository.findById(reviewId)
-			.orElseThrow(() -> new RuntimeException("해당 후기를 찾을 수 없습니다."));
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
 		if (!review.getUser().getId().equals(userId)) {
-			throw new RuntimeException("자신의 후기만 수정할 수 있습니다.");
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 		}
 
 		review.setContent(requestDTO.getContent());
@@ -122,38 +122,42 @@ public class ReviewService {
 		review.setUpdatedAt(LocalDateTime.now());
 
 		review.getImages().clear();
-		List<ReviewImage> images = requestDTO.getImageUrls().stream()
-			.map(url -> ReviewImage.builder().review(review).imageUrl(url).build())
-			.collect(Collectors.toList());
+		List<ReviewImage> images = new ArrayList<>();
+		for (String url : requestDTO.getImageUrls()) {
+			ReviewImage reviewImage = new ReviewImage();
+			reviewImage.setReview(review);
+			reviewImage.setImageUrl(url);
+			images.add(reviewImage);
+		}
 		review.setImages(images);
+		reviewRepository.save(review);
 
-		return ReviewResponseDTO.fromEntity(reviewRepository.save(review), getEventTitle(review));
+		ReviewResponseDTO responseDTO = modelMapper.map(review, ReviewResponseDTO.class);
+		responseDTO.setImageUrls(getImageUrls(review));
+		return responseDTO;
 	}
 
 	// 후기 삭제
 	public void deleteReview(Long reviewId, Long userId) {
 		Review review = reviewRepository.findById(reviewId)
-			.orElseThrow(() -> new RuntimeException("해당 후기를 찾을 수 없습니다."));
+			.orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
 		if (!review.getUser().getId().equals(userId)) {
-			throw new RuntimeException("자신의 후기만 삭제할 수 있습니다.");
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 		}
 
 		reviewRepository.delete(review);
 	}
 
-	// 이벤트 제목 조회 (후기 응답을 위한 메서드)
-	private String getEventTitle(Review review) {
-		if (review.getExhibit() != null) {
-			return review.getExhibit().getTitle();
-		} else if (review.getFestival() != null) {
-			return review.getFestival().getFestivalContent();
-		} else if (review.getPerformance() != null) {
-			return review.getPerformance().getPerformanceTitle();
-		} else if (review.getPopupStore() != null) {
-			return review.getPopupStore().getContent();
+	// 이미지 URL 리스트 변환 (ModelMapper가 자동 매핑하지 못하는 부분)
+	private List<String> getImageUrls(Review review) {
+		List<String> imageUrls = new ArrayList<>();
+		for (ReviewImage image : review.getImages()) {
+			imageUrls.add(image.getImageUrl());
 		}
-		return "알 수 없음";
+		return imageUrls;
 	}
 }
+
+
 

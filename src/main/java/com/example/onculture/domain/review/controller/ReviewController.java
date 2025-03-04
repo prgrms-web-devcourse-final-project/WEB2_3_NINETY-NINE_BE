@@ -1,7 +1,5 @@
 package com.example.onculture.domain.review.controller;
 
-
-
 import com.example.onculture.domain.review.dto.ReviewRequestDTO;
 import com.example.onculture.domain.review.dto.ReviewResponseDTO;
 import com.example.onculture.domain.review.service.ReviewService;
@@ -18,8 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
