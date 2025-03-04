@@ -31,17 +31,4 @@ public class SuccessResponse<T> {
     public static <T> SuccessResponse<T> success(HttpStatus httpStatus, T data) {
         return new SuccessResponse<>(true, httpStatus.value(), "성공", data);
     }
-
-    // 에러 응답
-//    public static ApiResponse<Void> error(HttpStatus httpStatus) {
-//        return new ApiResponse<>(false, httpStatus.value(), "실패", null);
-//    }
-//
-//    public static ApiResponse<Void> error(HttpStatus httpStatus, String message) {
-//        return new ApiResponse<>(false, httpStatus.value(), message, null);
-//    }
-//
-//    public static <T> ApiResponse<T> error(HttpStatus httpStatus, String message, T data) {
-//        return new ApiResponse<>(false, httpStatus.value(), message, null);
-//    }
 }

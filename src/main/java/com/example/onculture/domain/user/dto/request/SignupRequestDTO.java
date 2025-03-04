@@ -4,9 +4,11 @@ import com.example.onculture.domain.user.model.LoginType;
 import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.model.Social;
 import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
 import java.util.Set;
+
 
 @RequiredArgsConstructor
 @AllArgsConstructor

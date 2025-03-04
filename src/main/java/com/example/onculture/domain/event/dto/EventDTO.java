@@ -1,4 +1,4 @@
-package com.example.onculture.domain.event;
+package com.example.onculture.domain.event.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,9 +1,12 @@
 package com.example.onculture.domain.user.dto.response;
 
+import com.example.onculture.domain.user.model.Interest;
 import com.example.onculture.domain.user.model.LoginType;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
