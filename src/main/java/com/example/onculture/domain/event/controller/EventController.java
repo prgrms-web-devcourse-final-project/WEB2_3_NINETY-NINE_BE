@@ -2,6 +2,7 @@ package com.example.onculture.domain.event.controller;
 
 import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.FestivalPostDTO;
 import com.example.onculture.domain.event.dto.PopupStorePostDTO;
@@ -68,6 +69,18 @@ public class EventController {
         EventResponseDTO detail = popupStorePostService.getPopupStorePostDetail(id);
         return ResponseEntity.ok(detail);
     }
+    //  팝업 스토어 지역+상태 검색
+    @GetMapping("/search_popup_store")
+    public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchPopupStorePosts(
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String titleKeyword,
+            @RequestParam(required = false, defaultValue = "0") int pageNum,
+            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+        EventPageResponseDTO responseDTOS = popupStorePostService
+                .searchPopupStorePosts(region, status, titleKeyword, pageNum, pageSize);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
+    }
 
 
     // 전체 Festival 목록 조회
@@ -104,11 +117,22 @@ public class EventController {
         return ResponseEntity.ok(detail);
     }
 
-    //DB에 저장된 FestivalPost의 festivalLocation 필드를 업데이트한 후 전체 목록을 반환합니다.
+    //DB에 저장된 FestivalPost의 festivalLocation 필드를 업데이트 후 전체 목록을 반환
     @GetMapping("/update-addresses")
     public ResponseEntity<List<FestivalPost>> updateAddresses() {
         List<FestivalPost> updatedPosts = festivalPostAddressUpdateService.updateFestivalPostAddressesAndAreas();
         return ResponseEntity.ok(updatedPosts);
     }
-
+    // 페스티벌 지역+상태 검색
+    @GetMapping("/search_festival")
+    public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchFestivalPosts(
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String titleKeyword,
+            @RequestParam(required = false, defaultValue = "0") int pageNum,
+            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+        EventPageResponseDTO responseDTOS = festivalPostService
+                .searchFestivalPosts(region, status, titleKeyword, pageNum, pageSize);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
+    }
 }

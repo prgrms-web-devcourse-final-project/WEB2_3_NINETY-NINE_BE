@@ -1,11 +1,14 @@
 package com.example.onculture.domain.event.controller;
 
+import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.ExhibitDTO;
 import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.service.ExhibitService;
+import com.example.onculture.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -96,6 +99,18 @@ public class ExhibitController {
             @RequestParam(defaultValue = "9") int randomSize) {
         List<ExhibitDTO> list = exhibitService.getRandomExhibitions(randomSize);
         return ResponseEntity.ok(list);
+    }
+    //  전시회 지역+상태 검색
+    @GetMapping("/search_exhibits")
+    public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchExhibits(
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String titleKeyword,
+            @RequestParam(required = false, defaultValue = "0") int pageNum,
+            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+        EventPageResponseDTO responseDTOS = exhibitService
+                .searchExhibits(region, status, titleKeyword, pageNum, pageSize);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
 }

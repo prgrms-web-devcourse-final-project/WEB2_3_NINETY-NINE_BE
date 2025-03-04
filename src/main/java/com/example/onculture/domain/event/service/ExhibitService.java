@@ -1,17 +1,20 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.dto.EventResponseDTO;
-import com.example.onculture.domain.event.dto.ExhibitDTO;
-import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
-import com.example.onculture.domain.event.dto.PublicDataRequestDTO;
+import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -21,6 +24,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -111,8 +115,8 @@ public class ExhibitService {
             // API 호출 URL 생성 (PageNo 파라미터 포함)
             String apiUrl = UriComponentsBuilder.fromHttpUrl("http://apis.data.go.kr/B553457/nopenapi/rest/publicperformancedisplays/period")
                     .queryParam("serviceKey", serviceKey)  // 인코딩된 서비스키 그대로 사용
-                    .queryParam("from", "20250101")
-                    .queryParam("to", "20250225")
+                    .queryParam("from", "20250301")
+                    .queryParam("to", "20250401")
                     .queryParam("rows", rows)
                     .queryParam("PageNo", pageNo)
                     .build()//추가 인코딩 방지
@@ -257,6 +261,58 @@ public class ExhibitService {
                 .map(ExhibitDTO::new)
                 .collect(Collectors.toList());
     }
+
+    public EventPageResponseDTO searchExhibits(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+        Specification<ExhibitEntity> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 제목 키워드 검색 (대소문자 구분 없이)
+            if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
+                Expression<String> titleExpression = root.get("title").as(String.class);
+                Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
+
+                predicates.add(
+                        criteriaBuilder.like(
+                                lowerTitle,
+                                "%" + titleKeyword.toLowerCase() + "%"
+                        )
+                );
+            }
+
+            // 지역 필터
+            if (region != null && !region.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("area"), region));
+            }
+
+            // 공연 상태(공연중, 공연예정) 필터
+            if (status != null && !status.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("exhibitStatus"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<ExhibitEntity> exhibitPage = exhibitRepository.findAll(spec, pageable);
+
+        List<EventResponseDTO> posts = exhibitPage.getContent()
+                .stream()
+                .map(EventResponseDTO::new)
+                .toList();
+
+        EventPageResponseDTO response = new EventPageResponseDTO();
+        response.setPosts(posts);
+        response.setTotalPages(exhibitPage.getTotalPages());
+        response.setTotalElements(exhibitPage.getTotalElements());
+        response.setPageNum(exhibitPage.getNumber());
+        response.setPageSize(exhibitPage.getSize());
+        response.setNumberOfElements(exhibitPage.getNumberOfElements());
+
+        return response;
+    }
+
+
+
 
 
 }

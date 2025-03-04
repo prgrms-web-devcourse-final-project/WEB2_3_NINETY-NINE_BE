@@ -1,12 +1,16 @@
 package com.example.onculture.domain.event.service;
 
+import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.PopupStorePostDTO;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -15,6 +19,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -315,5 +323,54 @@ public class PopupStorePostService {
                 .map(EventResponseDTO::new)
                 .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
         return eventResponseDTO;
+    }
+
+    public EventPageResponseDTO searchPopupStorePosts(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+        Specification<PopupStorePost> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 제목 키워드 검색 (대소문자 구분 없이)
+            if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
+                Expression<String> titleExpression = root.get("content").as(String.class);
+                Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
+
+                predicates.add(
+                        criteriaBuilder.like(
+                                lowerTitle,
+                                "%" + titleKeyword.toLowerCase() + "%"
+                        )
+                );
+            }
+
+            // 지역 필터
+            if (region != null && !region.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("popupsArea"), region));
+            }
+
+            // 공연 상태(공연중, 공연예정) 필터
+            if (status != null && !status.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<PopupStorePost> performancePage = popupStorePostRepository.findAll(spec, pageable);
+
+        List<EventResponseDTO> posts = performancePage.getContent()
+                .stream()
+                .map(EventResponseDTO::new)
+                .toList();
+
+        EventPageResponseDTO response = new EventPageResponseDTO();
+        response.setPosts(posts);
+        response.setTotalPages(performancePage.getTotalPages());
+        response.setTotalElements(performancePage.getTotalElements());
+        response.setPageNum(performancePage.getNumber());
+        response.setPageSize(performancePage.getSize());
+        response.setNumberOfElements(performancePage.getNumberOfElements());
+
+        return response;
     }
 }
