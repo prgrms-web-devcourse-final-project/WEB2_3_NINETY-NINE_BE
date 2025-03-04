@@ -12,6 +12,8 @@ import com.example.onculture.domain.user.dto.response.LikedSocialPostIdsResponse
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.service.UserService;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -96,6 +99,9 @@ public class UserController {
     @Operation( summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회" )
     @GetMapping("/profile")
     public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        if (customUserDetails == null) {
+            throw new CustomException.CustomAuthenticationException();
+        }
         UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getUserId());
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 조회 성공", userProfileResponse));
     }

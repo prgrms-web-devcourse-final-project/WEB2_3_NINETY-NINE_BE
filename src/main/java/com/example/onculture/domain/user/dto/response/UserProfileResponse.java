@@ -16,6 +16,7 @@ import java.util.Set;
 @AllArgsConstructor
 public class UserProfileResponse {
 
+    private Long id;
     private String nickname;
     private LoginType loginType;
     private String description;
