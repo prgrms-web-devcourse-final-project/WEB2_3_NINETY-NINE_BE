@@ -58,7 +58,7 @@ public class PopupStorePostService {
     }
 
     private WebDriver setupWebDriver() {
-        WebDriverManager.chromedriver().driverVersion("133").setup();
+        System.setProperty("chromedriver-mac-arm64", "/OnCulture/chromedriver");
         return new ChromeDriver();
     }
 
