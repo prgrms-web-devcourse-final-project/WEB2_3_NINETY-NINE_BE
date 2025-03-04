@@ -24,7 +24,7 @@ public class CustomUserDetails implements UserDetails {     // 인증 객체 ( U
 
     // 상속 받은 UserDetails 클래스를 사용하기 위한 필수 @Override 메서드
     // getAuthorities() : 사용자 권한을 반환하는 역할
-    // 단일 권한 부여 메서드
+    // 단일 권한 부여 메서드 ( 한 사용자가 하나의 권한만 가짐 )
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Spring Security에서 권한 인식을 위해 "ROLE_" 접두사 추가

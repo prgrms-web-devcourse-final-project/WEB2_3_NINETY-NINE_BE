@@ -36,13 +36,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         CustomOAuth2User oauth2User = (CustomOAuth2User) authentication.getPrincipal();
 
-        // Authentication 내 사용자 정보를 JSON 형식으로 출력 (Jackson ObjectMapper 사용 / 데이터 확인용)
-        /*
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(oauth2User);
-        System.out.println("CustomOAuth2User JSON: " + json);
-         */
-
         String email = oauth2User.getEmail();
         System.out.println("email: " + email);
 
@@ -59,7 +52,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
         tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
-//        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
         // 인증 관련 설정값, 쿠키 제거
         clearAuthenticationAttributes(request, response);
         // application.properties 에서 리다이렉트 uri 변경 가능 ( 기본값 : 백엔드 테스트용 리다이렉트 uri
@@ -71,13 +63,4 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         super.clearAuthenticationAttributes(request);
         authorizationRequestBasedOnCookieRepository.removeAuthorizationRequestCookies(request, response);
     }
-
-    // 액세스 토큰을 패스에 추가(미사용)
-    /*
-    private String getTargetUrl(String token) {
-        return UriComponentsBuilder.fromUriString(REDIRECT_PATH)
-                .queryParam("token", token)
-                .build().toUriString();
-    }
-     */
 }

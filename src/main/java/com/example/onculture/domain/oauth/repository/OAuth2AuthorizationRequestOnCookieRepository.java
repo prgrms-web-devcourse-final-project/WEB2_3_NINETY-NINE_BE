@@ -13,16 +13,6 @@ import org.springframework.web.util.WebUtils;
 import static com.example.onculture.global.utils.CookieUtil.COOKIE_EXPIRE_SECONDS;
 import static com.example.onculture.global.utils.CookieUtil.OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME;
 
-// 인가 요청을 쿠키에 저장하고 관리하는 이유
-/*
-1. 무상태(Stateless) 인증 지원 ( 클라이언트가 상태 유지, 서버는 안 함 )
-2. OAuth2 로그인 과정에서 요청 정보를 유지 ( 리디렉션 과정에서 인가 요청 정보가 삭제되는 것을 방지 )
-3. 다중 서버 환경(로드 밸런싱)에서 세션 동기화 문제 방지
-( 여러 서버에서 동일한 OAuth2 로그인 요청을 처리 / 세션은 서버마다 개별로 존재하기에 동일한 인가 정보가 없을 수 있음 )
-4. 브라우저 기반 OAuth2 로그인에서 세션 유지가 어려울 때
-5. 서버 리소스를 절약하기 위해
- */
-
 // OAuth2 로그인 과정에서 인가 요청(Authorization Request)을 쿠키에 저장하고 관리하는 저장소
 // AuthorizationRequestRepository<OAuth2AuthorizationRequest> : // OAuth2 인증 요청을 저장/조회/삭제하는 기능 제공
 @RequiredArgsConstructor

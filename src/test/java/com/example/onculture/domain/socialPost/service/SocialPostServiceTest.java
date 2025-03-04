@@ -5,9 +5,8 @@ import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.Profile;
-import com.example.onculture.domain.user.model.Role;
-import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
+import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -93,17 +92,21 @@ public class SocialPostServiceTest {
         String sort = "latest";
         int pageNum = 0;
         int pageSize = 9;
+        Long userId = 1L;
         Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
-        Page<SocialPost> page = new PageImpl<>(List.of(testSocialPost), pageable, 1);
-        when(socialPostRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        PostWithLikeResponseDTO dto = new PostWithLikeResponseDTO(testSocialPost, false);
+        Page<PostWithLikeResponseDTO> page = new PageImpl<>(List.of(dto), pageable, 1);
+        when(socialPostRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(testSocialPost), pageable, 1));
+        when(socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, testSocialPost.getId())).thenReturn(false);
 
         // when
-        PostListResponseDTO dto = socialPostService.getSocialPosts(sort, pageNum, pageSize);
+        PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize, userId);
 
         // then
-        assertNotNull(dto);
-        assertEquals(1, dto.getPosts().size());
-        assertEquals(1, dto.getTotalElements());
+        assertNotNull(responseDTO);
+        assertEquals(1, responseDTO.getPosts().size());
+        assertEquals(1, responseDTO.getTotalElements());
         verify(socialPostRepository, times(1)).findAll(any(Pageable.class));
     }
 
@@ -114,10 +117,11 @@ public class SocialPostServiceTest {
         String sort = "invalid";
         int pageNum = 0;
         int pageSize = 9;
+        Long userId = 1L;
 
         // when & then
         CustomException ex = assertThrows(CustomException.class, () ->
-                socialPostService.getSocialPosts(sort, pageNum, pageSize)
+                socialPostService.getSocialPosts(sort, pageNum, pageSize, userId)
         );
         assertEquals(ErrorCode.INVALID_SORT_REQUEST, ex.getErrorCode());
     }
@@ -129,10 +133,11 @@ public class SocialPostServiceTest {
         String sort = "latest";
         int pageNum = -1;
         int pageSize = 9;
+        Long userId = 1L;
 
         // when & then
         CustomException ex = assertThrows(CustomException.class, () ->
-                socialPostService.getSocialPosts(sort, pageNum, pageSize)
+                socialPostService.getSocialPosts(sort, pageNum, pageSize, userId)
         );
         assertEquals(ErrorCode.INVALID_PAGE_REQUEST, ex.getErrorCode());
     }
@@ -145,13 +150,13 @@ public class SocialPostServiceTest {
         Long userId = 1L;
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(testSocialPost));
-        when(socialPostLikeRepository.existsByUserAndSocialPost(testUser,testSocialPost)).thenReturn(true);
+        when(socialPostLikeRepository.existsByUserAndSocialPost(testUser, testSocialPost)).thenReturn(true);
 
         // when
-        PostWithLikeResponseDTO dto = socialPostService.getSocialPostWithLikeStatus(socialPostId, userId);
+        PostWithLikeResponseDTO responseDTO = socialPostService.getSocialPostWithLikeStatus(socialPostId, userId);
 
         // then
-        assertNotNull(dto);
+        assertNotNull(responseDTO);
         verify(socialPostRepository, times(1)).findById(socialPostId);
         verify(socialPostRepository, times(1)).save(testSocialPost);
     }
@@ -171,42 +176,6 @@ public class SocialPostServiceTest {
         assertEquals(ErrorCode.POST_NOT_FOUND, ex.getErrorCode());
     }
 
-//    @Test
-//    @DisplayName("getSocialPostsByUser - 정상 조회")
-//    void testGetSocialPostsByUser_valid() {
-//        // given
-//        Long userId = 1L;
-//        int pageNum = 0;
-//        int pageSize = 9;
-//        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-//        Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
-//        Page<SocialPost> page = new PageImpl<>(List.of(testSocialPost), pageable, 1);
-//        when(socialPostRepository.findByUserId(eq(userId), any(Pageable.class))).thenReturn(page);
-//
-//        // when
-//        UserPostListResponseDTO dto = socialPostService.getSocialPostsByUser(userId, pageNum, pageSize);
-//
-//        // then
-//        assertNotNull(dto);
-//        assertEquals(1, dto.getPosts().size());
-//        verify(userRepository, times(1)).findById(userId);
-//        verify(socialPostRepository, times(1)).findByUserId(eq(userId), any(Pageable.class));
-//    }
-
-//    @Test
-//    @DisplayName("getSocialPostsByUser - 사용자 미존재 시 예외 발생")
-//    void testGetSocialPostsByUser_userNotFound() {
-//        // given
-//        Long userId = 999L;
-//        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-//
-//        // when & then
-//        CustomException ex = assertThrows(CustomException.class, () ->
-//                socialPostService.getSocialPostsByUser(userId, 0, 10)
-//        );
-//        assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
-//    }
-
     @Test
     @DisplayName("createSocialPost - 정상 생성")
     void testCreateSocialPost_valid() {
@@ -225,10 +194,11 @@ public class SocialPostServiceTest {
         });
 
         // when
-        PostResponseDTO dto = socialPostService.createSocialPost(userId, createPostRequestDTO);
+        // 반환 타입을 PostWithLikeResponseDTO로 변경
+        PostWithLikeResponseDTO responseDTO = socialPostService.createSocialPost(userId, createPostRequestDTO);
 
         // then
-        assertNotNull(dto);
+        assertNotNull(responseDTO);
         verify(userRepository, times(1)).findById(userId);
         verify(socialPostRepository, times(1)).save(any(SocialPost.class));
     }
@@ -256,12 +226,14 @@ public class SocialPostServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(testSocialPost));
         when(socialPostRepository.save(any(SocialPost.class))).thenReturn(testSocialPost);
+        when(socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, testSocialPost.getId())).thenReturn(false);
 
         // when
-        PostResponseDTO dto = socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId);
+        // 반환 타입을 PostWithLikeResponseDTO로 변경
+        PostWithLikeResponseDTO responseDTO = socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId);
 
         // then
-        assertNotNull(dto);
+        assertNotNull(responseDTO);
         verify(userRepository, times(1)).findById(userId);
         verify(socialPostRepository, times(2)).findById(socialPostId);
         verify(socialPostRepository, times(1)).save(testSocialPost);
@@ -289,7 +261,7 @@ public class SocialPostServiceTest {
         // given
         Long userId = 1L;
         Long socialPostId = 1L;
-        // given: 다른 사용자가 소유한 게시글 생성
+
         User otherUser = User.builder()
                 .id(2L)
                 .email("other@example.com")
@@ -337,7 +309,7 @@ public class SocialPostServiceTest {
         // given
         Long userId = 1L;
         Long socialPostId = 1L;
-        // given: 다른 사용자가 소유한 게시글 생성
+
         User otherUser = User.builder()
                 .id(2L)
                 .email("other@example.com")

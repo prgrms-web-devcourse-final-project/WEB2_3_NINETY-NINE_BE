@@ -135,8 +135,8 @@ public class UserServiceTest {
         String nickname = signupRequestDTO.getNickname();
 
         // Mocking
-        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());   // 이메일이 빈값이라고 가정
-        when(userRepository.findByNickname(nickname)).thenReturn(Optional.empty());     // 닉네임이 빈값이라고 가정
+        when(userRepository.existsByEmail(email)).thenReturn(false);   // 이메일이 빈값이라고 가정
+        when(userRepository.existsByNickname(nickname)).thenReturn(false);     // 닉네임이 빈값이라고 가정
         when(modelMapper.map(signupRequestDTO, User.class)).thenReturn(signupUser);     // DTO를 User로 반환
         when(passwordEncoder.encode(signupRequestDTO.getPassword())).thenReturn("encodedPassword");     // 패스워드 인코딩
 
@@ -229,15 +229,15 @@ public class UserServiceTest {
     void checkNickname() {
         // Given
         String nickname = "tester";
-        when(userRepository.findByNickname(nickname)).thenReturn(Optional.empty());     // 빈값 반환
+        when(userRepository.existsByNickname(nickname)).thenReturn(false); // existsByNickname()을 Mock으로 설정
 
         // When
-        Boolean result = userService.checkNickname(nickname);
+        boolean result = userService.checkNickname(nickname);
 
         // Then
         assertNotNull(result);
         assertEquals(false, result);
-        verify(userRepository, times(1)).findByNickname(nickname);
+        verify(userRepository, times(1)).existsByNickname(nickname);  // existsByNickname() 호출 검증
     }
 
     @Test

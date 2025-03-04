@@ -1,83 +1,77 @@
 package com.example.onculture.domain.review.controller;
 
-
-
-import com.example.onculture.domain.review.dto.CreateReviewRequestDTO;
+import com.example.onculture.domain.review.dto.ReviewRequestDTO;
 import com.example.onculture.domain.review.dto.ReviewResponseDTO;
+import com.example.onculture.domain.review.service.ReviewService;
+import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/reviews")
+@RequiredArgsConstructor
+@Tag(name = "Review API", description = "공연 후기 관련 API")
 public class ReviewController {
-    @Operation(summary = "이벤트 후기 전체 조회", description = "eventId에 해당하는 포스트의 후기 전체 조회 API 입니다")
-    @GetMapping("/events/{eventId}/reviews")
-    public ResponseEntity<List<ReviewResponseDTO>> getReviewsByEvent(@PathVariable Long eventId) {
-        ReviewResponseDTO review1 = new ReviewResponseDTO();
-        review1.setId(1L);
-        review1.setUserId(1L);
-        review1.setContent("내용1");
-        review1.setEventId(eventId);
-        review1.setStarRating(5);
-        review1.setUserNickName("유저 닉네임1");
-        review1.setImageUrl("super long url");
-        review1.setCreatedAt(LocalDateTime.now().minusDays(1));
 
-        ReviewResponseDTO review2 = new ReviewResponseDTO();
-        review2.setId(2L);
-        review2.setUserId(2L);
-        review2.setContent("내용2");
-        review2.setEventId(eventId);
-        review2.setStarRating(5);
-        review2.setUserNickName("유저 닉네임2");
-        review2.setImageUrl("super long url");
-        review2.setCreatedAt(LocalDateTime.now().minusDays(2));
+    private final ReviewService reviewService;
 
-        ReviewResponseDTO review3 = new ReviewResponseDTO();
-        review3.setId(3L);
-        review3.setUserId(3L);
-        review3.setContent("내용3");
-        review3.setEventId(eventId);
-        review3.setStarRating(5);
-        review3.setUserNickName("유저 닉네임3");
-        review3.setImageUrl("super long url");
-        review3.setCreatedAt(LocalDateTime.now().minusDays(3));
+    @Operation(summary = "공연 후기 작성", description = "현재 로그인한 사용자가 공연 후기를 작성합니다.")
+    @PostMapping
+    public ResponseEntity<SuccessResponse<ReviewResponseDTO>> createReview(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @Valid @RequestBody ReviewRequestDTO requestDTO) {
 
-        List<ReviewResponseDTO> reviews = new ArrayList<>();
-        reviews.add(review1);
-        reviews.add(review2);
-        reviews.add(review3);
+        ReviewResponseDTO createdReview = reviewService.createReview(userDetails.getUserId(), requestDTO);
 
-        return ResponseEntity.status(HttpStatus.OK).body(reviews);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(SuccessResponse.success("후기 작성 성공", createdReview));
     }
 
-    @Operation(summary = "이벤트 후기 생성", description = "이벤트의 후기 생성 API 입니다")
-    @PostMapping("/events/{eventId}/reviews")
-    public ResponseEntity<ReviewResponseDTO> createReviewByEvent(
-            @PathVariable Long eventId,
-            @RequestBody CreateReviewRequestDTO requestDTO) {
-        ReviewResponseDTO review = new ReviewResponseDTO();
-        review.setId(1L);
-        review.setUserId(1L);
-        review.setContent(requestDTO.getContent());
-        review.setEventId(eventId);
-        review.setStarRating(5);
-        review.setUserNickName("유저 닉네임1");
-        review.setImageUrl(requestDTO.getImageUrl());
-        review.setCreatedAt(LocalDateTime.now().minusDays(1));
+    @Operation(summary = "특정 이벤트(전시/축제/공연/팝업스토어)에 대한 후기 목록 조회",
+        description = "이벤트 ID(exhibitId, festivalId, performanceId, popupStoreId) 중 하나를 제공하여 후기를 조회합니다.")
+    @GetMapping
+    public ResponseEntity<SuccessResponse<List<ReviewResponseDTO>>> getReviewsByEvent(
+        @RequestParam(required = false) Long exhibitId,
+        @RequestParam(required = false) Long festivalId,
+        @RequestParam(required = false) Long performanceId,
+        @RequestParam(required = false) Long popupStoreId) {
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(review);
+        List<ReviewResponseDTO> reviews = reviewService.getReviewsByEvent(exhibitId, festivalId, performanceId, popupStoreId);
+        return ResponseEntity.ok(SuccessResponse.success("후기 목록 조회 성공", reviews));
     }
 
-    @Operation(summary = "이벤트 후기 삭제", description = "eventId에 해당하는 포스트의 후기 삭제 API 입니다")
-    @DeleteMapping("/events/{eventId}/reviews/{reviewId}")
-    public ResponseEntity<String> deleteReviewByEvent(@PathVariable Long eventId, @PathVariable Long reviewId) {
-        return ResponseEntity.status(HttpStatus.OK).body("삭제 완료");
+    @Operation(summary = "후기 수정", description = "현재 로그인한 사용자가 자신의 후기를 수정합니다.")
+    @PutMapping("/{reviewId}")
+    public ResponseEntity<SuccessResponse<ReviewResponseDTO>> updateReview(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long reviewId,
+        @Valid @RequestBody ReviewRequestDTO requestDTO) {
+
+        ReviewResponseDTO updatedReview = reviewService.updateReview(reviewId, userDetails.getUserId(), requestDTO);
+
+        return ResponseEntity.ok(SuccessResponse.success("후기 수정 성공", updatedReview));
+    }
+
+    @Operation(summary = "후기 삭제", description = "현재 로그인한 사용자가 자신의 후기를 삭제합니다.")
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<SuccessResponse<Void>> deleteReview(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long reviewId) {
+
+        reviewService.deleteReview(reviewId, userDetails.getUserId());
+        return ResponseEntity.ok(SuccessResponse.success("후기 삭제 성공", null));
     }
 }
+
+

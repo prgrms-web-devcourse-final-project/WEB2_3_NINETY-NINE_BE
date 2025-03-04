@@ -4,13 +4,18 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.example.onculture.domain.user.domain.User;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,11 +33,15 @@ public class Notification {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long notiId;
 
-	@Column(nullable = false)
-	private Long userId; // 알림 받는 사용자
+	// 알림 받는 사용자
+	@ManyToOne(fetch = FetchType.LAZY) // 불필요한 조인 없애기
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
-	@Column(nullable = true)
-	private Long senderId; // 알림을 보낸 사용자 (댓글 작성자, 좋아요 한 사용자 등)
+	// 알림을 보낸 사용자
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "sender_id", nullable = true)
+	private User sender;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)

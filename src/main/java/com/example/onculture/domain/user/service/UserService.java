@@ -5,6 +5,7 @@ import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
+import com.example.onculture.domain.socialPost.dto.PostWithLikeResponseDTO;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
 import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
@@ -16,11 +17,9 @@ import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.model.Interest;
 import com.example.onculture.domain.user.model.LoginType;
 import com.example.onculture.domain.user.model.Role;
-import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
-import com.example.onculture.domain.user.dto.response.UserSimpleResponse;
 import com.example.onculture.domain.user.repository.ProfileRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -43,7 +42,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -76,29 +74,14 @@ public class UserService {
     public void save(SignupRequestDTO dto) {
         System.out.println("dto: " + dto);
 
-        String email = dto.getEmail();
-        String nickname = dto.getNickname();
+        String email = dto.getEmail().trim();
+        String nickname = dto.getNickname().trim();
 
         // 중복 이메일 검증 로직 추가
         // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
-        if (userRepository.findByEmail(email).isPresent())
-            throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
+        if (userRepository.existsByEmail(email)) throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
         // 중복 닉네임 검증 로직 추가
-        if (userRepository.findByNickname(nickname).isPresent())
-            throw new CustomException.DuplicateNicknameException();        // 커스텀한 중복 닉네임 예외
-        // 동일한 이메일의 소셜 가입자가 있을 경우 고려 ( 보류 )
-            /*
-            // 이미 등록된 사용자 확인
-            Optional<User> existingUser = userRepository.findByEmail(email);
-
-            // 기존에 해당 이메일이 등록된 경우
-            if (existingUser.isPresent()) {
-                // 기존 사용자에 대해 socialUpdate 호출
-                User user = existingUser.get();
-                user.socialUpdate(Social.LOCAL, user.getSocials());  // 소셜 로그인 정보 업데이트
-                return userRepository.save(user);
-            }
-             */
+        if (userRepository.existsByNickname(nickname)) throw new CustomException.DuplicateNicknameException();      // 커스텀한 중복 닉네임 예외
 
         try {
             // DTO -> Entity 변환
@@ -131,7 +114,6 @@ public class UserService {
         String refreshToken = tokenService.createRefreshToken(userId);
         // 액세스 토큰 및 리프레시 토큰을 쿠키에 저장
         tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
-//        TokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
 
         // 테스트용 반환 DTO 및 응답 형식
         return new TokenResponse(accessToken, refreshToken);
@@ -143,8 +125,9 @@ public class UserService {
         String refreshToken = extractRefreshToken(request);
         // refreshToken 쿠키가 있을 경우, DB에서 삭제
         if (refreshToken != null) tokenService.deleteRefreshToken(refreshToken);
-        // 클라이언트 쿠키에서 RefreshToken 삭제 (Set-Cookie 헤더 사용)
+        // 클라이언트 쿠키에서 모든 토큰 삭제 (Set-Cookie 헤더 사용)
         CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
+        CookieUtil.deleteCookie(request, response, ACCESS_TOKEN_COOKIE_NAME);
     }
 
     // 재발급 메서드
@@ -162,8 +145,8 @@ public class UserService {
     }
 
     // 닉네임 중복 여부 메서드
-    public Boolean checkNickname(String nickname) {
-        return userRepository.findByNickname(nickname).isPresent();
+    public boolean checkNickname(String nickname) {
+        return userRepository.existsByNickname(nickname);
     }
 
     // UserId 기반 사용자 프로필 정보 조회 메서드
@@ -187,6 +170,7 @@ public class UserService {
         }
 
         return UserProfileResponse.builder()
+                .id(userId)
                 .nickname(user.getNickname())
                 .loginType(user.getLoginType())
                 .description(profile.getDescription() != null ? profile.getDescription() : "")
@@ -206,8 +190,11 @@ public class UserService {
         // 닉네임 업데이트
         user.setNickname(dto.getNickname().trim());
 
-        // 비밀번호 업데이트 (필요 시)
-        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
+        // 비밀번호 업데이트 (로컬 회원가입 사용자이면 비밀번호 입력 필수)
+        if (!user.getLoginType().equals(LoginType.SOCIAL_ONLY) && dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
+        }
+
         // 소개글 업데이트 (필요 시)
         if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) user.getProfile().setDescription(dto.getDescription().trim());
         // 관심사 업데이트 (필요 시)
@@ -218,35 +205,37 @@ public class UserService {
                             .map(Interest::getInterestByKor)
                             .collect(Collectors.toSet())
             );
-
-            // Set<한글>을 Set<ENUM>으로 변환 (for문 방식)
-            /*
-            Set<Interest> interests = new HashSet<>();
-            for (String interest : dto.getInterests()) {
-                interests.add(Interest.getInterestByKor(interest));
-            }
-            user.getProfile().setInterests(interests);
-             */
         }
+
         // 이미지 파일명 업데이트 (필요 시)
-        if (imageData != null && !imageData.isEmpty()) {
-            // 이미지 파일 유효성 검사 및 파일명 변경
-            String newImageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
-            // DB에 이미지 파일명 저장
-            user.getProfile().setProfileImage(newImageFileName);
-            awsS3Util.uploadFile(imageData, newImageFileName);
+        user.getProfile().setProfileImage(profileImageSave(dto, imageData, user));
 
-        } else {
-            if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()) {
-                // 기존 이미지 유지 시, 기존 이미지 파일명 저장
-                user.getProfile().setProfileImage(dto.getProfileImage());
-            } else {
-                // 프로필 이미지 삭제 시, DB에 빈값 처리
-                user.getProfile().setProfileImage("");
-            }
-        }
         // 변경사항 저장
         userRepository.save(user);
+    }
+
+    // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드
+    public String profileImageSave(ModifyRequestDTO dto, MultipartFile imageData, User user) {
+
+        String imageFileName = "";
+
+        if (imageData != null && !imageData.isEmpty()) {
+
+            if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
+                // S3에 있는 기존 이미지 파일 삭제
+                awsS3Util.deleteFile(user.getProfile().getProfileImage());
+            }
+            // 이미지 파일 유효성 검사 및 파일명 변경
+            imageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
+            // S3에 이미지 파일명 저장
+            awsS3Util.uploadFile(imageData, imageFileName);
+
+        } else if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()){
+            // 기존 이미지 유지 시, 기존 이미지 파일명 저장
+            imageFileName = dto.getProfileImage();
+        }
+        // 프로필 이미지 삭제 시, DB에 빈값 처리
+        return imageFileName;
     }
 
     // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
@@ -275,24 +264,10 @@ public class UserService {
     public Authentication authenticate(LoginRequestDTO dto) {
 
         // 인증 객체 생성 ( 아직 인증된 객체는 아님 )
-        // authenticate 내부 구조
-        /*
-        // principal (사용자 정보) = 사용자 이메일
-        // credentials (비밀번호) = 입력한 비밀번호
-        // authorities (권한 정보) = 권한 정보
-        // authenticated (인증 여부) = false
-         */
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword());
 
         // 사용자를 인증 ( 비밀번호 검증 포함 / 내부적으로 UserDetailsService의 loadUserByUsername()을 호출 )
-        // authenticate 내부 구조
-        /*
-         principal (사용자 정보) = DB에서 가져온 사용자 객체
-         credentials (비밀번호) = 보안상 제거됨 ( Null )
-         authorities (권한 정보) = [ROLE_USER] ( 사용자의 권한 목록 )
-         authenticated (인증 여부) = true
-         */
         return authenticationManager.authenticate(authenticationToken);
     }
 
@@ -312,19 +287,19 @@ public class UserService {
         return null;
     }
 
-    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
-    public LikedSocialPostIdsResponseDto getLikedSocialPosts(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
-
-        List<Long> ids = socialPostLikeRepository.findSocialPostIdByUserId(userId);
-
-        return new LikedSocialPostIdsResponseDto(ids);
-    }
+//    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
+//    public LikedSocialPostIdsResponseDto getLikedSocialPosts(Long userId) {
+//        if (!userRepository.existsById(userId)) {
+//            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+//        }
+//
+//        List<Long> ids = socialPostLikeRepository.findSocialPostIdByUserId(userId);
+//
+//        return new LikedSocialPostIdsResponseDto(ids);
+//    }
 
     // 사용자가 작성한 소셜 게시판 목록 조회
-    public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize) {
+    public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize, Long loginUserId) {
         if (!userRepository.existsById(userId)) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
@@ -335,7 +310,11 @@ public class UserService {
 
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
-        Page<PostResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(PostResponseDTO::new);
+        Page<PostWithLikeResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(socialPost -> {
+            boolean likeStatus = loginUserId != null &&
+                    socialPostLikeRepository.existsByUserIdAndSocialPostId(loginUserId, socialPost.getId());
+            return new PostWithLikeResponseDTO(socialPost, likeStatus);
+        });
 
         return UserPostListResponseDTO.builder()
                 .posts(posts.getContent())

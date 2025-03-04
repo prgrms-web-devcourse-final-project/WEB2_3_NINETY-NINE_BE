@@ -12,6 +12,8 @@ import com.example.onculture.domain.user.dto.response.LikedSocialPostIdsResponse
 import com.example.onculture.domain.user.dto.response.TokenResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.service.UserService;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -96,6 +99,9 @@ public class UserController {
     @Operation( summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회" )
     @GetMapping("/profile")
     public ResponseEntity<SuccessResponse<UserProfileResponse>> user(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+        if (customUserDetails == null) {
+            throw new CustomException.CustomAuthenticationException();
+        }
         UserProfileResponse userProfileResponse = userService.getUserProfile(customUserDetails.getUserId());
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 조회 성공", userProfileResponse));
     }
@@ -111,13 +117,13 @@ public class UserController {
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 수정 성공"));
     }
 
-    @Operation(summary = "유저가 좋아요를 누른 SocialPost 목록 조회",
-            description = "")
-    @GetMapping("/users/{userId}/liked-social-posts")
-    public ResponseEntity<SuccessResponse<LikedSocialPostIdsResponseDto>> getLikedSocialPosts(@PathVariable Long userId) {
-        LikedSocialPostIdsResponseDto likedPosts = userService.getLikedSocialPosts(userId);
-        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, likedPosts));
-    }
+//    @Operation(summary = "유저가 좋아요를 누른 SocialPost 목록 조회",
+//            description = "")
+//    @GetMapping("/users/{userId}/liked-social-posts")
+//    public ResponseEntity<SuccessResponse<LikedSocialPostIdsResponseDto>> getLikedSocialPosts(@PathVariable Long userId) {
+//        LikedSocialPostIdsResponseDto likedPosts = userService.getLikedSocialPosts(userId);
+//        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, likedPosts));
+//    }
 
     @Operation(summary = "유저의 게시판 전체 조회",
             description = "userId에 해당하는 게시글을 불러옵니다. pageNum과 pageSize의 기본값은 각각 0, 9입니다.")
@@ -125,8 +131,10 @@ public class UserController {
     public ResponseEntity<SuccessResponse<UserPostListResponseDTO>> getSocialPostsByUser(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int pageNum,
-            @RequestParam(defaultValue = "9") int pageSize) {
-        UserPostListResponseDTO responseDTO = userService.getSocialPostsByUser(userId, pageNum, pageSize);
+            @RequestParam(defaultValue = "9") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long loginUserId = (userDetails != null) ? userDetails.getUserId() : null;
+        UserPostListResponseDTO responseDTO = userService.getSocialPostsByUser(userId, pageNum, pageSize, loginUserId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 

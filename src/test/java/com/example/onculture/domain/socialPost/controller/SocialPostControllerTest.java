@@ -36,7 +36,6 @@ public class SocialPostControllerTest {
     private SocialPostController socialPostController;
 
     private PostListResponseDTO mockPostListResponseDTO;
-    private PostResponseDTO mockPostResponseDTO;
     private PostWithLikeResponseDTO mockPostWithLikeResponseDTO;
     private UserPostListResponseDTO mockUserPostListResponseDTO;
 
@@ -48,15 +47,23 @@ public class SocialPostControllerTest {
         images.add("image.jpg");
         images.add("image2.jpg");
 
-        mockPostResponseDTO = new PostResponseDTO(
-                1L, 1L, "제목", "내용", images,
-                0, 0, 0,
-                "닉네임", "profile.jpg",
-                LocalDateTime.now(), LocalDateTime.now()
-        );
+        mockPostWithLikeResponseDTO = new PostWithLikeResponseDTO();
+        mockPostWithLikeResponseDTO.setId(1L);
+        mockPostWithLikeResponseDTO.setUserId(1L);
+        mockPostWithLikeResponseDTO.setTitle("제목");
+        mockPostWithLikeResponseDTO.setContent("내용");
+        mockPostWithLikeResponseDTO.setImageUrls(images);
+        mockPostWithLikeResponseDTO.setViewCount(0);
+        mockPostWithLikeResponseDTO.setCommentCount(0);
+        mockPostWithLikeResponseDTO.setLikeCount(0);
+        mockPostWithLikeResponseDTO.setUserNickname("닉네임");
+        mockPostWithLikeResponseDTO.setUserProfileImage("profile.jpg");
+        mockPostWithLikeResponseDTO.setLikeStatus(false);
+        mockPostWithLikeResponseDTO.setCreatedAt(LocalDateTime.now());
+        mockPostWithLikeResponseDTO.setUpdatedAt(LocalDateTime.now());
 
         mockPostListResponseDTO = PostListResponseDTO.builder()
-                .posts(Arrays.asList(mockPostResponseDTO))
+                .posts(Arrays.asList(mockPostWithLikeResponseDTO))
                 .totalPages(1)
                 .totalElements(1)
                 .pageNum(0)
@@ -65,7 +72,7 @@ public class SocialPostControllerTest {
                 .build();
 
         mockUserPostListResponseDTO = UserPostListResponseDTO.builder()
-                .posts(Arrays.asList(mockPostResponseDTO))
+                .posts(Arrays.asList(mockPostWithLikeResponseDTO))
                 .totalPages(1)
                 .totalElements(1)
                 .pageNum(0)
@@ -85,17 +92,18 @@ public class SocialPostControllerTest {
         String sort = "latest";
         int pageNum = 0;
         int pageSize = 9;
-        when(socialPostService.getSocialPosts(sort, pageNum, pageSize))
+        Long userId = customUserDetails.getUserId();
+        when(socialPostService.getSocialPosts(sort, pageNum, pageSize, userId))
                 .thenReturn(mockPostListResponseDTO);
 
         // when
         ResponseEntity<SuccessResponse<PostListResponseDTO>> response =
-                socialPostController.getSocialPosts(sort, pageNum, pageSize);
+                socialPostController.getSocialPosts(sort, pageNum, pageSize, customUserDetails);
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPostListResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).getSocialPosts(sort, pageNum, pageSize);
+        verify(socialPostService, times(1)).getSocialPosts(sort, pageNum, pageSize, userId);
     }
 
     @Test
@@ -117,26 +125,6 @@ public class SocialPostControllerTest {
         verify(socialPostService, times(1)).getSocialPostWithLikeStatus(socialPostId, userId);
     }
 
-//    @Test
-//    @DisplayName("유저의 게시판 전체 조회 요청")
-//    void testGetSocialPostsByUser() {
-//        // given
-//        Long userId = 1L;
-//        int pageNum = 0;
-//        int pageSize = 9;
-//        when(socialPostService.getSocialPostsByUser(userId, pageNum, pageSize))
-//                .thenReturn(mockUserPostListResponseDTO);
-//
-//        // when
-//        ResponseEntity<SuccessResponse<UserPostListResponseDTO>> response =
-//                socialPostController.getSocialPostsByUser(userId, pageNum, pageSize);
-//
-//        // then
-//        assertEquals(HttpStatus.OK, response.getStatusCode());
-//        assertEquals(mockUserPostListResponseDTO, response.getBody().getData());
-//        verify(socialPostService, times(1)).getSocialPostsByUser(userId, pageNum, pageSize);
-//    }
-
     @Test
     @DisplayName("소셜 게시판 생성 요청 - 인증 정보 포함")
     void testCreateSocialPost() {
@@ -146,17 +134,17 @@ public class SocialPostControllerTest {
         requestDTO.setContent("내용");
         requestDTO.setImageUrls(images);
 
-        when(socialPostService.createSocialPost(1L, requestDTO))
-                .thenReturn(mockPostResponseDTO);
+        when(socialPostService.createSocialPost(customUserDetails.getUserId(), requestDTO))
+                .thenReturn(mockPostWithLikeResponseDTO);
 
         // when
-        ResponseEntity<SuccessResponse<PostResponseDTO>> response =
+        ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> response =
                 socialPostController.createSocialPost(requestDTO, customUserDetails);
 
         // then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(mockPostResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).createSocialPost(1L, requestDTO);
+        assertEquals(mockPostWithLikeResponseDTO, response.getBody().getData());
+        verify(socialPostService, times(1)).createSocialPost(customUserDetails.getUserId(), requestDTO);
     }
 
     @Test
@@ -169,17 +157,17 @@ public class SocialPostControllerTest {
         requestDTO.setContent("수정 내용");
         requestDTO.setImageUrls(images);
 
-        when(socialPostService.updateSocialPost(1L, requestDTO, socialPostId))
-                .thenReturn(mockPostResponseDTO);
+        when(socialPostService.updateSocialPost(customUserDetails.getUserId(), requestDTO, socialPostId))
+                .thenReturn(mockPostWithLikeResponseDTO);
 
         // when
-        ResponseEntity<SuccessResponse<PostResponseDTO>> response =
+        ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> response =
                 socialPostController.updateSocialPost(requestDTO, socialPostId, customUserDetails);
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(mockPostResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).updateSocialPost(1L, requestDTO, socialPostId);
+        assertEquals(mockPostWithLikeResponseDTO, response.getBody().getData());
+        verify(socialPostService, times(1)).updateSocialPost(customUserDetails.getUserId(), requestDTO, socialPostId);
     }
 
     @Test
@@ -188,7 +176,7 @@ public class SocialPostControllerTest {
         // given
         Long socialPostId = 1L;
         String expectedResult = "삭제 완료";
-        when(socialPostService.deleteSocialPost(1L, socialPostId))
+        when(socialPostService.deleteSocialPost(customUserDetails.getUserId(), socialPostId))
                 .thenReturn(expectedResult);
 
         // when
@@ -198,7 +186,7 @@ public class SocialPostControllerTest {
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedResult, response.getBody().getData());
-        verify(socialPostService, times(1)).deleteSocialPost(1L, socialPostId);
+        verify(socialPostService, times(1)).deleteSocialPost(customUserDetails.getUserId(), socialPostId);
     }
 
     @Test
@@ -207,7 +195,7 @@ public class SocialPostControllerTest {
         // given
         Long socialPostId = 1L;
         String expectedResult = "좋아요 추가";
-        when(socialPostLikeService.toggleLike(1L, socialPostId)).thenReturn(expectedResult);
+        when(socialPostLikeService.toggleLike(customUserDetails.getUserId(), socialPostId)).thenReturn(expectedResult);
 
         // when
         ResponseEntity<SuccessResponse<String>> response =
@@ -216,7 +204,7 @@ public class SocialPostControllerTest {
         // then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(expectedResult, response.getBody().getData());
-        verify(socialPostLikeService, times(1)).toggleLike(1L, socialPostId);
+        verify(socialPostLikeService, times(1)).toggleLike(customUserDetails.getUserId(), socialPostId);
     }
 
     @Test
@@ -225,7 +213,7 @@ public class SocialPostControllerTest {
         // given
         Long socialPostId = 1L;
         String expectedResult = "좋아요 삭제";
-        when(socialPostLikeService.toggleLike(1L, socialPostId)).thenReturn(expectedResult);
+        when(socialPostLikeService.toggleLike(customUserDetails.getUserId(), socialPostId)).thenReturn(expectedResult);
 
         // when
         ResponseEntity<SuccessResponse<String>> response =
@@ -234,6 +222,6 @@ public class SocialPostControllerTest {
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedResult, response.getBody().getData());
-        verify(socialPostLikeService, times(1)).toggleLike(1L, socialPostId);
+        verify(socialPostLikeService, times(1)).toggleLike(customUserDetails.getUserId(), socialPostId);
     }
 }
