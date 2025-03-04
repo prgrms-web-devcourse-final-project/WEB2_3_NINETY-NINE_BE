@@ -3,7 +3,9 @@ package com.example.onculture.domain.notification.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +23,10 @@ import com.example.onculture.domain.notification.domain.Notification;
 import com.example.onculture.domain.notification.dto.NotificationRequestDTO;
 import com.example.onculture.domain.notification.dto.NotificationResponseDTO;
 import com.example.onculture.domain.notification.repository.NotificationRepository;
+import com.example.onculture.domain.user.domain.User;
+import com.example.onculture.domain.user.model.LoginType;
+import com.example.onculture.domain.user.model.Role;
+import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 
@@ -32,6 +38,9 @@ class NotificationServiceTest {
 	private NotificationRepository notificationRepository;
 
 	@Mock
+	private UserRepository userRepository;
+
+	@Mock
 	private SimpMessagingTemplate messagingTemplate;
 
 	@Mock
@@ -41,17 +50,25 @@ class NotificationServiceTest {
 	@InjectMocks
 	private NotificationService notificationService;
 
+	private User mockUser;
+	private User mockSender;
 	private Notification mockNotification;
 	private NotificationRequestDTO requestDTO;
 	private NotificationResponseDTO responseDTO;
 
 	@BeforeEach // 테스트 실행 전에 공통적으로 필요한 데이터를 미리 설정하는 메서드
 	void setUp() {
+
+		// 테스트용 User 객체 생성
+		mockUser = new User(5L, "user@example.com", "password", "사용자", Role.USER, LoginType.LOCAL_ONLY, new HashSet<>(), LocalDateTime.now(), null);
+		mockSender = new User(3L, "sender@example.com", "password", "보낸 사용자", Role.USER, LoginType.LOCAL_ONLY, new HashSet<>(), LocalDateTime.now(), null);
+
 		// 자동 생성 되는 건 null 처리
+		// ✅ 테스트용 Notification 객체 생성
 		mockNotification = new Notification(
 			null,  // notiId
-			5L,  // userId (알림 받는 사용자)
-			3L,  // senderId (알림을 보낸 사용자)
+			mockUser,  // user (알림 받는 사용자)
+			mockSender,  // sender (알림을 보낸 사용자)
 			Notification.NotificationType.COMMENT,  // 알림 유형
 			"새 댓글이 달렸습니다.",  // 알림 내용
 			100L,  // relatedId
@@ -60,6 +77,7 @@ class NotificationServiceTest {
 			null  // createdAt
 		);
 
+		// ✅ 테스트용 DTO 객체 생성
 		requestDTO = new NotificationRequestDTO(
 			5L,  // userId (알림 받는 사용자)
 			3L,  // senderId (알림을 보낸 사용자)
@@ -88,15 +106,20 @@ class NotificationServiceTest {
 	@DisplayName("알림 생성 테스트") // 해당 설명이 테스트 이름으로 표시됨
 	void testCreateNotification() {
 		// GIVEN
-		when(modelMapper.map(requestDTO, Notification.class)).thenReturn(mockNotification);
-		when(notificationRepository.save(mockNotification)).thenReturn(mockNotification);
-		when(modelMapper.map(mockNotification, NotificationResponseDTO.class)).thenReturn(responseDTO);
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser)); // 알림 받는 사용자 조회
+		when(userRepository.findById(3L)).thenReturn(Optional.of(mockSender)); // 보낸 사용자 조회
+		when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
+			Notification savedNotification = invocation.getArgument(0);
+			savedNotification.setNotiId(1L); // ID 설정 (DB에서 자동 증가되는 값 시뮬레이션)
+			return savedNotification;
+		});
+		when(modelMapper.map(any(Notification.class), eq(NotificationResponseDTO.class))).thenReturn(responseDTO);
 
 		// WHEN
 		notificationService.createNotification(requestDTO);
 
 		// THEN
-		verify(notificationRepository, times(1)).save(mockNotification); // 저장 메서드 실행 확인 (1회 호출 된건지 확인)
+		verify(notificationRepository, times(1)).save(any(Notification.class)); // 저장 메서드 1회 호출 확인
 		verify(messagingTemplate, times(1)).convertAndSend("/topic/notifications/5", responseDTO); // WebSocket 전송 확인
 	}
 
@@ -105,8 +128,8 @@ class NotificationServiceTest {
 	@DisplayName("특정 사용자의 모든 알림 조회 테스트")
 	void testGetAllNotifications() {
 		// GIVEN
-		List<Notification> mockNotifications = List.of(mockNotification);
-		when(notificationRepository.findByUserId(5L)).thenReturn(mockNotifications);
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
+		when(notificationRepository.findAllByUser(mockUser)).thenReturn(List.of(mockNotification));
 		when(modelMapper.map(mockNotification, NotificationResponseDTO.class)).thenReturn(responseDTO);
 
 		// WHEN
@@ -116,14 +139,16 @@ class NotificationServiceTest {
 		assertThat(result).isNotEmpty(); // 비어있는지 확인
 		assertThat(result.get(0).getContent()).isEqualTo("테스트 알림"); // content 내용이 똑같은지 확인
 
-		verify(notificationRepository, times(1)).findByUserId(5L); // DB 조회 확인 (1회 호출 된건지 확인)
+		verify(notificationRepository, times(1)).findAllByUser(mockUser); // DB 조회 확인 (1회 호출 된건지 확인)
 	}
 
 	// 특정 알림 읽음 처리 테스트
 	@Test
 	@DisplayName("특정 알림 읽음 처리 테스트")
 	void testMarkNotificationAsRead() {
+
 		// GIVEN
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
 		when(notificationRepository.findById(anyLong())).thenReturn(Optional.of(mockNotification)); // anyLong -> 어떤 값이 들어가더라도 작동, notiId null 처리해놨기 때문, null 처리 했기 때문에 Optional 사용
 
 		// WHEN
@@ -140,12 +165,14 @@ class NotificationServiceTest {
 	@DisplayName("특정 알림이 존재하지 않을 경우 예외 발생 테스트")
 	void testMarkNotificationAsRead_NotFound() {
 		// GIVEN
-		when(notificationRepository.findById(1L)).thenReturn(Optional.empty());  // notiId가 1L로 조회할 때 데이터가 없다는걸 지정하기 위해 anyLong 대신 값 설정
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));  // 사용자 존재하도록 설정
+		when(notificationRepository.findById(1L)).thenReturn(Optional.empty());  // 알림이 존재하지 않는 경우 설정
 
 		// WHEN & THEN
-		assertThatThrownBy(() -> notificationService.markNotificationAsRead(5L, 1L)) // Optional.empty()가 반환됨으로 에러 반환 돼야함
-			.isInstanceOf(CustomException.class) // 반환한 예외가 CustomException인지 확인
-			.hasMessageContaining(ErrorCode.NOTIFICATION_NOT_FOUND.getMessage()); // 올바른 메시지가 포함되어있는지 확인
+		assertThatThrownBy(() -> notificationService.markNotificationAsRead(5L, 1L)) // 알림이 존재하지 않으므로 예외 발생
+			.isInstanceOf(CustomException.class) // CustomException 발생 여부 확인
+			.hasMessageContaining(ErrorCode.NOTIFICATION_NOT_FOUND.getMessage()); // "알림을 찾을 수 없습니다." 메시지가 포함되어 있는지 확인
+
 	}
 
 	// 특정 사용자의 모든 알림 읽음 처리 테스트
@@ -154,7 +181,8 @@ class NotificationServiceTest {
 	void testMarkAllNotificationsAsRead() {
 		// GIVEN
 		List<Notification> mockNotifications = List.of(mockNotification);
-		when(notificationRepository.findByUserId(5L)).thenReturn(mockNotifications);
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
+		when(notificationRepository.findAllByUser(mockUser)).thenReturn(mockNotifications);
 
 		// WHEN
 		notificationService.markAllNotificationsAsRead(5L);
@@ -169,7 +197,8 @@ class NotificationServiceTest {
 	@DisplayName("특정 사용자의 모든 알림이 존재하지 않을 경우 예외 발생 테스트")
 	void testMarkAllNotificationsAsRead_NotFound() {
 		// GIVEN
-		when(notificationRepository.findByUserId(5L)).thenReturn(new ArrayList<>());
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
+		when(notificationRepository.findAllByUser(mockUser)).thenReturn(new ArrayList<>());
 
 		// WHEN & THEN
 		assertThatThrownBy(() -> notificationService.markAllNotificationsAsRead(5L))
@@ -183,7 +212,8 @@ class NotificationServiceTest {
 	void testDeleteAllNotifications() {
 		// GIVEN
 		List<Notification> mockNotifications = List.of(mockNotification);
-		when(notificationRepository.findByUserId(5L)).thenReturn(mockNotifications);
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
+		when(notificationRepository.findAllByUser(mockUser)).thenReturn(mockNotifications);
 
 		// WHEN
 		notificationService.deleteAllNotifications(5L);
@@ -197,7 +227,8 @@ class NotificationServiceTest {
 	@DisplayName("특정 사용자의 모든 알림이 존재하지 않을 경우 예외 발생 테스트")
 	void testDeleteAllNotifications_NotFound() {
 		// GIVEN
-		when(notificationRepository.findByUserId(5L)).thenReturn(new ArrayList<>());
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
+		when(notificationRepository.findAllByUser(mockUser)).thenReturn(new ArrayList<>());
 
 		// WHEN & THEN
 		assertThatThrownBy(() -> notificationService.deleteAllNotifications(5L))
