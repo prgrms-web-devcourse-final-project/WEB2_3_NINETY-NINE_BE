@@ -1,6 +1,5 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.domain.Performance;
 import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
@@ -38,7 +37,7 @@ public class ExhibitService {
 
     private final BookmarkRepository bookmarkRepository;
     // application.properties에 설정된 인코딩된 서비스키
-    @Value("${public.api.serviceKey}")
+    @Value("${PUBLIC_API_SERVICE_KEY}")
     private String serviceKey;
 
     // 기간별 공연/전시 목록 조회
@@ -258,15 +257,20 @@ public class ExhibitService {
         return exhibits.stream().map(this::toListDTO).collect(Collectors.toList());
     }
     //랜덤조회
-    public List<ExhibitDTO> getRandomExhibitions(int randomSize) {
+    public List<EventResponseDTO> getRandomExhibitions(int randomSize,Long userId) {
         if (randomSize < 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        // exhibitRepository.findRandomExhibitions(randomSize)는 무작위 전시 데이터를 조회하는 커스텀 메서드입니다.
+
         return exhibitRepository.findRandomExhibitions(randomSize)
                 .stream()
-                .map(ExhibitDTO::new)
-                .collect(Collectors.toList());
+                .map(exhibitEntity -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndExhibitEntitySeq(userId, exhibitEntity.getSeq())
+                                    .isPresent();
+                    return new EventResponseDTO(exhibitEntity, isBookmarked);
+                })
+                .toList();
     }
 
     public EventPageResponseDTO searchExhibits(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {

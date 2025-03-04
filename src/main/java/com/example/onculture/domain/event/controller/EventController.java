@@ -37,17 +37,17 @@ public class EventController {
         this.festivalPostAddressUpdateService = festivalPostAddressUpdateService;
     }
 
-    // 전체 PopupStore 목록 조회
-    @Operation(summary = "전체 PopupStore 목록 조회",
-            description = "전체 PopupStore 목록을 조회합니다.")
+    // 공연(PopupStore) 목록 조회
+    @Operation(summary = "공연(PopupStore) 목록 조회",
+            description = "공연(PopupStore) 목록을 조회합니다.")
     @GetMapping("/popup-store-posts")
     public List<PopupStorePost> listAllPopupStorePosts() {
         return popupStorePostService.listAll();
     }
 
     // 제목(title)를 이용한 PopupStore 검색 (실제로 content 필드를 검색)
-    @Operation(summary = "제목(title)를 이용한 PopupStore 검색",
-            description = "제목(title)를 이용하여 PopupStore 게시글을 검색합니다. 요청 항목: title(검색어)")
+    @Operation(summary = "제목(title)를 이용한 공연(PopupStore)검색",
+            description = "제목(title)를 이용하여 공연(PopupStore) 게시글을 검색합니다. 요청 항목: title(검색어)")
     @GetMapping("/popup-store-posts/title")
     public List<PopupStorePost> searchPopupStorePosts(@RequestParam("title") String title) {
         if (title == null || title.trim().isEmpty()) {
@@ -57,11 +57,15 @@ public class EventController {
     }
 
     //랜덤 조회
+    @Operation(summary = "공연(PopupStore) 게시글 랜덤 조회",
+            description = "randomSize를 입력하셔야 되고 로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
     @GetMapping("/popup-store-posts/random")
-    public ResponseEntity<SuccessResponse<List<PopupStorePostDTO>>> getRandomPopupStorePosts(
-            @RequestParam(defaultValue = "9") int randomSize) {
-        List<PopupStorePostDTO> dtos = popupStorePostService.getRandomPopupStorePosts(randomSize);
-        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, dtos));
+    public ResponseEntity<SuccessResponse<List<EventResponseDTO>>> getRandomPopupStorePosts(
+            @RequestParam(defaultValue = "9") int randomSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        List<EventResponseDTO> responseDTOS = popupStorePostService.getRandomPopupStorePosts(randomSize, userId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
     //상세 조회
@@ -77,6 +81,8 @@ public class EventController {
     }
 
     //  팝업 스토어 지역+상태 검색
+    @Operation(summary = "공연(PopupStore) 지역+상태 검색 조회",
+            description = "randomSize를 입력하셔야 되고 로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
     @GetMapping("/search_popup_store")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchPopupStorePosts(
             @RequestParam(required = false) String region,
@@ -93,8 +99,8 @@ public class EventController {
 
 
     // 전체 Festival 목록 조회
-    @Operation(summary = "전체 Festival 목록 조회",
-            description = "전체 Festival 게시글 목록을 조회합니다.")
+    @Operation(summary = "전체 공연(festival) 목록 조회",
+            description = "전체 공연(festival) 게시글 목록을 조회합니다.")
     @GetMapping("/festival-posts")
     public List<FestivalPost> listAllFestivalPosts() {
         return festivalPostService.listAll();
@@ -112,16 +118,21 @@ public class EventController {
     }
 
     // festival 랜덤 조회
+    @Operation(summary = "공연(festival) 게시글 랜덤 조회",
+            description = "randomSize를 입력하셔야 되고 로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
     @GetMapping("/festival-posts/random")
-    public ResponseEntity<SuccessResponse<List<FestivalPostDTO>>> getRandomFestivalPosts(
-            @RequestParam(defaultValue = "9") int randomSize) {
-        List<FestivalPostDTO> dtos = festivalPostService.getRandomFestivalPosts(randomSize);
-        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, dtos));
+    public ResponseEntity<SuccessResponse<List<EventResponseDTO>>> getRandomFestivalPosts(
+            @RequestParam(defaultValue = "9") int randomSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        List<EventResponseDTO> responseDTOS = festivalPostService.getRandomFestivalPosts(randomSize, userId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
+
     //상세 조회
-    @Operation(summary = "팝업 스토어 데이터 상세 정보 조회",
-            description = "팝업 스토어 데이터 상세 정보 조회")
+    @Operation(summary = "공연(festival) 데이터 상세 정보 조회",
+            description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
     @GetMapping("/festival/detail")
     public ResponseEntity<EventResponseDTO> getFestivalPostDetail(
             @RequestParam Long id,
@@ -132,6 +143,8 @@ public class EventController {
     }
 
     //DB에 저장된 FestivalPost의 festivalLocation 필드를 업데이트 후 전체 목록을 반환
+    @Operation(summary = "공연(festival) 건물 데이터 주소 변환",
+            description = "kakaoAddressService를 사용해서 주소를 업데이트 합니다.")
     @GetMapping("/update-addresses")
     public ResponseEntity<List<FestivalPost>> updateAddresses() {
         List<FestivalPost> updatedPosts = festivalPostAddressUpdateService.updateFestivalPostAddressesAndAreas();
@@ -139,6 +152,8 @@ public class EventController {
     }
 
     // 페스티벌 지역+상태 검색
+    @Operation(summary = "공연(festival) 지역+상태 검색",
+            description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
     @GetMapping("/search_festival")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchFestivalPosts(
             @RequestParam(required = false) String region,

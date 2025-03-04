@@ -1,10 +1,8 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.PopupStorePost;
 import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
-import com.example.onculture.domain.event.dto.PopupStorePostDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import com.example.onculture.global.exception.CustomException;
@@ -12,7 +10,6 @@ import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
-import lombok.AllArgsConstructor;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -33,15 +30,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class PopupStorePostService {
 
-    @Value("${instagram.username}")
+    @Value("${INSTAGRAM_ID}")
     private String username;
 
-    @Value("${instagram.password}")
+    @Value("${INSTAGRAM_PASSWORD}")
     private String password;
 
     private final PopupStorePostRepository popupStorePostRepository;
@@ -311,27 +307,33 @@ public class PopupStorePostService {
     }
 
 
-    public List<PopupStorePostDTO> getRandomPopupStorePosts(int randomSize) {
+    public List<EventResponseDTO> getRandomPopupStorePosts(int randomSize, Long userId) {
         if (randomSize < 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        // repository.findRandomPopupStorePosts(randomSize)는 무작위로 팝업스토어 데이터를 조회하는 커스텀 메서드입니다.
+
         return popupStorePostRepository.findRandomPopupStorePosts(randomSize)
                 .stream()
-                .map(PopupStorePostDTO::new)
-                .collect(Collectors.toList());
+                .map(popupStorePost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPopupStorePostId(userId, popupStorePost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(popupStorePost, isBookmarked);
+                })
+                .toList();
     }
+
 
     // 공연/전시 상세정보 조회
     public EventResponseDTO getPopupStorePostDetail(Long id, Long userId) {
         EventResponseDTO eventResponseDTO = popupStorePostRepository.findById(id)
                 .map(popupStorePost -> {
                     boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPerformanceId(userId, popupStorePost.getId())
+                            bookmarkRepository.findByUserIdAndPopupStorePostId(userId, popupStorePost.getId())
                                     .isPresent();
                     return new EventResponseDTO(popupStorePost, isBookmarked);
                 })
-                .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("popupStorePost not found with id: " + id));
         return eventResponseDTO;
     }
 
