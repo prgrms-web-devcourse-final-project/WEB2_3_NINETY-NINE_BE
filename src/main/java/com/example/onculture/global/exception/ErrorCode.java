@@ -45,6 +45,8 @@ public enum ErrorCode {
 	FILE_EXTENSION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 파일 확장자입니다."),
 	FILE_MIME_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 파일 MIME 타입입니다."),
 
+	S3_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "S3 파일 업로드에 실패했습니다."),
+
 	/*
 	 * 401 UNAUTHORIZED
 	 */
@@ -76,6 +78,7 @@ public enum ErrorCode {
 	POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
 	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),
 	NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
+	S3_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "S3에 해당 파일이 존재하지 않습니다."),
 	REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 후기를 찾을 수 없습니다."),
 	INVALID_EVENT_TYPE(HttpStatus.BAD_REQUEST, "하나의 이벤트 ID만 입력해야 합니다."),
 	EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 이벤트를 찾을 수 없습니다."),
@@ -113,6 +116,8 @@ public enum ErrorCode {
 	USER_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 삭제에 실패했습니다."),
 	REFRESH_TOKEN_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "리프레시 토큰 삭제에 실패했습니다."),
 	IMAGE_UPLOAD_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다."),
+	// S3
+	S3_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S3 파일 삭제에 실패했습니다."),
 	;
 
 	private final HttpStatus status;

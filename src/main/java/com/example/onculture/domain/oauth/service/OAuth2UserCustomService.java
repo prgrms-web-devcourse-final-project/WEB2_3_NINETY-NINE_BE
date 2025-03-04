@@ -24,36 +24,10 @@ public class OAuth2UserCustomService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
 
-    // 구글에 OAuth 요청 시,  scope별 반환되는 사용자 데이터 종류
-    /*
-    - profile 스코프 (scope=profile)
-    {
-      "sub": "123456789012345678901",
-      "name": "홍길동",
-      "given_name": "길동",
-      "family_name": "홍",
-      "picture": "https://lh3.googleusercontent.com/a-/profile.jpg",
-      "email": "example@gmail.com",
-      "email_verified": true,
-      "locale": "ko"
-    }
-     */
-
     // 현재 단계에 OAuth2UserRequest userRequest에는 액세스 토큰이 담겨 있음
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User user = super.loadUser(userRequest);
-
-        // OAuth2User 내 사용자 정보를 JSON 형식으로 출력 (Jackson ObjectMapper 사용 / 데이터 확인용)
-        /*
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(user.getAttributes());
-            System.out.println("OAuth2User Attributes (Formatted JSON):\n" + json);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-         */
 
         User saveUser = saveOrUpdate(user, userRequest);
 

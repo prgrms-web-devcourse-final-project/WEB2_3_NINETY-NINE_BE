@@ -17,4 +17,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 닉네임으로 유저를 찾는 쿼리 ( 네임드 기반 파라미터 방식 - 사용 O )
     @Query(value = "select u from User u where u.nickname = :nickname")
     Optional<User> findByNickname(@Param("nickname") String nickname);
+
+    boolean existsByNickname(String nickname);
+
+    boolean existsByEmail(String email);
 }

@@ -58,7 +58,6 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(ex.getErrorCode().getStatus()).body(errorResponse);
 	}
 
-	// user 도메인 - 리팩토링 에정 핸들러
 	// 사용자 인증 과정 - 사용자가 없을 경우
 	@ExceptionHandler(UsernameNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException ex) {
