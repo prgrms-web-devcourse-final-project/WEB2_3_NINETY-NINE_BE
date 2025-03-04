@@ -81,11 +81,9 @@ public class UserService {
 
         // 중복 이메일 검증 로직 추가
         // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
-        if (userRepository.findByEmail(email).isPresent())
-            throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
+        if (userRepository.existsByEmail(email)) throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
         // 중복 닉네임 검증 로직 추가
-        if (userRepository.findByNickname(nickname).isPresent())
-            throw new CustomException.DuplicateNicknameException();        // 커스텀한 중복 닉네임 예외
+        if (userRepository.existsByNickname(nickname)) throw new CustomException.DuplicateNicknameException();      // 커스텀한 중복 닉네임 예외
         // 동일한 이메일의 소셜 가입자가 있을 경우 고려 ( 보류 )
             /*
             // 이미 등록된 사용자 확인
