@@ -6,10 +6,12 @@ import com.example.onculture.domain.event.dto.ExhibitDTO;
 import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
 import com.example.onculture.domain.event.service.ExhibitService;
 import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -79,8 +81,11 @@ public class ExhibitController {
     @Operation(summary = "전시회 데이터 상세 정보 조회",
             description = "전시회 데이터 상세 정보 조회")
     @GetMapping("/detail")
-    public ResponseEntity<EventResponseDTO> getExhibitionDetail(@RequestParam Long seq) {
-        EventResponseDTO detail = exhibitService.getExhibitDetail(seq);
+    public ResponseEntity<EventResponseDTO> getExhibitionDetail(
+            @RequestParam Long seq,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        EventResponseDTO detail = exhibitService.getExhibitDetail(seq, userId);
         return ResponseEntity.ok(detail);
     }
 
@@ -100,6 +105,7 @@ public class ExhibitController {
         List<ExhibitDTO> list = exhibitService.getRandomExhibitions(randomSize);
         return ResponseEntity.ok(list);
     }
+
     //  전시회 지역+상태 검색
     @GetMapping("/search_exhibits")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchExhibits(
@@ -107,9 +113,11 @@ public class ExhibitController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String titleKeyword,
             @RequestParam(required = false, defaultValue = "0") int pageNum,
-            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+            @RequestParam(required = false, defaultValue = "9") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
         EventPageResponseDTO responseDTOS = exhibitService
-                .searchExhibits(region, status, titleKeyword, pageNum, pageSize);
+                .searchExhibits(region, status, titleKeyword, pageNum, pageSize, userId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 

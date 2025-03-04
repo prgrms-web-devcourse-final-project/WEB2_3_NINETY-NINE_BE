@@ -10,9 +10,11 @@ import com.example.onculture.domain.event.service.FestivalPostAddressUpdateServi
 import com.example.onculture.domain.event.service.FestivalPostService;
 import com.example.onculture.domain.event.service.PopupStorePostService;
 import com.example.onculture.global.response.SuccessResponse;
+import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,7 +50,7 @@ public class EventController {
             description = "제목(title)를 이용하여 PopupStore 게시글을 검색합니다. 요청 항목: title(검색어)")
     @GetMapping("/popup-store-posts/title")
     public List<PopupStorePost> searchPopupStorePosts(@RequestParam("title") String title) {
-        if(title == null || title.trim().isEmpty()){
+        if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어는 필수입니다.");
         }
         return popupStorePostService.searchByTitle(title);
@@ -61,14 +63,19 @@ public class EventController {
         List<PopupStorePostDTO> dtos = popupStorePostService.getRandomPopupStorePosts(randomSize);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, dtos));
     }
+
     //상세 조회
     @Operation(summary = "팝업 스토어 데이터 상세 정보 조회",
             description = "팝업 스토어 데이터 상세 정보 조회")
     @GetMapping("/popup-store/detail")
-    public ResponseEntity<EventResponseDTO> getPopupStorePostDetail(@RequestParam Long id) {
-        EventResponseDTO detail = popupStorePostService.getPopupStorePostDetail(id);
+    public ResponseEntity<EventResponseDTO> getPopupStorePostDetail(
+            @RequestParam Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        EventResponseDTO detail = popupStorePostService.getPopupStorePostDetail(id, userId);
         return ResponseEntity.ok(detail);
     }
+
     //  팝업 스토어 지역+상태 검색
     @GetMapping("/search_popup_store")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchPopupStorePosts(
@@ -76,9 +83,11 @@ public class EventController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String titleKeyword,
             @RequestParam(required = false, defaultValue = "0") int pageNum,
-            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+            @RequestParam(required = false, defaultValue = "9") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
         EventPageResponseDTO responseDTOS = popupStorePostService
-                .searchPopupStorePosts(region, status, titleKeyword, pageNum, pageSize);
+                .searchPopupStorePosts(region, status, titleKeyword, pageNum, pageSize, userId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 
@@ -96,11 +105,12 @@ public class EventController {
             description = "제목(title)를 이용하여 Festival 게시글을 검색합니다. 요청 항목: title(검색어)")
     @GetMapping("/festival-posts/title")
     public List<FestivalPost> searchFestivalPosts(@RequestParam("title") String title) {
-        if(title == null || title.trim().isEmpty()){
+        if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어는 필수입니다.");
         }
         return festivalPostService.searchByTitle(title);
     }
+
     // festival 랜덤 조회
     @GetMapping("/festival-posts/random")
     public ResponseEntity<SuccessResponse<List<FestivalPostDTO>>> getRandomFestivalPosts(
@@ -108,12 +118,16 @@ public class EventController {
         List<FestivalPostDTO> dtos = festivalPostService.getRandomFestivalPosts(randomSize);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, dtos));
     }
+
     //상세 조회
     @Operation(summary = "팝업 스토어 데이터 상세 정보 조회",
             description = "팝업 스토어 데이터 상세 정보 조회")
     @GetMapping("/festival/detail")
-    public ResponseEntity<EventResponseDTO> getFestivalPostDetail(@RequestParam Long id) {
-        EventResponseDTO detail = festivalPostService.getFestivalPostDetail(id);
+    public ResponseEntity<EventResponseDTO> getFestivalPostDetail(
+            @RequestParam Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        EventResponseDTO detail = festivalPostService.getFestivalPostDetail(id, userId);
         return ResponseEntity.ok(detail);
     }
 
@@ -123,6 +137,7 @@ public class EventController {
         List<FestivalPost> updatedPosts = festivalPostAddressUpdateService.updateFestivalPostAddressesAndAreas();
         return ResponseEntity.ok(updatedPosts);
     }
+
     // 페스티벌 지역+상태 검색
     @GetMapping("/search_festival")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchFestivalPosts(
@@ -130,9 +145,11 @@ public class EventController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String titleKeyword,
             @RequestParam(required = false, defaultValue = "0") int pageNum,
-            @RequestParam(required = false, defaultValue = "9") int pageSize) {
+            @RequestParam(required = false, defaultValue = "9") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
         EventPageResponseDTO responseDTOS = festivalPostService
-                .searchFestivalPosts(region, status, titleKeyword, pageNum, pageSize);
+                .searchFestivalPosts(region, status, titleKeyword, pageNum, pageSize, userId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTOS));
     }
 }

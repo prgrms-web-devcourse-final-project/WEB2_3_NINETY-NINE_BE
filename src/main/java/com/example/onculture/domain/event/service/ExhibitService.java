@@ -1,7 +1,9 @@
 package com.example.onculture.domain.event.service;
 
+import com.example.onculture.domain.event.domain.Performance;
 import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -34,6 +36,7 @@ public class ExhibitService {
 
     private final ExhibitRepository exhibitRepository;
 
+    private final BookmarkRepository bookmarkRepository;
     // application.properties에 설정된 인코딩된 서비스키
     @Value("${public.api.serviceKey}")
     private String serviceKey;
@@ -60,10 +63,14 @@ public class ExhibitService {
     }
 
     // 공연/전시 상세정보 조회
-    public EventResponseDTO getExhibitDetail(Long seq) {
+    public EventResponseDTO getExhibitDetail(Long seq, Long userId) {
         EventResponseDTO eventResponseDTO = exhibitRepository.findById(seq)
-                .map(EventResponseDTO::new)
-
+                .map(exhibitEntity -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, exhibitEntity.getSeq())
+                                    .isPresent();
+                    return new EventResponseDTO(exhibitEntity, isBookmarked);
+                })
                 .orElseThrow(() -> new RuntimeException("Performance not found with seq: " + seq));
         return eventResponseDTO;
     }
@@ -262,7 +269,7 @@ public class ExhibitService {
                 .collect(Collectors.toList());
     }
 
-    public EventPageResponseDTO searchExhibits(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+    public EventPageResponseDTO searchExhibits(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
         Specification<ExhibitEntity> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -297,7 +304,12 @@ public class ExhibitService {
 
         List<EventResponseDTO> posts = exhibitPage.getContent()
                 .stream()
-                .map(EventResponseDTO::new)
+                .map(exhibitEntity -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, exhibitEntity.getSeq())
+                                    .isPresent();
+                    return new EventResponseDTO(exhibitEntity, isBookmarked);
+                })
                 .toList();
 
         EventPageResponseDTO response = new EventPageResponseDTO();
