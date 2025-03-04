@@ -4,6 +4,7 @@ import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.FestivalPostDTO;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
@@ -37,8 +38,11 @@ public class FestivalPostService {
 
     private final FestivalPostRepository festivalPostRepository;
 
-    public FestivalPostService(FestivalPostRepository festivalPostRepository) {
+    private final BookmarkRepository bookmarkRepository;
+
+    public FestivalPostService(FestivalPostRepository festivalPostRepository, BookmarkRepository bookmarkRepository) {
         this.festivalPostRepository = festivalPostRepository;
+        this.bookmarkRepository = bookmarkRepository;
     }
 
     public List<FestivalPost> listAll() {
@@ -322,15 +326,19 @@ public class FestivalPostService {
     }
 
     // 공연/전시 상세정보 조회
-    public EventResponseDTO getFestivalPostDetail(Long id) {
+    public EventResponseDTO getFestivalPostDetail(Long id, Long userId) {
         EventResponseDTO eventResponseDTO = festivalPostRepository.findById(id)
-                .map(EventResponseDTO::new)
-
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
                 .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
         return eventResponseDTO;
     }
 
-    public EventPageResponseDTO searchFestivalPosts(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+    public EventPageResponseDTO searchFestivalPosts(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
         Specification<FestivalPost> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -365,7 +373,12 @@ public class FestivalPostService {
 
         List<EventResponseDTO> posts = performancePage.getContent()
                 .stream()
-                .map(EventResponseDTO::new)
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
                 .toList();
 
         EventPageResponseDTO response = new EventPageResponseDTO();

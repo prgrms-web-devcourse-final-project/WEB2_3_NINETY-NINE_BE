@@ -5,12 +5,14 @@ import com.example.onculture.domain.event.domain.PopupStorePost;
 import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.dto.PopupStorePostDTO;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
+import lombok.AllArgsConstructor;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -44,8 +46,11 @@ public class PopupStorePostService {
 
     private final PopupStorePostRepository popupStorePostRepository;
 
-    public PopupStorePostService(PopupStorePostRepository popupStorePostRepository) {
+    private final BookmarkRepository bookmarkRepository;
+
+    public PopupStorePostService(PopupStorePostRepository popupStorePostRepository, BookmarkRepository bookmarkRepository) {
         this.popupStorePostRepository = popupStorePostRepository;
+        this.bookmarkRepository = bookmarkRepository;
     }
 
     public List<PopupStorePost> listAll() {
@@ -318,14 +323,19 @@ public class PopupStorePostService {
     }
 
     // 공연/전시 상세정보 조회
-    public EventResponseDTO getPopupStorePostDetail(Long id) {
+    public EventResponseDTO getPopupStorePostDetail(Long id, Long userId) {
         EventResponseDTO eventResponseDTO = popupStorePostRepository.findById(id)
-                .map(EventResponseDTO::new)
+                .map(popupStorePost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, popupStorePost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(popupStorePost, isBookmarked);
+                })
                 .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
         return eventResponseDTO;
     }
 
-    public EventPageResponseDTO searchPopupStorePosts(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+    public EventPageResponseDTO searchPopupStorePosts(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
         Specification<PopupStorePost> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -360,7 +370,12 @@ public class PopupStorePostService {
 
         List<EventResponseDTO> posts = performancePage.getContent()
                 .stream()
-                .map(EventResponseDTO::new)
+                .map(popupStorePost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, popupStorePost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(popupStorePost, isBookmarked);
+                })
                 .toList();
 
         EventPageResponseDTO response = new EventPageResponseDTO();
