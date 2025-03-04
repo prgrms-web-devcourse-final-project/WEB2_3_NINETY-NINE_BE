@@ -53,9 +53,8 @@ public class FestivalPostService {
         return festivalPostRepository.findByFestivalContentContaining(title);
     }
 
-    // 크롬 드라이버 설정 (버전 133으로 하드코딩)
     private WebDriver setupWebDriver() {
-        WebDriverManager.chromedriver().driverVersion("133").setup();
+        System.setProperty("chromedriver-mac-arm64", "/OnCulture/chromedriver");
         return new ChromeDriver();
     }
 
