@@ -1,6 +1,7 @@
 package com.example.onculture.domain.socialPost.service;
 
 
+import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
@@ -24,7 +25,7 @@ public class SocialPostService {
     private final SocialPostRepository socialPostRepository;
     private final SocialPostLikeRepository socialPostLikeRepository;
 
-    public PostListResponseDTO getSocialPosts(String sort, int pageNum, int pageSize) {
+    public PostListResponseDTO getSocialPosts(String sort, int pageNum, int pageSize, Long userId) {
         if (!(sort.equals("latest") || sort.equals("comments") || sort.equals("popular"))) {
             throw new CustomException(ErrorCode.INVALID_SORT_REQUEST);
         }
@@ -42,7 +43,11 @@ public class SocialPostService {
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, sortConfig);
 
-        Page<PostResponseDTO> posts = socialPostRepository.findAll(pageable).map(PostResponseDTO::new);
+        Page<PostWithLikeResponseDTO> posts = socialPostRepository.findAll(pageable).map(socialPost -> {
+            boolean likeStatus = userId != null &&
+                    socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, socialPost.getId());
+            return new PostWithLikeResponseDTO(socialPost, likeStatus);
+        });
 
         return PostListResponseDTO.builder()
                 .posts(posts.getContent())
@@ -72,7 +77,7 @@ public class SocialPostService {
         }
     }
 
-    public PostResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
+    public PostWithLikeResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO) {
         User user = findUserOrThrow(userId);
 
         SocialPost socialPost = SocialPost.builder()
@@ -84,10 +89,10 @@ public class SocialPostService {
 
         socialPostRepository.save(socialPost);
 
-        return new PostResponseDTO(socialPost);
+        return new PostWithLikeResponseDTO(socialPost, false);
     }
 
-    public PostResponseDTO updateSocialPost(Long userId, UpdatePostRequestDTO requestDTO, Long socialPostId) {
+    public PostWithLikeResponseDTO updateSocialPost(Long userId, UpdatePostRequestDTO requestDTO, Long socialPostId) {
         User user = findUserOrThrow(userId);
 
         validateOwner(socialPostId, user);
@@ -99,7 +104,9 @@ public class SocialPostService {
 
         socialPostRepository.save(socialPost);
 
-        return new PostResponseDTO(socialPost);
+        boolean likeStatus = socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, socialPost.getId());
+
+        return new PostWithLikeResponseDTO(socialPost, likeStatus);
     }
 
     public String deleteSocialPost(Long userId, Long socialPostId) {
