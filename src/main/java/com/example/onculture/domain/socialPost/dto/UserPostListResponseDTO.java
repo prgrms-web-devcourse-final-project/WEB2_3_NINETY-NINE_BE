@@ -10,7 +10,7 @@ import java.util.List;
 @Setter
 @Builder
 public class UserPostListResponseDTO {
-    private List<PostResponseDTO> posts;
+    private List<PostWithLikeResponseDTO> posts;
     private int totalPages;
     private long totalElements;
     private int pageNum;

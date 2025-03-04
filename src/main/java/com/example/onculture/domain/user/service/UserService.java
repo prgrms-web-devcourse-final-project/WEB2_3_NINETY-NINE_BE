@@ -5,6 +5,7 @@ import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
+import com.example.onculture.domain.socialPost.dto.PostWithLikeResponseDTO;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
 import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
 import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
@@ -317,19 +318,19 @@ public class UserService {
         return null;
     }
 
-    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
-    public LikedSocialPostIdsResponseDto getLikedSocialPosts(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
-
-        List<Long> ids = socialPostLikeRepository.findSocialPostIdByUserId(userId);
-
-        return new LikedSocialPostIdsResponseDto(ids);
-    }
+//    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
+//    public LikedSocialPostIdsResponseDto getLikedSocialPosts(Long userId) {
+//        if (!userRepository.existsById(userId)) {
+//            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+//        }
+//
+//        List<Long> ids = socialPostLikeRepository.findSocialPostIdByUserId(userId);
+//
+//        return new LikedSocialPostIdsResponseDto(ids);
+//    }
 
     // 사용자가 작성한 소셜 게시판 목록 조회
-    public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize) {
+    public UserPostListResponseDTO getSocialPostsByUser(Long userId, int pageNum, int pageSize, Long loginUserId) {
         if (!userRepository.existsById(userId)) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
@@ -340,7 +341,11 @@ public class UserService {
 
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
-        Page<PostResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(PostResponseDTO::new);
+        Page<PostWithLikeResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(socialPost -> {
+            boolean likeStatus = loginUserId != null &&
+                    socialPostLikeRepository.existsByUserIdAndSocialPostId(loginUserId, socialPost.getId());
+            return new PostWithLikeResponseDTO(socialPost, likeStatus);
+        });
 
         return UserPostListResponseDTO.builder()
                 .posts(posts.getContent())

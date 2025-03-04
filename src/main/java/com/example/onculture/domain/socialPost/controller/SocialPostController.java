@@ -27,8 +27,10 @@ public class SocialPostController {
     public ResponseEntity<SuccessResponse<PostListResponseDTO>> getSocialPosts(
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int pageNum,
-            @RequestParam(defaultValue = "9") int pageSize) {
-        PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize);
+            @RequestParam(defaultValue = "9") int pageSize,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = (userDetails != null) ? userDetails.getUserId() : null;
+        PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize, userId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
@@ -45,21 +47,21 @@ public class SocialPostController {
 
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
     @PostMapping
-    public ResponseEntity<SuccessResponse<PostResponseDTO>> createSocialPost(
+    public ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> createSocialPost(
             @RequestBody CreatePostRequestDTO requestDTO,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        PostResponseDTO responseDTO = socialPostService.createSocialPost(
+        PostWithLikeResponseDTO responseDTO = socialPostService.createSocialPost(
                 userDetails.getUserId(), requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.success(HttpStatus.CREATED, responseDTO));
     }
 
     @Operation(summary = "소셜 게시판 수정", description = "socialPostId에 해당하는 게시글의 수정 API 입니다")
     @PutMapping("/{socialPostId}")
-    public ResponseEntity<SuccessResponse<PostResponseDTO>> updateSocialPost(
+    public ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> updateSocialPost(
             @RequestBody UpdatePostRequestDTO requestDTO,
             @PathVariable Long socialPostId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        PostResponseDTO responseDTO = socialPostService.updateSocialPost(
+        PostWithLikeResponseDTO responseDTO = socialPostService.updateSocialPost(
                 userDetails.getUserId(), requestDTO, socialPostId);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
