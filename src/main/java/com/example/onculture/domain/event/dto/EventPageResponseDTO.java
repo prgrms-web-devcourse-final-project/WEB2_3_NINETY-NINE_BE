@@ -12,4 +12,6 @@ public class EventPageResponseDTO {
     private int pageNum;
     private int pageSize;
     private int numberOfElements;
+
 }
+

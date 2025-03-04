@@ -1,8 +1,16 @@
 package com.example.onculture.domain.event.service;
 
+import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.dto.EventPageResponseDTO;
+import com.example.onculture.domain.event.dto.EventResponseDTO;
+import com.example.onculture.domain.event.dto.PopupStorePostDTO;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -11,6 +19,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -19,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class PopupStorePostService {
@@ -29,22 +42,18 @@ public class PopupStorePostService {
     @Value("${instagram.password}")
     private String password;
 
-    private final PopupStorePostRepository repository;
+    private final PopupStorePostRepository popupStorePostRepository;
 
-    public PopupStorePostService(PopupStorePostRepository repository) {
-        this.repository = repository;
-    }
-
-    public PopupStorePost savePost(PopupStorePost post) {
-        return repository.save(post);
+    public PopupStorePostService(PopupStorePostRepository popupStorePostRepository) {
+        this.popupStorePostRepository = popupStorePostRepository;
     }
 
     public List<PopupStorePost> listAll() {
-        return repository.findAll();
+        return popupStorePostRepository.findAll();
     }
 
-    public List<PopupStorePost> searchByLocation(String keyword) {
-        return repository.findByLocationContaining(keyword);
+    public List<PopupStorePost> searchByTitle(String title) {
+        return popupStorePostRepository.findByContentContaining(title);
     }
 
     private WebDriver setupWebDriver() {
@@ -67,6 +76,7 @@ public class PopupStorePostService {
             System.out.println("로그인 실패: " + e.getMessage());
         }
     }
+
 
     private Set<String> collectPostLinks(WebDriver driver, int scrollCount) throws InterruptedException {
         Set<String> postLinks = new HashSet<>();
@@ -117,14 +127,14 @@ public class PopupStorePostService {
     // ParsedContent 헬퍼 클래스 (종료일자 필드 추가)
     private static class ParsedContent {
         String location;
-        java.sql.Date operatingDate;
+        java.sql.Date popupsStartDate;
         java.sql.Date popupsEndDate;
         String operatingTime;
         String details;
 
-        ParsedContent(String location, java.sql.Date operatingDate, java.sql.Date popupsEndDate, String operatingTime, String details) {
+        ParsedContent(String location, java.sql.Date popupsStartDate, java.sql.Date popupsEndDate, String operatingTime, String details) {
             this.location = location;
-            this.operatingDate = operatingDate;
+            this.popupsStartDate = popupsStartDate;
             this.popupsEndDate = popupsEndDate;
             this.operatingTime = operatingTime;
             this.details = details;
@@ -134,7 +144,7 @@ public class PopupStorePostService {
     // 운영일자 문자열(예: "📆2025년 4월 19일-20일 (토~일)")를 파싱하여 정보를 추출
     private ParsedContent parseContent(String content) {
         String location = null;
-        String operatingDateStr = null;
+        String popupsStartDateStr = null;
         String popupsEndDateStr = null;
         String operatingTime = null;
         StringBuilder detailsBuilder = new StringBuilder();
@@ -151,10 +161,10 @@ public class PopupStorePostService {
                 String dateLine = line.substring(1).trim();
                 if (dateLine.contains("-")) {
                     String[] dateParts = dateLine.split("-");
-                    operatingDateStr = dateParts[0].trim();
+                    popupsStartDateStr = dateParts[0].trim();
                     popupsEndDateStr = dateParts[1].trim();
                 } else {
-                    operatingDateStr = dateLine;
+                    popupsStartDateStr = dateLine;
                 }
             } else if (line.startsWith("⏰")) {
                 operatingTime = line.substring(1).trim();
@@ -163,7 +173,7 @@ public class PopupStorePostService {
             }
         }
         String details = detailsBuilder.toString().trim();
-        java.sql.Date operatingDate = parseOperatingDate(operatingDateStr);
+        java.sql.Date operatingDate = parseOperatingDate(popupsStartDateStr);
         java.sql.Date popupsEndDate = parsepopupsEndDate(popupsEndDateStr);
         return new ParsedContent(location, operatingDate, popupsEndDate, operatingTime, details);
     }
@@ -256,7 +266,7 @@ public class PopupStorePostService {
                     String postContent = fetchPostContent(wait);
                     List<String> imageUrls = fetchImageUrls(wait);
                     ParsedContent pc = parseContent(postContent);
-                    if (pc.operatingDate == null || pc.operatingTime == null ||
+                    if (pc.popupsStartDate == null || pc.operatingTime == null ||
                             pc.location == null || pc.details == null || postContent.isEmpty()) {
                         System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
                         continue;
@@ -264,16 +274,27 @@ public class PopupStorePostService {
                     PopupStorePost post = new PopupStorePost();
                     post.setPostUrl(postUrl);
                     post.setContent(postContent);
-                    post.setOperatingDate(pc.operatingDate);
+                    post.setPopupsStartDate(pc.popupsStartDate);
                     post.setOperatingTime(pc.operatingTime);
                     post.setPopupsEndDate(pc.popupsEndDate);
                     post.setLocation(pc.location);
                     post.setDetails(pc.details);
                     post.setImageUrls(imageUrls);
                     // 상태 결정 (현재 날짜와 운영/종료일 비교)
-                    String status = determineStatus(pc.operatingDate, pc.popupsEndDate);
+                    String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
                     post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
-                    PopupStorePost savedPost = repository.save(post);
+
+                    // 지역 추출 로직: location에서 앞의 두 단어를 추출하여 popupsArea에 저장
+                    String location = pc.location;
+                    if (location != null && !location.trim().isEmpty()) {
+                        String[] tokens = location.split("\\s+");
+                        if (tokens.length >= 2) {
+                            String popupsArea = tokens[0] + " " + tokens[1];
+                            post.setPopupsArea(popupsArea);
+                        }
+                    }
+
+                    PopupStorePost savedPost = popupStorePostRepository.save(post);
                     System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
                 }
             } finally {
@@ -282,5 +303,74 @@ public class PopupStorePostService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    public List<PopupStorePostDTO> getRandomPopupStorePosts(int randomSize) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        // repository.findRandomPopupStorePosts(randomSize)는 무작위로 팝업스토어 데이터를 조회하는 커스텀 메서드입니다.
+        return popupStorePostRepository.findRandomPopupStorePosts(randomSize)
+                .stream()
+                .map(PopupStorePostDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    // 공연/전시 상세정보 조회
+    public EventResponseDTO getPopupStorePostDetail(Long id) {
+        EventResponseDTO eventResponseDTO = popupStorePostRepository.findById(id)
+                .map(EventResponseDTO::new)
+                .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
+        return eventResponseDTO;
+    }
+
+    public EventPageResponseDTO searchPopupStorePosts(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+        Specification<PopupStorePost> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 제목 키워드 검색 (대소문자 구분 없이)
+            if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
+                Expression<String> titleExpression = root.get("content").as(String.class);
+                Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
+
+                predicates.add(
+                        criteriaBuilder.like(
+                                lowerTitle,
+                                "%" + titleKeyword.toLowerCase() + "%"
+                        )
+                );
+            }
+
+            // 지역 필터
+            if (region != null && !region.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("popupsArea"), region));
+            }
+
+            // 공연 상태(공연중, 공연예정) 필터
+            if (status != null && !status.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<PopupStorePost> performancePage = popupStorePostRepository.findAll(spec, pageable);
+
+        List<EventResponseDTO> posts = performancePage.getContent()
+                .stream()
+                .map(EventResponseDTO::new)
+                .toList();
+
+        EventPageResponseDTO response = new EventPageResponseDTO();
+        response.setPosts(posts);
+        response.setTotalPages(performancePage.getTotalPages());
+        response.setTotalElements(performancePage.getTotalElements());
+        response.setPageNum(performancePage.getNumber());
+        response.setPageSize(performancePage.getSize());
+        response.setNumberOfElements(performancePage.getNumberOfElements());
+
+        return response;
     }
 }

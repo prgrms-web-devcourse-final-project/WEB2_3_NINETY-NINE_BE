@@ -20,5 +20,7 @@ public class ExhibitDetailDTO {
     private String thumbnail;
     private Double gpsX;
     private Double gpsY;
+    private String exhibitStatus; //전시회 상태 추가
+
 
 }

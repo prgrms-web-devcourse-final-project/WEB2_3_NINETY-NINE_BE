@@ -112,4 +112,58 @@ public class EventResponseDTO {
     public boolean getBookmarked() {
         return this.isBookmarked;
     }
+    public EventResponseDTO(ExhibitEntity exhibitEntity) {
+        this.id = exhibitEntity.getSeq();
+        this.genre = exhibitEntity.getArea();
+        this.postUrl = exhibitEntity.getThumbnail();
+        this.ageRating = null;
+        this.title = exhibitEntity.getTitle();
+        this.startDate = exhibitEntity.getStartDate();
+        this.endDate = exhibitEntity.getEndDate();
+        this.operatingHours = null;
+        this.location = exhibitEntity.getArea();
+        this.venue = exhibitEntity.getPlace();
+        this.status = exhibitEntity.getExhibitStatus();
+        this.ticketingWebSite = null;
+        this.price = null;
+        this.detailImage = null;
+        this.description = null;
+    }
+
+    public EventResponseDTO(PopupStorePost popupStorePost) {
+        this.id = popupStorePost.getId();
+        this.genre = null;
+        this.postUrl = popupStorePost.getImageUrls().toString();
+        this.ageRating = null;
+        this.title = popupStorePost.getContent();
+        this.startDate = String.valueOf(popupStorePost.getPopupsStartDate());
+        this.endDate = String.valueOf(popupStorePost.getPopupsEndDate());
+        this.operatingHours = null;
+        this.location = popupStorePost.getPopupsArea();
+        this.venue = popupStorePost.getLocation();
+        this.status = popupStorePost.getStatus();
+        this.ticketingWebSite = null;
+        this.price = null;
+        this.detailImage = null;
+        this.description = null;
+    }
+
+    public EventResponseDTO(FestivalPost festivalPost) {
+        this.id = festivalPost.getId();
+        this.genre = null;
+        this.postUrl = festivalPost.getImageUrls().toString();
+        this.ageRating = null;
+        this.title = festivalPost.getFestivalContent();
+        this.startDate = String.valueOf(festivalPost.getFestivalStartDate());
+        this.endDate = String.valueOf(festivalPost.getFestivalEndDate());
+        this.operatingHours = null;
+        this.location = festivalPost.getFestivalArea();
+        this.venue = festivalPost.getFestivalLocation();
+        this.status = festivalPost.getFestivalStatus();
+        this.ticketingWebSite = null;
+        this.price = null;
+        this.detailImage = null;
+        this.description = null;
+    }
+
 }

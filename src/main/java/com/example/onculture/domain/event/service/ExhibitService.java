@@ -1,14 +1,20 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.dto.ExhibitDTO;
-import com.example.onculture.domain.event.dto.ExhibitDetailDTO;
-import com.example.onculture.domain.event.dto.PublicDataRequestDTO;
+import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -16,6 +22,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,14 +60,34 @@ public class ExhibitService {
     }
 
     // 공연/전시 상세정보 조회
-    public ExhibitDetailDTO getExhibitDetail(Long seq) {
-        ExhibitEntity exhibit = exhibitRepository.findById(seq)
+    public EventResponseDTO getExhibitDetail(Long seq) {
+        EventResponseDTO eventResponseDTO = exhibitRepository.findById(seq)
+                .map(EventResponseDTO::new)
+
                 .orElseThrow(() -> new RuntimeException("Performance not found with seq: " + seq));
-        return toDetailDTO(exhibit);
+        return eventResponseDTO;
     }
 
     // 클라이언트로부터 전달받은 공공데이터(JSON)를 DB에 저장하는 메서드
     public void savePublicData(PublicDataRequestDTO requestDTO) {
+        // 날짜 파싱 (문자열 "YYYYMMDD" -> java.util.Date)
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        java.util.Date start = null;
+        java.util.Date end = null;
+        try {
+            start = sdf.parse(requestDTO.getStartDate());
+            end = sdf.parse(requestDTO.getEndDate());
+        } catch (ParseException e) {
+            e.printStackTrace();
+            // 파싱 실패 시 기본값 또는 예외 처리 로직 추가 가능
+        }
+
+        // determineStatus 메서드는 java.sql.Date 타입을 받으므로 변환
+        String status = determineStatus(
+                start != null ? new java.sql.Date(start.getTime()) : null,
+                end != null ? new java.sql.Date(end.getTime()) : null
+        );
+
         ExhibitEntity entity = ExhibitEntity.builder()
                 .title(requestDTO.getTitle())
                 .startDate(requestDTO.getStartDate())
@@ -69,7 +98,7 @@ public class ExhibitService {
                 .thumbnail(requestDTO.getThumbnail())
                 .gpsX(requestDTO.getGpsX())
                 .gpsY(requestDTO.getGpsY())
-                // 상세 정보 필드가 필요하면 여기서 추가할 수 있습니다.
+                .exhibitStatus(status) // 계산된 상태 저장
                 .build();
         exhibitRepository.save(entity);
     }
@@ -86,8 +115,8 @@ public class ExhibitService {
             // API 호출 URL 생성 (PageNo 파라미터 포함)
             String apiUrl = UriComponentsBuilder.fromHttpUrl("http://apis.data.go.kr/B553457/nopenapi/rest/publicperformancedisplays/period")
                     .queryParam("serviceKey", serviceKey)  // 인코딩된 서비스키 그대로 사용
-                    .queryParam("from", "20250101")
-                    .queryParam("to", "20250225")
+                    .queryParam("from", "20250301")
+                    .queryParam("to", "20250401")
                     .queryParam("rows", rows)
                     .queryParam("PageNo", pageNo)
                     .build()//추가 인코딩 방지
@@ -169,6 +198,20 @@ public class ExhibitService {
         }
     }
 
+
+    // 공연 상태 결정 로직: 현재 날짜와 시작/종료일 비교
+    private String determineStatus(java.sql.Date startDate, java.sql.Date endDate) {
+        java.util.Date today = new java.util.Date();
+        if (endDate != null && today.after(endDate)) {
+            return "진행 종료";
+        } else if (startDate != null && today.before(startDate)) {
+            return "진행 예정";
+        } else if (startDate != null && endDate != null && (!today.before(startDate) && !today.after(endDate))) {
+            return "진행중";
+        }
+        return "상태 미정";
+    }
+
     // Entity -> ListDTO 변환
     private ExhibitDTO toListDTO(ExhibitEntity p) {
         return ExhibitDTO.builder()
@@ -185,19 +228,91 @@ public class ExhibitService {
                 .build();
     }
 
-    // Entity -> DetailDTO 변환
-    private ExhibitDetailDTO toDetailDTO(ExhibitEntity p) {
-        return ExhibitDetailDTO.builder()
-                .seq(p.getSeq())
-                .title(p.getTitle())
-                .startDate(p.getStartDate())
-                .endDate(p.getEndDate())
-                .place(p.getPlace())
-                .realmName(p.getRealmName())
-                .area(p.getArea())
-                .thumbnail(p.getThumbnail())
-                .gpsX(p.getGpsX())
-                .gpsY(p.getGpsY())
-                .build();
+//    // Entity -> DetailDTO 변환
+//    private ExhibitDetailDTO toDetailDTO(ExhibitEntity p) {
+//        return ExhibitDetailDTO.builder()
+//                .seq(p.getSeq())
+//                .title(p.getTitle())
+//                .startDate(p.getStartDate())
+//                .endDate(p.getEndDate())
+//                .place(p.getPlace())
+//                .realmName(p.getRealmName())
+//                .area(p.getArea())
+//                .thumbnail(p.getThumbnail())
+//                .gpsX(p.getGpsX())
+//                .gpsY(p.getGpsY())
+//                .build();
+//    }
+
+    // 제목 검색 기능
+    public List<ExhibitDTO> getExhibitByTitle(String title) {
+        String keyword = title.trim();
+        List<ExhibitEntity> exhibits = exhibitRepository.findByTitleContaining(keyword);
+        return exhibits.stream().map(this::toListDTO).collect(Collectors.toList());
     }
+    //랜덤조회
+    public List<ExhibitDTO> getRandomExhibitions(int randomSize) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        // exhibitRepository.findRandomExhibitions(randomSize)는 무작위 전시 데이터를 조회하는 커스텀 메서드입니다.
+        return exhibitRepository.findRandomExhibitions(randomSize)
+                .stream()
+                .map(ExhibitDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    public EventPageResponseDTO searchExhibits(String region, String status, String titleKeyword, int pageNum, int pageSize) {
+        Specification<ExhibitEntity> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 제목 키워드 검색 (대소문자 구분 없이)
+            if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
+                Expression<String> titleExpression = root.get("title").as(String.class);
+                Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
+
+                predicates.add(
+                        criteriaBuilder.like(
+                                lowerTitle,
+                                "%" + titleKeyword.toLowerCase() + "%"
+                        )
+                );
+            }
+
+            // 지역 필터
+            if (region != null && !region.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("area"), region));
+            }
+
+            // 공연 상태(공연중, 공연예정) 필터
+            if (status != null && !status.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("exhibitStatus"), status));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        Page<ExhibitEntity> exhibitPage = exhibitRepository.findAll(spec, pageable);
+
+        List<EventResponseDTO> posts = exhibitPage.getContent()
+                .stream()
+                .map(EventResponseDTO::new)
+                .toList();
+
+        EventPageResponseDTO response = new EventPageResponseDTO();
+        response.setPosts(posts);
+        response.setTotalPages(exhibitPage.getTotalPages());
+        response.setTotalElements(exhibitPage.getTotalElements());
+        response.setPageNum(exhibitPage.getNumber());
+        response.setPageSize(exhibitPage.getSize());
+        response.setNumberOfElements(exhibitPage.getNumberOfElements());
+
+        return response;
+    }
+
+
+
+
+
 }
