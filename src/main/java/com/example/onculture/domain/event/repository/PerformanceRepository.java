@@ -10,6 +10,6 @@ import java.util.List;
 
 @Repository
 public interface PerformanceRepository extends JpaRepository<Performance, Long>, JpaSpecificationExecutor<Performance> {
-    @Query(value = "SELECT * FROM performance WHERE performance_state = '공연중' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
+    @Query(value = "SELECT * FROM performance WHERE performance_state = '진행중' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
     List<Performance> findRandomPerformances(int randomSize);
 }
