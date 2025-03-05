@@ -90,11 +90,11 @@ public class PerformanceDetailDTO {
         performance.setGenre(this.genre);
         performance.setUpdateDate(this.updateDate);
         if (this.performanceState.equals("공연예정")) {
-            performance.setPerformanceState("진행예정");
+            performance.setPerformanceState("진행 예정");
         } else if (this.performanceState.equals("공연중")) {
             performance.setPerformanceState("진행중");
         } else {
-            performance.setPerformanceState("진행종료");
+            performance.setPerformanceState("진행 종료");
         }
         performance.setShowTimes(this.showTimes);
 

@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/performances")
+@RequestMapping("/api/events/performances")
 @Tag(name = "공연(뮤지컬,연극) API", description = "공연(뮤지컬,연극)을 관리하는 API")
 public class PerformanceController {
     private final PerformanceService performanceService;
