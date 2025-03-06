@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/exhibit")
+@RequestMapping("/api/events/exhibits")
 @RequiredArgsConstructor
 public class ExhibitController {
 
@@ -80,13 +80,13 @@ public class ExhibitController {
     // 전시 상세 정보 조회
     @Operation(summary = "공연(전시회) 게시글 상세 조회",
             description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/detail")
+    @GetMapping("/{exhibitId}")
     public ResponseEntity<EventResponseDTO> getExhibitionDetail(
-            @RequestParam Long seq,
+            @PathVariable Long exhibitId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = (userDetails != null) ? userDetails.getUserId() : null;
-        EventResponseDTO detail = exhibitService.getExhibitDetail(seq, userId);
-        return ResponseEntity.ok(detail);
+        EventResponseDTO responseDTO = exhibitService.getExhibitDetail(exhibitId, userId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO).getData());
     }
 
     // 제목 검색
@@ -116,7 +116,7 @@ public class ExhibitController {
     //  전시회 지역+상태 검색
     @Operation(summary = "공연(전시회) 게시글 지역, 상태, 검색 조회",
             description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/search_exhibits")
+    @GetMapping("/exhibits")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchExhibits(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String status,

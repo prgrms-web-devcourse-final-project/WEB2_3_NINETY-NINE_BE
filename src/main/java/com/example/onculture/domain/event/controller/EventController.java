@@ -15,15 +15,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/event")
+@RequestMapping("/api/events")
 public class EventController {
 
     private final PopupStorePostService popupStorePostService;
@@ -40,7 +37,7 @@ public class EventController {
     // 공연(PopupStore) 목록 조회
     @Operation(summary = "공연(PopupStore) 목록 조회",
             description = "공연(PopupStore) 목록을 조회합니다.")
-    @GetMapping("/popup-store-posts")
+    @GetMapping("/popupstores/posts")
     public List<PopupStorePost> listAllPopupStorePosts() {
         return popupStorePostService.listAll();
     }
@@ -48,7 +45,7 @@ public class EventController {
     // 제목(title)를 이용한 PopupStore 검색 (실제로 content 필드를 검색)
     @Operation(summary = "제목(title)를 이용한 공연(PopupStore)검색",
             description = "제목(title)를 이용하여 공연(PopupStore) 게시글을 검색합니다. 요청 항목: title(검색어)")
-    @GetMapping("/popup-store-posts/title")
+    @GetMapping("/popupstores/title")
     public List<PopupStorePost> searchPopupStorePosts(@RequestParam("title") String title) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어는 필수입니다.");
@@ -59,7 +56,7 @@ public class EventController {
     //랜덤 조회
     @Operation(summary = "공연(PopupStore) 게시글 랜덤 조회",
             description = "randomSize를 입력하셔야 되고 로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/popup-store-posts/random")
+    @GetMapping("/popupstores/random")
     public ResponseEntity<SuccessResponse<List<EventResponseDTO>>> getRandomPopupStorePosts(
             @RequestParam(defaultValue = "9") int randomSize,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -71,19 +68,20 @@ public class EventController {
     //상세 조회
     @Operation(summary = "팝업 스토어 데이터 상세 정보 조회",
             description = "팝업 스토어 데이터 상세 정보 조회")
-    @GetMapping("/popup-store/detail")
+    @GetMapping("/popupstores/{popupstoreId}")
     public ResponseEntity<EventResponseDTO> getPopupStorePostDetail(
-            @RequestParam Long id,
+            @PathVariable Long popupstoreId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = (userDetails != null) ? userDetails.getUserId() : null;
-        EventResponseDTO detail = popupStorePostService.getPopupStorePostDetail(id, userId);
-        return ResponseEntity.ok(detail);
+        EventResponseDTO responseDTO = popupStorePostService
+                .getPopupStorePostDetail(popupstoreId, userId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO).getData());
     }
 
     //  팝업 스토어 지역+상태 검색
     @Operation(summary = "공연(PopupStore) 지역+상태 검색 조회",
             description = "randomSize를 입력하셔야 되고 로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/search_popup_store")
+    @GetMapping("/popupstores")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchPopupStorePosts(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String status,
@@ -101,7 +99,7 @@ public class EventController {
     // 전체 Festival 목록 조회
     @Operation(summary = "전체 공연(festival) 목록 조회",
             description = "전체 공연(festival) 게시글 목록을 조회합니다.")
-    @GetMapping("/festival-posts")
+    @GetMapping("/festivals/posts")
     public List<FestivalPost> listAllFestivalPosts() {
         return festivalPostService.listAll();
     }
@@ -109,7 +107,7 @@ public class EventController {
     // 제목(title)를 이용한 Festival 검색 (festival_content 필드 검색)
     @Operation(summary = "제목(title)를 이용한 Festival 검색",
             description = "제목(title)를 이용하여 Festival 게시글을 검색합니다. 요청 항목: title(검색어)")
-    @GetMapping("/festival-posts/title")
+    @GetMapping("/festivals/title")
     public List<FestivalPost> searchFestivalPosts(@RequestParam("title") String title) {
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어는 필수입니다.");
@@ -120,7 +118,7 @@ public class EventController {
     // festival 랜덤 조회
     @Operation(summary = "공연(festival) 게시글 랜덤 조회",
             description = "randomSize를 입력하셔야 되고 로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/festival-posts/random")
+    @GetMapping("/festivals/random")
     public ResponseEntity<SuccessResponse<List<EventResponseDTO>>> getRandomFestivalPosts(
             @RequestParam(defaultValue = "9") int randomSize,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -133,19 +131,20 @@ public class EventController {
     //상세 조회
     @Operation(summary = "공연(festival) 데이터 상세 정보 조회",
             description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/festival/detail")
-    public ResponseEntity<EventResponseDTO> getFestivalPostDetail(
-            @RequestParam Long id,
+    @GetMapping("/festivals/{festivalId}")
+    public ResponseEntity<SuccessResponse<EventResponseDTO>> getFestivalPostDetail(
+            @PathVariable Long festivalId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = (userDetails != null) ? userDetails.getUserId() : null;
-        EventResponseDTO detail = festivalPostService.getFestivalPostDetail(id, userId);
-        return ResponseEntity.ok(detail);
+        EventResponseDTO responseDTO = festivalPostService
+                .getFestivalPostDetail(festivalId, userId);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 
     //DB에 저장된 FestivalPost의 festivalLocation 필드를 업데이트 후 전체 목록을 반환
     @Operation(summary = "공연(festival) 건물 데이터 주소 변환",
             description = "kakaoAddressService를 사용해서 주소를 업데이트 합니다.")
-    @GetMapping("/update-addresses")
+    @GetMapping("/festivals/update-addresses")
     public ResponseEntity<List<FestivalPost>> updateAddresses() {
         List<FestivalPost> updatedPosts = festivalPostAddressUpdateService.updateFestivalPostAddressesAndAreas();
         return ResponseEntity.ok(updatedPosts);
@@ -154,7 +153,7 @@ public class EventController {
     // 페스티벌 지역+상태 검색
     @Operation(summary = "공연(festival) 지역+상태 검색",
             description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/search_festival")
+    @GetMapping("/festivals")
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchFestivalPosts(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String status,
