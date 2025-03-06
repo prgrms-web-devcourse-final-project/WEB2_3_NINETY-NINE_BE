@@ -28,9 +28,6 @@ public class TokenService {
 
     // 생성된 액세스 및 리프레시 토큰을 쿠키에 저장
     public void addAllTokenToCookie(HttpServletRequest request, HttpServletResponse response, String accessToken, String refreshToken) {
-        // 기존 토큰 쿠키 삭제
-        CookieUtil.deleteCookie(request, response, ACCESS_TOKEN_COOKIE_NAME);
-        CookieUtil.deleteCookie(request, response, REFRESH_TOKEN_COOKIE_NAME);
         // 새로운 토큰 쿠키 생성
         CookieUtil.addCookie(response, ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_DURATION);
         CookieUtil.addSecurityCookie(response, REFRESH_TOKEN_COOKIE_NAME, refreshToken, REFRESH_TOKEN_COOKIE_DURATION);
