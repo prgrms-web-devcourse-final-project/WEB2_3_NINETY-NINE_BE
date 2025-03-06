@@ -29,8 +29,8 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final Key key;      // 서명 키
-    private static final Long ACCESS_TOKEN_EXPIRATION_IN_SECONDS = Duration.ofHours(1).getSeconds();
-    private static final Long REFRESH_TOKEN_EXPIRATION_IN_SECONDS = Duration.ofDays(14).getSeconds();
+    private static final Long ACCESS_TOKEN_EXPIRATION_IN_SECONDS = Duration.ofDays(14).getSeconds();        // 2주
+    private static final Long REFRESH_TOKEN_EXPIRATION_IN_SECONDS = Duration.ofDays(28).getSeconds();       // 4주
     public final UserRepository userRepository;
 
     // application.properties에 설정된 값 반영

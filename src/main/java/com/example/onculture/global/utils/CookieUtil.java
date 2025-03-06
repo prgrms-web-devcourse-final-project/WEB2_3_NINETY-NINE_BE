@@ -3,6 +3,7 @@ package com.example.onculture.global.utils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
 import org.springframework.util.SerializationUtils;
 
 import java.time.Duration;
@@ -18,34 +19,51 @@ public class CookieUtil {
     public final static String OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME = "oauth2_auth_request";    // OAuth2 인가 요청 쿠키 이름
     public final static int COOKIE_EXPIRE_SECONDS = 18000;      // OAuth2 인가 요청 쿠키의 유효 시간 ( 18000 = 5seconds )
 
-    // 요청값(이름, 값, 만료 기간)을 바탕으로 쿠키 생성 메서드
     public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/");       // 전체 도메인에서 사용 가능하도록 설정
-        cookie.setMaxAge(maxAge);  // 쿠키 유효 시간 설정 (초 단위)
-        response.addCookie(cookie);
+        // ResponseCookie를 사용하여 쿠키 생성
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")               // 전체 도메인에서 사용 가능하도록 설정
+//                .sameSite("None")        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
+//                .secure(true)           // HTTP 환경에서는 Secure=false로 설정
+                .maxAge(maxAge)          // 쿠키 유효 시간 설정 (초 단위)
+                .build();
+
+        // 쿠키를 응답에 추가
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 
-    // 리프레시 전용 쿠키 생성 메서드
+    // 리프레시 전용 쿠키 생성 메서드 (HttpOnly 설정)
     public static void addSecurityCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setHttpOnly(true);   // XSS 공격 방지를 위해 HttpOnly 설정
-        cookie.setPath("/");
-        cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
+        // ResponseCookie를 사용하여 쿠키 생성
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .path("/")               // 전체 도메인에서 사용 가능하도록 설정
+                .httpOnly(true)         // HttpOnly 설정 (프론트엔드에서 쿠키를 읽지 못하도록)
+//                .sameSite("None")        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
+//                .secure(true)           // HTTP 환경에서는 Secure=false로 설정
+                .maxAge(maxAge)          // 쿠키 유효 시간 설정 (초 단위)
+                .build();
+
+        // 쿠키를 응답에 추가
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 
     // 쿠키의 이름을 입력받아 쿠키 삭제
     public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
         Cookie[] cookies = request.getCookies();
-        if ( cookies == null ) return;
+        if (cookies == null) return;
 
-        for ( Cookie cookie : cookies ) {
+        for (Cookie cookie : cookies) {
             if (name.equals(cookie.getName())) {
-                cookie.setValue("");
-                cookie.setPath("/");
-                cookie.setMaxAge(0);
-                response.addCookie(cookie);
+                // ResponseCookie로 쿠키 삭제 설정
+                ResponseCookie cookieToDelete = ResponseCookie.from(name, "")  // 쿠키 값은 빈 문자열로 설정
+                        .path("/")                  // 쿠키의 경로는 그대로 유지
+//                        .sameSite("None")           // SameSite=None 설정 (Cross-Site 요청 허용)
+//                        .secure(true)              // HTTP 환경에서만 사용
+                        .maxAge(0)                  // 유효 시간을 0으로 설정하여 만료 처리
+                        .build();
+
+                // 응답에 쿠키 삭제를 반영
+                response.addHeader("Set-Cookie", cookieToDelete.toString());
             }
         }
     }
@@ -63,4 +81,59 @@ public class CookieUtil {
                         Base64.getUrlDecoder().decode(cookie.getValue()))
         );
     }
+
+    // 개선 전
+    /*
+    // 요청값(이름, 값, 만료 기간)을 바탕으로 쿠키 생성 메서드
+    public static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");       // 전체 도메인에서 사용 가능하도록 설정
+        cookie.setSecure(false);   // HTTP 환경에서는 Secure=false로 설정
+        cookie.setMaxAge(maxAge);  // 쿠키 유효 시간 설정 (초 단위)
+
+        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
+        cookie.setAttribute("SameSite", "None");
+        response.addCookie(cookie);
+
+        // 쿠키 헤더에도 SameSite=None 적용 (브라우저가 SameSite 속성을 인식하도록)
+        response.addHeader("Set-Cookie", String.format(
+                "%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None",
+                name, value, maxAge));
+    }
+
+    // 리프레시 전용 쿠키 생성 메서드 (HttpOnly 설정)
+    public static void addSecurityCookie(HttpServletResponse response, String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);   // XSS 공격 방지를 위해 HttpOnly 설정
+        cookie.setSecure(false);    // HTTP 환경에서는 Secure=false로 설정
+        cookie.setMaxAge(maxAge);
+        cookie.setAttribute("SameSite", "None");  // Cross-Site 요청 허용
+        response.addCookie(cookie);
+
+        // 쿠키 헤더에도 SameSite=None 적용
+        response.addHeader("Set-Cookie", String.format(
+                "%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=None",
+                name, value, maxAge));
+    }
+
+    // 쿠키의 이름을 입력받아 쿠키 삭제
+    public static void deleteCookie(HttpServletRequest request, HttpServletResponse response, String name) {
+        Cookie[] cookies = request.getCookies();
+        if ( cookies == null ) return;
+
+        for ( Cookie cookie : cookies ) {
+            if (name.equals(cookie.getName())) {
+                cookie.setValue("");
+                cookie.setPath("/");
+                cookie.setSecure(false);        // HTTP 에서만 전송 (HTTPS일 경우 true로 변경)
+                cookie.setMaxAge(0);
+                cookie.setAttribute("SameSite", "None");        // Cross-Site 요청 허용
+                response.addCookie(cookie);
+            }
+        }
+    }
+     */
+
+
 }
