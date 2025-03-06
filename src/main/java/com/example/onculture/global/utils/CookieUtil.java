@@ -23,9 +23,8 @@ public class CookieUtil {
         // ResponseCookie를 사용하여 쿠키 생성
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .path("/")               // 전체 도메인에서 사용 가능하도록 설정
-                .sameSite("None")        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
-                .httpOnly(false)        // 액세스 토큰용이므로 HttpOnly 설정하지 않음 (프론트엔드에서 쿠키를 접근 가능하게 설정)
-                .secure(false)           // HTTP 환경에서는 Secure=false로 설정
+//                .sameSite("None")        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
+//                .secure(false)           // HTTP 환경에서는 Secure=false로 설정
                 .maxAge(maxAge)          // 쿠키 유효 시간 설정 (초 단위)
                 .build();
 
@@ -38,9 +37,9 @@ public class CookieUtil {
         // ResponseCookie를 사용하여 쿠키 생성
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .path("/")               // 전체 도메인에서 사용 가능하도록 설정
-                .sameSite("None")        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
                 .httpOnly(true)         // HttpOnly 설정 (프론트엔드에서 쿠키를 읽지 못하도록)
-                .secure(false)           // HTTP 환경에서는 Secure=false로 설정
+//                .sameSite("None")        // SameSite=None을 명시적으로 설정하여 크로스사이트 요청 허용
+//                .secure(false)           // HTTP 환경에서는 Secure=false로 설정
                 .maxAge(maxAge)          // 쿠키 유효 시간 설정 (초 단위)
                 .build();
 
@@ -58,8 +57,8 @@ public class CookieUtil {
                 // ResponseCookie로 쿠키 삭제 설정
                 ResponseCookie cookieToDelete = ResponseCookie.from(name, "")  // 쿠키 값은 빈 문자열로 설정
                         .path("/")                  // 쿠키의 경로는 그대로 유지
-                        .sameSite("None")           // SameSite=None 설정 (Cross-Site 요청 허용)
-                        .secure(false)              // HTTP 환경에서만 사용
+//                        .sameSite("None")           // SameSite=None 설정 (Cross-Site 요청 허용)
+//                        .secure(false)              // HTTP 환경에서만 사용
                         .maxAge(0)                  // 유효 시간을 0으로 설정하여 만료 처리
                         .build();
 
