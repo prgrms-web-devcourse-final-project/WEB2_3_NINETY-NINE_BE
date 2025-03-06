@@ -10,11 +10,9 @@ import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,10 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class PopupStorePostService {
@@ -57,30 +52,79 @@ public class PopupStorePostService {
         return popupStorePostRepository.findByContentContaining(title);
     }
 
+    // WebDriver 설정: ChromeOptions를 사용하여 브라우저를 실제 사용자처럼 모방
     private WebDriver setupWebDriver() {
         WebDriverManager.chromedriver().driverVersion("133").setup();
-        return new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+        // 실제 사용자 브라우저처럼 보이도록 headless 모드는 사용하지 않음
+        options.addArguments("--start-maximized");
+        // 자동화 탐지를 피하기 위한 옵션 추가 (필요시 더 보완)
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        // 실제 브라우저의 User-Agent 사용
+        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36");
+        return new ChromeDriver(options);
     }
 
+    // 인스타그램 로그인: 로그인 후 프로필 아이콘이 보일 때까지 대기하여 로그인 성공을 확실히 하고, 쿠키를 저장
     private void loginToInstagram(WebDriver driver, WebDriverWait wait, String username, String password) {
         driver.get("https://www.instagram.com/accounts/login/");
+
+        // 로그인 페이지 완전 로딩 대기
         try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            // 사용자명 입력 필드가 클릭 가능해질 때까지 대기
             WebElement usernameInput = wait.until(ExpectedConditions.elementToBeClickable(By.name("username")));
             usernameInput.sendKeys(username);
+
+            // 비밀번호 입력
             WebElement passwordInput = driver.findElement(By.name("password"));
             passwordInput.sendKeys(password);
-            WebElement loginButton = driver.findElement(By.xpath("//button[@type='submit']"));
+
+            // 입력 후 약간의 대기 (사용자 입력 모방)
+            Thread.sleep(2000);
+
+            // 로그인 버튼 클릭
+            WebElement loginButton = driver.findElement(By.cssSelector("button[type='submit']"));
             loginButton.click();
-            wait.until(ExpectedConditions.urlContains("instagram.com"));
+
+            // 로그인 성공 후, 프로필 아이콘(또는 고유 요소)이 나타날 때까지 대기
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//img[contains(@alt, '프로필 사진')]")));
             System.out.println("로그인 성공!");
+
+            // 로그인 상태 유지를 위해 쿠키 저장 (실제 환경에서는 파일 또는 안전한 스토리지에 저장할 것)
+            saveCookies(driver);
         } catch (Exception e) {
             System.out.println("로그인 실패: " + e.getMessage());
         }
     }
 
+    // 로그인 후 쿠키 정보를 저장 (예시로 콘솔 출력 – 보안 저장은 별도 구현)
+    private void saveCookies(WebDriver driver) {
+        Set<Cookie> cookies = driver.manage().getCookies();
+        for (Cookie cookie : cookies) {
+            System.out.println("쿠키 저장됨: " + cookie.getName() + " = " + cookie.getValue());
+        }
+        // 실제 운영환경에서는 이 쿠키들을 안전하게 파일이나 데이터베이스에 저장합니다.
+    }
+
+    // 쿠키를 로드하여 브라우저에 추가 (새 세션에서도 로그인 상태를 복원할 때 사용)
+    private void loadCookies(WebDriver driver, Set<Cookie> cookies) {
+        driver.get("https://www.instagram.com"); // 도메인 접근 필수
+        for (Cookie cookie : cookies) {
+            driver.manage().addCookie(cookie);
+        }
+        driver.navigate().refresh(); // 쿠키 적용을 위해 새로고침
+    }
+
 
     private Set<String> collectPostLinks(WebDriver driver, int scrollCount) throws InterruptedException {
-        Set<String> postLinks = new HashSet<>();
+        Set<String> postLinks = new LinkedHashSet<>();
         JavascriptExecutor js = (JavascriptExecutor) driver;
         for (int i = 0; i < scrollCount; i++) {
             List<WebElement> posts = driver.findElements(By.xpath("//a[contains(@href, '/p/')]"));
@@ -267,11 +311,11 @@ public class PopupStorePostService {
                     String postContent = fetchPostContent(wait);
                     List<String> imageUrls = fetchImageUrls(wait);
                     ParsedContent pc = parseContent(postContent);
-                    if (pc.popupsStartDate == null || pc.operatingTime == null ||
-                            pc.location == null || pc.details == null || postContent.isEmpty()) {
-                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
-                        continue;
-                    }
+//                    if (pc.popupsStartDate == null || pc.operatingTime == null ||
+//                            pc.location == null || pc.details == null || postContent.isEmpty()) {
+//                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
+//                        continue;
+//                    }
                     PopupStorePost post = new PopupStorePost();
                     post.setPostUrl(postUrl);
                     post.setContent(postContent);
