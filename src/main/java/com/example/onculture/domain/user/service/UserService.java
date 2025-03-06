@@ -186,10 +186,13 @@ public class UserService {
     public void modifyUserProfile(Long userId, ModifyRequestDTO dto, MultipartFile imageData) {
         User user = findUserAndProfileByuserId(userId);
 
-        // 필수 입력값이 닉네임이 없을 경우
-        if (dto.getNickname() == null || dto.getNickname().trim().isEmpty()) throw new CustomException(ErrorCode.NICKNAME_CANNOT_BE_NULL);
-        // 닉네임 업데이트
-        user.setNickname(dto.getNickname().trim());
+        if (dto.getNickname() != null && !dto.getNickname().trim().isEmpty()) {
+            if (userRepository.existsByNickname(dto.getNickname().trim())) {
+                throw new CustomException.DuplicateNicknameException();
+            } else {
+                user.setNickname(dto.getNickname().trim());
+            }
+        }
 
         // 비밀번호 업데이트 (로컬 회원가입 사용자이고 비밀번호 입력했으면 비밀번호 수정)
         if (!user.getLoginType().equals(LoginType.SOCIAL_ONLY) && dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
