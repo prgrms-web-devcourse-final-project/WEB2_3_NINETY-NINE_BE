@@ -45,7 +45,7 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // cors 설정
-                .cors(Customizer.withDefaults())
+//                .cors(Customizer.withDefaults())
                 // 특정 경로에 대한 액세스 설정
                 .authorizeHttpRequests(auth -> auth
 
