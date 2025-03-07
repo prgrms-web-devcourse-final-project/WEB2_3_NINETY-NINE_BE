@@ -119,7 +119,7 @@ public class UserServiceTest {
                 LoginType.LOCAL_ONLY, new HashSet<>(Set.of(Social.LOCAL)), LocalDateTime.now(), findProfile);
         findProfile.setUser(signupUser);
         // UserId 기반 사용자 프로필 정보 수정
-        modifyRequestDTO = new ModifyRequestDTO("tester2", "!123456", "modifyUserProfile 테스트용 입니다.",
+        modifyRequestDTO = new ModifyRequestDTO("tester3", "encodedPassword", "modifyUserProfile 테스트용 입니다.",
                 new HashSet<>(Set.of("팝업 스토어", "뮤지컬")), "testimage.jpa");
         imageData = new MockMultipartFile("profileImage", "testimage2.jpa", "image/jpeg", "fake image content".getBytes());
         // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
@@ -277,10 +277,12 @@ public class UserServiceTest {
     @DisplayName("UserId 기반 사용자 프로필 정보 수정")
     void modifyUserProfile() {
         // Given
-        Long userId = 2L;
-        doReturn(findUser).when(userService).findUserAndProfileByuserId(userId);
-        when(passwordEncoder.encode(modifyRequestDTO.getPassword().trim())).thenReturn("encodedPassword");     // 패스워드 인코딩
+        Long userId = findUser.getId();
         String newImageFileName = "newImageFileName";
+
+        doReturn(findUser).when(userService).findUserAndProfileByuserId(userId);
+        when(userRepository.existsByNickname(modifyRequestDTO.getNickname())).thenReturn(false);
+        when(passwordEncoder.encode(modifyRequestDTO.getPassword().trim())).thenReturn(modifyRequestDTO.getPassword());
         when(imageFileService.checkFileExtensionAndRename(imageData, findUser.getEmail())).thenReturn(newImageFileName);
         doNothing().when(awsS3Util).uploadFile(imageData, newImageFileName);
 
@@ -302,6 +304,23 @@ public class UserServiceTest {
     }
 
     @Test
+    @DisplayName("프로필 이미지 파일 S3 저장 및 파일명 반환 메서드")
+    void profileImageSave() {
+        // Given
+        String newImageFileName = "newImageFileName";
+        when(imageFileService.checkFileExtensionAndRename(imageData, findUser.getEmail())).thenReturn(newImageFileName);
+        doNothing().when(awsS3Util).uploadFile(imageData, newImageFileName);
+
+        // When
+        String imageFileName = userService.profileImageSave(modifyRequestDTO, imageData, findUser);
+
+        // Then
+        assertEquals(newImageFileName, imageFileName);
+        verify(imageFileService, times(1)).checkFileExtensionAndRename(imageData, findUser.getEmail());
+        verify(awsS3Util, times(1)).uploadFile(imageData, newImageFileName);
+    }
+
+    @Test
     @DisplayName("userId 기반 User 조회 및 Profile 존재 여부에 따른 처리")
     void findUserAndProfileByuserId() {
         // Given
@@ -310,7 +329,6 @@ public class UserServiceTest {
 
         ArgumentCaptor<Profile> profileCaptor = ArgumentCaptor.forClass(Profile.class);     // 실제 메서드 내에서 생성되는 Profile 객체를 가져옴
         when(profileRepository.save(profileCaptor.capture())).thenAnswer(i -> i.getArgument(0));        // 가져온 Profile 객체를 반환
-//        doNothing().when(profileRepository).save(profileCaptor.capture());
 
         // When
         User user = userService.findUserAndProfileByuserId(userId);

@@ -34,7 +34,7 @@ public class Profile {
     private String profileImage ="";
 
     // 기본값 : Null
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "profile_interests", joinColumns = @JoinColumn(name = "profile_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "interests")
