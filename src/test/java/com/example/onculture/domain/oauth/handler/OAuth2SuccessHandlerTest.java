@@ -101,19 +101,24 @@ public class OAuth2SuccessHandlerTest {
         doNothing().when(tokenService).addAllTokenToCookie(request, response, accessToken, refreshToken);
 
         // 리다이렉트 URI 설정
-        String redirectUri = "http://localhost:8080/home";
+        String redirectUri = "http://localhost:8080/";
         ReflectionTestUtils.setField(oAuth2SuccessHandler, "redirectUri", redirectUri);
 
         // When
         oAuth2SuccessHandler.onAuthenticationSuccess(request, response, authentication);
 
         // Then
-        // 메서드 내부에서 쿠키를 추가한 후 리다이렉트가 이루어져야 함
-        assertEquals(302, response.getStatus());  // 리다이렉트 상태 코드 확인
-        assertEquals(redirectUri, response.getRedirectedUrl());  // 리다이렉트 URL 확인
+        // 응답 상태 코드가 302(리디렉션)인지 확인
+        assertEquals(302, response.getStatus());
+        // 리다이렉트 URL 확인
+        assertEquals("http://localhost:8080/?access_token=accessToken", response.getRedirectedUrl());
+
+        // 헤더의 Authorization에 액세스 토큰이 들어있는지 검증
+        assertEquals("Bearer " + accessToken, response.getHeader("Authorization"));
 
         // userRepository.findByEmail 호출 여부 검증
         verify(userRepository, times(1)).findByEmail(email);
+
         // 액세스 토큰과 리프레시 토큰을 쿠키에 추가하는 메서드가 호출되었는지 검증
         verify(tokenService, times(1)).addAllTokenToCookie(request, response, accessToken, refreshToken);
     }
