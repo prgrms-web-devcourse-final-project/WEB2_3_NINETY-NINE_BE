@@ -8,6 +8,8 @@ import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.repository.UserRepository;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -16,7 +18,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -51,7 +55,7 @@ public class OAuth2UserCustomService extends DefaultOAuth2UserService {
 
         // 픒랫폼 맞춤형 OAuth2UserInfo 객체에서 필요 데이터 불러오기
         String email = userInfo.getEmail();
-        String name = userInfo.getName();
+        String name = nameCheckAndRandomName(userInfo.getName());
         Social socialType = Social.valueOf(userRequest.getClientRegistration().getRegistrationId().toUpperCase());
 
         System.out.println("email: " + email);
@@ -73,5 +77,23 @@ public class OAuth2UserCustomService extends DefaultOAuth2UserService {
                         .build());
 
         return userRepository.save(user);
+    }
+
+    // 닉네임 중복 확인 및 랜던 닉네임 처리
+    public String nameCheckAndRandomName(String name) {
+        if (userRepository.existsByNickname(name)) {
+            String randomSuffix;
+            for (int i = 0; i < 100; i++) { // 최대 100번 시도
+                randomSuffix = String.format("%04d", new Random().nextInt(10000));
+                String newNickname = name + "#" + randomSuffix;
+                if (!userRepository.existsByNickname(newNickname)) {
+                    return newNickname;
+                }
+            }
+            System.out.println("소셜 로그인 성공 후 중복 닉네임을 대체할 임시 닉네임 생성에 실패했습니다.");
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME_GENERATION_FAILED);
+        } else {
+            return name;
+        }
     }
 }

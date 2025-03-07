@@ -78,7 +78,6 @@ public class UserService {
         String nickname = dto.getNickname().trim();
 
         // 중복 이메일 검증 로직 추가
-        // isPresent() : Optional 객체에서 제공하는 메서드로, 해당 Optional 객체가 값을 가지고 있는지 여부를 확인하는 메서드 ( 값이 있을 경우 True )
         if (userRepository.existsByEmail(email)) throw new CustomException.DuplicateEmailException();     // 커스텀한 중복 이메일 예외
         // 중복 닉네임 검증 로직 추가
         if (userRepository.existsByNickname(nickname)) throw new CustomException.DuplicateNicknameException();      // 커스텀한 중복 닉네임 예외
@@ -131,7 +130,7 @@ public class UserService {
     }
 
     // 재발급 메서드
-    public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
+    public String refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // request를 통해 쿠키에서 refreshToken 가져오기
         String refreshToken = extractRefreshToken(request);
         // 리프레시 토큰 만료로 없을 경우, 재로그인 요청 메세지 반환
@@ -142,6 +141,8 @@ public class UserService {
         log.info("재발급된 액세스 토큰 : " + accessToken);
         // 쿠키에 액세스 토큰 저장
         CookieUtil.addCookie(response, ACCESS_TOKEN_COOKIE_NAME, accessToken, ACCESS_TOKEN_COOKIE_DURATION);
+
+        return accessToken;
     }
 
     // 닉네임 중복 여부 메서드
@@ -185,12 +186,15 @@ public class UserService {
     public void modifyUserProfile(Long userId, ModifyRequestDTO dto, MultipartFile imageData) {
         User user = findUserAndProfileByuserId(userId);
 
-        // 필수 입력값이 닉네임이 없을 경우
-        if (dto.getNickname() == null || dto.getNickname().trim().isEmpty()) throw new CustomException(ErrorCode.NICKNAME_CANNOT_BE_NULL);
-        // 닉네임 업데이트
-        user.setNickname(dto.getNickname().trim());
+        if (dto.getNickname() != null && !dto.getNickname().trim().isEmpty()) {
+            if (userRepository.existsByNickname(dto.getNickname().trim())) {
+                throw new CustomException.DuplicateNicknameException();
+            } else {
+                user.setNickname(dto.getNickname().trim());
+            }
+        }
 
-        // 비밀번호 업데이트 (로컬 회원가입 사용자이면 비밀번호 입력 필수)
+        // 비밀번호 업데이트 (로컬 회원가입 사용자이고 비밀번호 입력했으면 비밀번호 수정)
         if (!user.getLoginType().equals(LoginType.SOCIAL_ONLY) && dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
         }
@@ -216,11 +220,9 @@ public class UserService {
 
     // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드
     public String profileImageSave(ModifyRequestDTO dto, MultipartFile imageData, User user) {
-
         String imageFileName = "";
 
         if (imageData != null && !imageData.isEmpty()) {
-
             if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
                 // S3에 있는 기존 이미지 파일 삭제
                 awsS3Util.deleteFile(user.getProfile().getProfileImage());

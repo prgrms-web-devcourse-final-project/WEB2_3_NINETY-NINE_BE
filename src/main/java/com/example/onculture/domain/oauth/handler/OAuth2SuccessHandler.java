@@ -54,8 +54,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         tokenService.addAllTokenToCookie(request, response, accessToken, refreshToken);
         // 인증 관련 설정값, 쿠키 제거
         clearAuthenticationAttributes(request, response);
+        System.out.println("accessToken: " + accessToken);
+        response.setHeader("Authorization", "Bearer " + accessToken);
+
         // application.properties 에서 리다이렉트 uri 변경 가능 ( 기본값 : 백엔드 테스트용 리다이렉트 uri
-        getRedirectStrategy().sendRedirect(request, response, redirectUri);
+        getRedirectStrategy().sendRedirect(request, response, redirectUri+"?access_token="+accessToken);
     }
 
     // 인증 관련 설정값, 쿠키 제거

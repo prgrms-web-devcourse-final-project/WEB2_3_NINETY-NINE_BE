@@ -15,7 +15,7 @@ public interface FestivalPostRepository extends JpaRepository<FestivalPost, Long
     // 제목(title)를 포함하는 게시글을 검색
     List<FestivalPost> findByFestivalContentContaining(String title);
 
-    @Query(value = "SELECT * FROM festival_post WHERE festival_status = '진행중' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
+    @Query(value = "SELECT * FROM festival_post WHERE festival_status = '진행 예정' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
     List<FestivalPost> findRandomFestivalPosts(int randomSize);
 
     // festivalLocation 필드가 null이 아닌 항목들만 조회 (필요에 따라)

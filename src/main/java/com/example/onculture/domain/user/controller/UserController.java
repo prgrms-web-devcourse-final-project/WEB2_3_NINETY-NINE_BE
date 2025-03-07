@@ -32,7 +32,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -74,9 +76,11 @@ public class UserController {
     // 액세스 토큰 재발급 API
     @Operation( summary = "액세스 토큰 재발급 API", description = "refreshToken 토큰이 만료되어 있다면 기존 저장된 토큰 삭제 및 로그인 페이지로 리다이렉트" )
     @PostMapping("/refresh-token")
-    public ResponseEntity<SuccessResponse<String>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        userService.refreshToken(request, response);
-        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공"));
+    public ResponseEntity<SuccessResponse<?>> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        String accessToken =  userService.refreshToken(request, response);
+        Map<String, String> result = new HashMap<>();
+        result.put("access_token", "Bearer " + accessToken);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "액세스 토큰 재발급 성공", result));
     }
 
     // 닉네임 중복 체크 API
