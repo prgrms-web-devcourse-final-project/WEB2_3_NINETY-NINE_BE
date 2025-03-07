@@ -4,6 +4,7 @@ import com.example.onculture.domain.event.domain.Bookmark;
 import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
+import com.example.onculture.domain.socialPost.domain.SocialPost;
 import com.example.onculture.domain.socialPost.dto.PostResponseDTO;
 import com.example.onculture.domain.socialPost.dto.PostWithLikeResponseDTO;
 import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
@@ -310,9 +311,18 @@ public class UserService {
 
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
-        Page<PostWithLikeResponseDTO> posts = socialPostRepository.findByUserId(userId, pageable).map(socialPost -> {
-            boolean likeStatus = loginUserId != null &&
-                    socialPostLikeRepository.existsByUserIdAndSocialPostId(loginUserId, socialPost.getId());
+        Page<SocialPost> socialPostsPage = socialPostRepository.findByUserId(userId, pageable);
+
+        List<Long> socialPostIds = socialPostsPage.getContent().stream()
+                .map(SocialPost::getId)
+                .collect(Collectors.toList());
+
+        Set<Long> likedPostIds = loginUserId != null
+                ? new HashSet<>(socialPostLikeRepository.findSocialPostIdsByUserIdAndSocialPostIds(loginUserId, socialPostIds))
+                : Collections.emptySet();
+
+        Page<PostWithLikeResponseDTO> posts = socialPostsPage.map(socialPost -> {
+            boolean likeStatus = likedPostIds.contains(socialPost.getId());
             return new PostWithLikeResponseDTO(socialPost, likeStatus);
         });
 

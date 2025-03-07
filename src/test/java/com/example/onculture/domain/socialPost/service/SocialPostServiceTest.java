@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -92,23 +93,38 @@ public class SocialPostServiceTest {
         String sort = "latest";
         int pageNum = 0;
         int pageSize = 9;
-        Long userId = 1L;
+        Long userId = testUser.getId();
+
         Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
+        Page<SocialPost> pagePosts = new PageImpl<>(List.of(testSocialPost), pageable, 1);
 
-        PostWithLikeResponseDTO dto = new PostWithLikeResponseDTO(testSocialPost, false);
-        Page<PostWithLikeResponseDTO> page = new PageImpl<>(List.of(dto), pageable, 1);
-        when(socialPostRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(testSocialPost), pageable, 1));
-        when(socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, testSocialPost.getId())).thenReturn(false);
+        when(socialPostRepository.findAllWithUserAndProfile(any(Pageable.class)))
+                .thenReturn(pagePosts);
 
-        // when
+        when(socialPostLikeRepository.findSocialPostIdsByUserIdAndSocialPostIds(eq(userId), anyList()))
+                .thenReturn(List.of(testSocialPost.getId()));
+
         PostListResponseDTO responseDTO = socialPostService.getSocialPosts(sort, pageNum, pageSize, userId);
 
         // then
         assertNotNull(responseDTO);
         assertEquals(1, responseDTO.getPosts().size());
+        PostWithLikeResponseDTO postDto = responseDTO.getPosts().get(0);
+        assertEquals(testSocialPost.getId(), postDto.getId());
+        assertTrue(postDto.isLikeStatus(), "좋아요 상태가 true여야 합니다.");
+
+        assertEquals(1, responseDTO.getTotalPages());
+        assertEquals(pageNum, responseDTO.getPageNum());
+        assertEquals(pageSize, responseDTO.getPageSize());
         assertEquals(1, responseDTO.getTotalElements());
-        verify(socialPostRepository, times(1)).findAll(any(Pageable.class));
+        assertEquals(1, responseDTO.getNumberOfElements());
+
+        verify(socialPostRepository, times(1)).findAllWithUserAndProfile(any(Pageable.class));
+        verify(socialPostLikeRepository, times(1))
+                .findSocialPostIdsByUserIdAndSocialPostIds(eq(userId), anyList());
     }
+
+
 
     @Test
     @DisplayName("getSocialPosts - 잘못된 정렬 옵션 시 예외 발생")

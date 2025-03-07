@@ -5,6 +5,11 @@ import com.example.onculture.domain.event.domain.Performance;
 import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
+import com.example.onculture.domain.socialPost.domain.SocialPost;
+import com.example.onculture.domain.socialPost.dto.PostWithLikeResponseDTO;
+import com.example.onculture.domain.socialPost.dto.UserPostListResponseDTO;
+import com.example.onculture.domain.socialPost.repository.SocialPostLikeRepository;
+import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.Profile;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.dto.request.LoginRequestDTO;
@@ -32,10 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -85,6 +87,10 @@ public class UserServiceTest {
     private ProfileRepository profileRepository;
     @Mock
     private BookmarkRepository bookmarkRepository;
+    @Mock
+    private SocialPostLikeRepository socialPostLikeRepository;
+    @Mock
+    private SocialPostRepository socialPostRepository;
 
     @Spy    // spy로 일부 메서드를 Mocking
     @InjectMocks
@@ -396,5 +402,64 @@ public class UserServiceTest {
         assertNotNull(posts);
         assertEquals(1, posts.size());
         assertTrue(posts.get(0).getBookmarked());
+    }
+
+    @Test
+    @DisplayName("getSocialPostsByUser - 정상 조회")
+    void testGetSocialPostsByUser_valid() {
+        // given
+        Long userId = 1L;
+        int pageNum = 0;
+        int pageSize = 10;
+        Long loginUserId = 2L;
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+
+        Profile testProfile = Profile.builder()
+                .profileImage("testImage.jpg")
+                .build();
+
+        User testUser = User.builder()
+                .id(1L)
+                .build();
+        testUser.setProfile(testProfile);
+        testProfile.setUser(testUser);
+
+        SocialPost testSocialPost = SocialPost.builder()
+                .id(1L)
+                .createdAt(LocalDateTime.now())
+                .user(testUser)
+                .build();
+
+        List<SocialPost> socialPosts = List.of(testSocialPost);
+        Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by("createdAt").descending());
+        Page<SocialPost> socialPostsPage = new PageImpl<>(socialPosts, pageable, socialPosts.size());
+
+        when(socialPostRepository.findByUserId(eq(userId), any(Pageable.class)))
+                .thenReturn(socialPostsPage);
+
+        when(socialPostLikeRepository.findSocialPostIdsByUserIdAndSocialPostIds(eq(loginUserId), anyList()))
+                .thenReturn(List.of(1L));
+
+        // when
+        UserPostListResponseDTO response = userService.getSocialPostsByUser(userId, pageNum, pageSize, loginUserId);
+
+        // then
+        assertNotNull(response);
+        assertEquals(1, response.getPosts().size());
+        PostWithLikeResponseDTO postDto = response.getPosts().get(0);
+        assertEquals(1L, postDto.getId());
+        assertTrue(postDto.isLikeStatus(), "좋아요 상태가 true여야 합니다.");
+
+        assertEquals(1, response.getTotalPages());
+        assertEquals(pageNum, response.getPageNum());
+        assertEquals(pageSize, response.getPageSize());
+        assertEquals(1, response.getTotalElements());
+        assertEquals(1, response.getNumberOfElements());
+
+        verify(userRepository, times(1)).existsById(userId);
+        verify(socialPostRepository, times(1)).findByUserId(eq(userId), any(Pageable.class));
+        verify(socialPostLikeRepository, times(1))
+                .findSocialPostIdsByUserIdAndSocialPostIds(eq(loginUserId), anyList());
     }
 }
