@@ -72,8 +72,6 @@ public class UserService {
     // 회원가입 메서드
     @Transactional
     public void save(SignupRequestDTO dto) {
-        System.out.println("dto: " + dto);
-
         String email = dto.getEmail().trim();
         String nickname = dto.getNickname().trim();
 
@@ -220,24 +218,30 @@ public class UserService {
 
     // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드
     public String profileImageSave(ModifyRequestDTO dto, MultipartFile imageData, User user) {
-        String imageFileName = "";
+        String dbUserProfileImageName = user.getProfile().getProfileImage();
 
+        // 새로운 이미지가 업로드된 경우
         if (imageData != null && !imageData.isEmpty()) {
-            if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
-                // S3에 있는 기존 이미지 파일 삭제
-                awsS3Util.deleteFile(user.getProfile().getProfileImage());
-            }
-            // 이미지 파일 유효성 검사 및 파일명 변경
-            imageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
-            // S3에 이미지 파일명 저장
+            deleteOldProfileImage(dbUserProfileImageName);
+            String imageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
             awsS3Util.uploadFile(imageData, imageFileName);
-
-        } else if (dto.getProfileImage() != null && !dto.getProfileImage().isEmpty()){
-            // 기존 이미지 유지 시, 기존 이미지 파일명 저장
-            imageFileName = dto.getProfileImage();
+            return imageFileName;
         }
-        // 프로필 이미지 삭제 시, DB에 빈값 처리
-        return imageFileName;
+
+        // 기존 프로필 이미지 유지하는 경우
+        if (dto.getProfileImage() != null && !dto.getProfileImage().trim().isEmpty()) {
+            return dto.getProfileImage();
+        }
+
+        // 프로필 이미지 삭제하는 경우
+        deleteOldProfileImage(dbUserProfileImageName);
+        return "";
+    }
+
+    private void deleteOldProfileImage(String profileImageName) {
+        if (profileImageName != null && !profileImageName.trim().isEmpty()) {
+            awsS3Util.deleteFile(profileImageName);
+        }
     }
 
     // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
