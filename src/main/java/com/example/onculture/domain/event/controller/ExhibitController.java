@@ -8,6 +8,7 @@ import com.example.onculture.domain.event.service.ExhibitService;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/events/exhibits")
 @RequiredArgsConstructor
+@Tag(name = "전시회 API", description = "전시회를 관리하는 API")
 public class ExhibitController {
 
     private final ExhibitService exhibitService;
