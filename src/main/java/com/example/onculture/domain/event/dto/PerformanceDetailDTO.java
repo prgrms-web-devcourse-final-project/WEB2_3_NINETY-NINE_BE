@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import lombok.Data;
 
+import java.sql.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -78,8 +79,8 @@ public class PerformanceDetailDTO {
         performance.setPerformanceId(this.performanceId);
         performance.setFacilityId(this.facilityId != null ? this.facilityId : "UNKNOWN_CATEGORY_ID");
         performance.setPerformanceTitle(this.performanceTitle);
-        performance.setStartDate(this.startDate);
-        performance.setEndDate(this.endDate);
+        performance.setStartDate(Date.valueOf(this.startDate.replace(".", "-")));
+        performance.setEndDate(Date.valueOf(this.endDate.replace(".", "-")));
         performance.setFacilityName(this.facilityName);
         performance.setRuntime(this.runtime);
         performance.setAgeRating(this.ageRating);

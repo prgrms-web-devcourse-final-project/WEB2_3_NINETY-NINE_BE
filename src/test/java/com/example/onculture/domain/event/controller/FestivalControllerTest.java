@@ -53,12 +53,12 @@ public class FestivalControllerTest {
         // 예제용 페스티벌 상세 응답 DTO
         sampleFestivalEvent = new EventResponseDTO(
                 202L,                      // id
-                null,                     // genre
+                "축제",                     // genre
                 "http://example.com/festival.jpg", // postUrl
                 null,                     // ageRating
                 "페스티벌 제목",           // title
-                "20250201",               // startDate
-                "20250205",               // endDate
+                java.sql.Date.valueOf("2025-02-01"),               // startDate
+                java.sql.Date.valueOf("2025-02-05"),               // endDate
                 null,                     // operatingHours
                 "서울",                   // location
                 "페스티벌 장소",          // venue

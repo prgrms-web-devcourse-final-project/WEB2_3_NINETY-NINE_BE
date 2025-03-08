@@ -81,7 +81,7 @@ public class FestivalController {
     //Festival crawling 실행
     @Operation(summary = "Festival Crawling 실행",
             description = "Festival Crawling 실행")
-    @GetMapping("/festival")
+    @GetMapping("/crawl")
     public String crawlFestival() {
         try {
             festivalService.runCrawling();

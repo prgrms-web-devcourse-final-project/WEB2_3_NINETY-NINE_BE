@@ -62,7 +62,7 @@ public class ExhibitController {
     //  전시회 지역+상태 검색
     @Operation(summary = "공연(전시회) 게시글 지역, 상태, 검색 조회",
             description = "로그인을 한 유저면 토큰을 담아서 요청하셔야 북마크 여부를 알 수 있습니다.")
-    @GetMapping("/exhibits")
+    @GetMapping
     public ResponseEntity<SuccessResponse<EventPageResponseDTO>> searchExhibits(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String status,

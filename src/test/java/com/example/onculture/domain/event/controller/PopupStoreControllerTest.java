@@ -48,12 +48,12 @@ public class PopupStoreControllerTest {
         // 예제용 팝업스토어 상세 응답 DTO
         samplePopupEvent = new EventResponseDTO(
                 101L,                      // id
-                "팝업",                   // genre
+                "팝업스토어",                   // genre
                 "http://example.com/popup.jpg", // postUrl
                 null,                     // ageRating
                 "팝업스토어 제목",         // title
-                "20250101",               // startDate
-                "20250102",               // endDate
+                java.sql.Date.valueOf("2025-01-01"),               // startDate
+                java.sql.Date.valueOf("2025-01-02"),               // endDate
                 null,                     // operatingHours
                 "서울",                  // location
                 "팝업 장소",             // venue
