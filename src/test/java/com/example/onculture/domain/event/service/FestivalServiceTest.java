@@ -2,7 +2,6 @@ package com.example.onculture.domain.event.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
 
 import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.Bookmark;
@@ -29,7 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.*;
 
 @ExtendWith(MockitoExtension.class)
-public class FestivalPostServiceTest {
+public class FestivalServiceTest {
 
     @Mock
     private FestivalPostRepository festivalPostRepository;
@@ -38,7 +37,7 @@ public class FestivalPostServiceTest {
     private BookmarkRepository bookmarkRepository;
 
     @InjectMocks
-    private FestivalPostService festivalPostService;
+    private FestivalService festivalService;
 
     // 더미 FestivalPost 생성 메서드
     private FestivalPost createDummyFestivalPost(Long id) {
@@ -82,42 +81,6 @@ public class FestivalPostServiceTest {
     }
 
     @Test
-    @DisplayName("listAll - 모든 FestivalPost 조회")
-    void testListAll() {
-        // Given
-        FestivalPost post1 = createDummyFestivalPost(1L);
-        FestivalPost post2 = createDummyFestivalPost(2L);
-        when(festivalPostRepository.findAll()).thenReturn(Arrays.asList(post1, post2));
-
-        // When
-        List<FestivalPost> result = festivalPostService.listAll();
-
-        // Then
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(1L, result.get(0).getId());
-        assertEquals(2L, result.get(1).getId());
-    }
-
-    @Test
-    @DisplayName("searchByTitle - 제목으로 FestivalPost 검색")
-    void testSearchByTitle() {
-        // Given
-        String title = "Festival";
-        FestivalPost post = createDummyFestivalPost(3L);
-        when(festivalPostRepository.findByFestivalContentContaining(title))
-                .thenReturn(Collections.singletonList(post));
-
-        // When
-        List<FestivalPost> result = festivalPostService.searchByTitle(title);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getFestivalContent().contains(title));
-    }
-
-    @Test
     @DisplayName("getRandomFestivalPosts - 북마크 미등록 경우")
     void testGetRandomFestivalPosts_NotBookmarked() {
         // Given
@@ -134,7 +97,7 @@ public class FestivalPostServiceTest {
                 .thenReturn(Optional.empty());
 
         // When
-        List<EventResponseDTO> result = festivalPostService.getRandomFestivalPosts(randomSize, userId);
+        List<EventResponseDTO> result = festivalService.getRandomFestivalPosts(randomSize, userId);
 
         // Then
         assertNotNull(result);
@@ -157,7 +120,7 @@ public class FestivalPostServiceTest {
                 .thenReturn(Optional.of(bookmark));
 
         // When
-        List<EventResponseDTO> result = festivalPostService.getRandomFestivalPosts(randomSize, userId);
+        List<EventResponseDTO> result = festivalService.getRandomFestivalPosts(randomSize, userId);
 
         // Then
         assertNotNull(result);
@@ -174,7 +137,7 @@ public class FestivalPostServiceTest {
 
         // When & Then
         CustomException exception = assertThrows(CustomException.class,
-                () -> festivalPostService.getRandomFestivalPosts(randomSize, userId));
+                () -> festivalService.getRandomFestivalPosts(randomSize, userId));
         assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
     }
 
@@ -192,7 +155,7 @@ public class FestivalPostServiceTest {
                 .thenReturn(Optional.empty());
 
         // When
-        EventResponseDTO result = festivalPostService.getFestivalPostDetail(id, userId);
+        EventResponseDTO result = festivalService.getFestivalPostDetail(id, userId);
 
         // Then
         assertNotNull(result);
@@ -214,7 +177,7 @@ public class FestivalPostServiceTest {
                 .thenReturn(Optional.of(bookmark));
 
         // When
-        EventResponseDTO result = festivalPostService.getFestivalPostDetail(id, userId);
+        EventResponseDTO result = festivalService.getFestivalPostDetail(id, userId);
 
         // Then
         assertNotNull(result);
@@ -245,7 +208,7 @@ public class FestivalPostServiceTest {
                 .thenReturn(page);
 
         // When
-        EventPageResponseDTO response = festivalPostService.searchFestivalPosts(
+        EventPageResponseDTO response = festivalService.searchFestivalPosts(
                 region, status, titleKeyword, pageNum, pageSize, userId
         );
 

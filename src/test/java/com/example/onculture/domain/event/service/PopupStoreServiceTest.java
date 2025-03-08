@@ -29,7 +29,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.*;
 
 @ExtendWith(MockitoExtension.class)
-public class PopupStorePostServiceTest {
+public class PopupStoreServiceTest {
 
     @Mock
     private PopupStorePostRepository popupStorePostRepository;
@@ -38,7 +38,7 @@ public class PopupStorePostServiceTest {
     private BookmarkRepository bookmarkRepository;
 
     @InjectMocks
-    private PopupStorePostService popupStorePostService;
+    private PopupStoreService popupStoreService;
 
     // 기존 더미 PopupStorePost 생성 메서드 (imageUrls를 빈 리스트로 초기화)
     private PopupStorePost createDummyPopupStorePost(Long id) {
@@ -85,38 +85,6 @@ public class PopupStorePostServiceTest {
     }
 
     @Test
-    @DisplayName("listAll - 모든 PopupStorePost 조회")
-    void testListAll() {
-        PopupStorePost post1 = createDummyPopupStorePost(1L);
-        PopupStorePost post2 = createDummyPopupStorePost(2L);
-        when(popupStorePostRepository.findAll()).thenReturn(Arrays.asList(post1, post2));
-
-        List<PopupStorePost> result = popupStorePostService.listAll();
-
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(1L, result.get(0).getId());
-        assertEquals(2L, result.get(1).getId());
-    }
-
-    @Test
-    @DisplayName("searchByTitle - 제목으로 PopupStorePost 검색")
-    void testSearchByTitle() {
-        String title = "Test";
-        // 검색 테스트용으로 content에 "Test"가 포함된 객체 생성
-        PopupStorePost post = createDummyPopupStorePostWithContent(3L, "This is a Test content for popup store post");
-        when(popupStorePostRepository.findByContentContaining(title))
-                .thenReturn(Collections.singletonList(post));
-
-        List<PopupStorePost> result = popupStorePostService.searchByTitle(title);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        // 검색어가 포함되어 있는지 확인
-        assertTrue(result.get(0).getContent().contains(title));
-    }
-
-    @Test
     @DisplayName("getRandomPopupStorePosts - 북마크 미등록 경우")
     void testGetRandomPopupStorePosts_NotBookmarked() {
         int randomSize = 2;
@@ -131,7 +99,7 @@ public class PopupStorePostServiceTest {
         when(bookmarkRepository.findByUserIdAndPopupStorePostId(userId, post2.getId()))
                 .thenReturn(Optional.empty());
 
-        List<EventResponseDTO> result = popupStorePostService.getRandomPopupStorePosts(randomSize, userId);
+        List<EventResponseDTO> result = popupStoreService.getRandomPopupStorePosts(randomSize, userId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -151,7 +119,7 @@ public class PopupStorePostServiceTest {
         when(bookmarkRepository.findByUserIdAndPopupStorePostId(userId, post.getId()))
                 .thenReturn(Optional.of(bookmark));
 
-        List<EventResponseDTO> result = popupStorePostService.getRandomPopupStorePosts(randomSize, userId);
+        List<EventResponseDTO> result = popupStoreService.getRandomPopupStorePosts(randomSize, userId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -165,7 +133,7 @@ public class PopupStorePostServiceTest {
         Long userId = 300L;
 
         CustomException exception = assertThrows(CustomException.class,
-                () -> popupStorePostService.getRandomPopupStorePosts(randomSize, userId));
+                () -> popupStoreService.getRandomPopupStorePosts(randomSize, userId));
         assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
     }
 
@@ -180,7 +148,7 @@ public class PopupStorePostServiceTest {
         when(bookmarkRepository.findByUserIdAndPopupStorePostId(userId, post.getId()))
                 .thenReturn(Optional.empty());
 
-        EventResponseDTO result = popupStorePostService.getPopupStorePostDetail(id, userId);
+        EventResponseDTO result = popupStoreService.getPopupStorePostDetail(id, userId);
 
         assertNotNull(result);
         assertEquals(id, result.getId());
@@ -199,7 +167,7 @@ public class PopupStorePostServiceTest {
         when(bookmarkRepository.findByUserIdAndPopupStorePostId(userId, post.getId()))
                 .thenReturn(Optional.of(bookmark));
 
-        EventResponseDTO result = popupStorePostService.getPopupStorePostDetail(id, userId);
+        EventResponseDTO result = popupStoreService.getPopupStorePostDetail(id, userId);
 
         assertNotNull(result);
         assertEquals(id, result.getId());
@@ -227,7 +195,7 @@ public class PopupStorePostServiceTest {
         when(popupStorePostRepository.findAll((Specification<PopupStorePost>) any(), eq(PageRequest.of(pageNum, pageSize))))
                 .thenReturn(page);
 
-        EventPageResponseDTO response = popupStorePostService.searchPopupStorePosts(
+        EventPageResponseDTO response = popupStoreService.searchPopupStorePosts(
                 region, status, titleKeyword, pageNum, pageSize, userId
         );
 

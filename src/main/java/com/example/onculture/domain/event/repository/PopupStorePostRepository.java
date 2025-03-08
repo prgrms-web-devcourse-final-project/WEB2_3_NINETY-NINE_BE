@@ -16,8 +16,5 @@ public interface PopupStorePostRepository extends JpaRepository<PopupStorePost, 
     @Query(value = "SELECT * FROM popup_store_post WHERE status = '진행중' ORDER BY RAND() LIMIT :randomSize", nativeQuery = true)
     List<PopupStorePost> findRandomPopupStorePosts(int randomSize);
 
-    // 제목(title)를 포함하는 게시글을 검색
-    List<PopupStorePost> findByContentContaining(String title);
-
     Page<PopupStorePost> findAll(Specification<PopupStorePost> spec, Pageable pageable);
 }
