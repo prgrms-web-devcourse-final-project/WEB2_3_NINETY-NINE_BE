@@ -39,7 +39,7 @@ public class RegionMapper {
             return "전라북도"; // 마찬가지로 세분화 가능
         } else if (address.contains("전남") || address.contains("목포") || address.contains("담양")  || address.contains("여수")){
             return "전라남도";
-        } else if (address.contains("창원") || address.contains("경남") || address.contains("김해") || address.contains("거제") || address.contains("진주") ||  address.contains("전라남도"))  {
+        } else if (address.contains("창원") || address.contains("경남") || address.contains("김해") || address.contains("거제") || address.contains("진주"))  {
             return "경상남도";
         }else if (address.contains("경상북") || address.contains("경북")|| address.contains("영주") || address.contains("포항"))  {
             return "경상북도";
