@@ -12,14 +12,16 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/reviews")
+@RequestMapping("/api/reviews")
 @RequiredArgsConstructor
 @Tag(name = "Review API", description = "공연 후기 관련 API")
 public class ReviewController {
@@ -27,16 +29,17 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @Operation(summary = "공연 후기 작성", description = "현재 로그인한 사용자가 공연 후기를 작성합니다.")
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<ReviewResponseDTO>> createReview(
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @Valid @RequestBody ReviewRequestDTO requestDTO) {
+        @RequestPart("requestDTO") @Valid ReviewRequestDTO requestDTO,
+        @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        ReviewResponseDTO createdReview = reviewService.createReview(userDetails.getUserId(), requestDTO);
-
+        ReviewResponseDTO createdReview = reviewService.createReview(userDetails.getUserId(), requestDTO, image);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(SuccessResponse.success("후기 작성 성공", createdReview));
     }
+
 
     @Operation(summary = "특정 이벤트(전시/축제/공연/팝업스토어)에 대한 후기 목록 조회",
         description = "이벤트 ID(exhibitId, festivalId, performanceId, popupStoreId) 중 하나를 제공하여 후기를 조회합니다.")
@@ -52,16 +55,17 @@ public class ReviewController {
     }
 
     @Operation(summary = "후기 수정", description = "현재 로그인한 사용자가 자신의 후기를 수정합니다.")
-    @PutMapping("/{reviewId}")
+    @PutMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<ReviewResponseDTO>> updateReview(
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @PathVariable Long reviewId,
-        @Valid @RequestBody ReviewRequestDTO requestDTO) {
+        @RequestPart("requestDTO") @Valid ReviewRequestDTO requestDTO,
+        @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        ReviewResponseDTO updatedReview = reviewService.updateReview(reviewId, userDetails.getUserId(), requestDTO);
-
+        ReviewResponseDTO updatedReview = reviewService.updateReview(reviewId, userDetails.getUserId(), requestDTO, image);
         return ResponseEntity.ok(SuccessResponse.success("후기 수정 성공", updatedReview));
     }
+
 
     @Operation(summary = "후기 삭제", description = "현재 로그인한 사용자가 자신의 후기를 삭제합니다.")
     @DeleteMapping("/{reviewId}")
