@@ -3,8 +3,12 @@ package com.example.onculture.domain.review.controller;
 import com.example.onculture.domain.review.dto.ReviewRequestDTO;
 import com.example.onculture.domain.review.dto.ReviewResponseDTO;
 import com.example.onculture.domain.review.service.ReviewService;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,13 +36,23 @@ public class ReviewController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<ReviewResponseDTO>> createReview(
         @AuthenticationPrincipal CustomUserDetails userDetails,
-        @RequestPart("requestDTO") @Valid ReviewRequestDTO requestDTO,
-        @RequestPart(value = "image", required = false) MultipartFile image) {
+        @RequestParam("requestDTO") String requestDTOStr,
+        @RequestParam(value = "image", required = false) MultipartFile image) {
+
+        // JSON 문자열을 DTO 객체로 변환
+        ObjectMapper objectMapper = new ObjectMapper();
+        ReviewRequestDTO requestDTO;
+        try {
+            requestDTO = objectMapper.readValue(requestDTOStr, ReviewRequestDTO.class);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
 
         ReviewResponseDTO createdReview = reviewService.createReview(userDetails.getUserId(), requestDTO, image);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(SuccessResponse.success("후기 작성 성공", createdReview));
     }
+
 
 
     @Operation(summary = "특정 이벤트(전시/축제/공연/팝업스토어)에 대한 후기 목록 조회",
@@ -59,8 +73,17 @@ public class ReviewController {
     public ResponseEntity<SuccessResponse<ReviewResponseDTO>> updateReview(
         @AuthenticationPrincipal CustomUserDetails userDetails,
         @PathVariable Long reviewId,
-        @RequestPart("requestDTO") @Valid ReviewRequestDTO requestDTO,
-        @RequestPart(value = "image", required = false) MultipartFile image) {
+        @RequestParam("requestDTO") String requestDTOStr,
+        @RequestParam(value = "image", required = false) MultipartFile image) {
+
+        // JSON 문자열을 DTO 객체로 변환
+        ObjectMapper objectMapper = new ObjectMapper();
+        ReviewRequestDTO requestDTO;
+        try {
+            requestDTO = objectMapper.readValue(requestDTOStr, ReviewRequestDTO.class);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
 
         ReviewResponseDTO updatedReview = reviewService.updateReview(reviewId, userDetails.getUserId(), requestDTO, image);
         return ResponseEntity.ok(SuccessResponse.success("후기 수정 성공", updatedReview));
