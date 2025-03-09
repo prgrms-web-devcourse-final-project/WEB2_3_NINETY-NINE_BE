@@ -49,12 +49,12 @@ public class ExhibitControllerTest {
         // 전시 상세 조회 시 반환할 예제 DTO (북마크 여부 포함)
         sampleExhibitDetail = new EventResponseDTO(
                 10L,                      // id
-                "전시",                   // genre (여기서는 area를 전시 장르로 사용)
+                "전시회",                   // genre
                 "http://example.com/thumbnail.jpg", // postUrl
                 null,                     // ageRating
                 "전시 제목",              // title
-                "20250101",               // startDate
-                "20250131",               // endDate
+                java.sql.Date.valueOf("2025-01-01"),               // startDate
+                java.sql.Date.valueOf("2025-01-31"),               // endDate
                 null,                     // operatingHours
                 "서울",                  // location
                 "서울전시장",            // venue

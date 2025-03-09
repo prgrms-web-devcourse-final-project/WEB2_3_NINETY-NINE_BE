@@ -1,10 +1,10 @@
 package com.example.onculture.domain.event.service;
 
-import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
-import com.example.onculture.domain.event.repository.PopupStorePostRepository;
+import com.example.onculture.domain.event.repository.FestivalPostRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -27,7 +27,7 @@ import java.time.Duration;
 import java.util.*;
 
 @Service
-public class PopupStorePostService {
+public class FestivalService {
 
     @Value("${INSTAGRAM_ID}")
     private String username;
@@ -35,21 +35,13 @@ public class PopupStorePostService {
     @Value("${INSTAGRAM_PASSWORD}")
     private String password;
 
-    private final PopupStorePostRepository popupStorePostRepository;
+    private final FestivalPostRepository festivalPostRepository;
 
     private final BookmarkRepository bookmarkRepository;
 
-    public PopupStorePostService(PopupStorePostRepository popupStorePostRepository, BookmarkRepository bookmarkRepository) {
-        this.popupStorePostRepository = popupStorePostRepository;
+    public FestivalService(FestivalPostRepository festivalPostRepository, BookmarkRepository bookmarkRepository) {
+        this.festivalPostRepository = festivalPostRepository;
         this.bookmarkRepository = bookmarkRepository;
-    }
-
-    public List<PopupStorePost> listAll() {
-        return popupStorePostRepository.findAll();
-    }
-
-    public List<PopupStorePost> searchByTitle(String title) {
-        return popupStorePostRepository.findByContentContaining(title);
     }
 
     // WebDriver 설정: ChromeOptions를 사용하여 브라우저를 실제 사용자처럼 모방
@@ -122,7 +114,7 @@ public class PopupStorePostService {
         driver.navigate().refresh(); // 쿠키 적용을 위해 새로고침
     }
 
-
+    // 스크롤하여 게시글 URL들을 수집
     private Set<String> collectPostLinks(WebDriver driver, int scrollCount) throws InterruptedException {
         Set<String> postLinks = new LinkedHashSet<>();
         JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -137,6 +129,7 @@ public class PopupStorePostService {
         return postLinks;
     }
 
+    // 게시글의 텍스트 콘텐츠 추출 ('_ap3a' 클래스 사용)
     private String fetchPostContent(WebDriverWait wait) {
         try {
             WebElement postContent = wait.until(
@@ -151,6 +144,7 @@ public class PopupStorePostService {
         }
     }
 
+    // 게시글의 이미지 URL 목록 추출 ('x5yr21d' 클래스 사용)
     private List<String> fetchImageUrls(WebDriverWait wait) {
         List<String> imageUrls = new ArrayList<>();
         try {
@@ -169,116 +163,137 @@ public class PopupStorePostService {
         return imageUrls;
     }
 
-    // ParsedContent 헬퍼 클래스 (종료일자 필드 추가)
-    private static class ParsedContent {
-        String location;
-        java.sql.Date popupsStartDate;
-        java.sql.Date popupsEndDate;
-        String operatingTime;
-        String details;
-
-        ParsedContent(String location, java.sql.Date popupsStartDate, java.sql.Date popupsEndDate, String operatingTime, String details) {
-            this.location = location;
-            this.popupsStartDate = popupsStartDate;
-            this.popupsEndDate = popupsEndDate;
-            this.operatingTime = operatingTime;
-            this.details = details;
-        }
+    // 파싱된 데이터를 담을 헬퍼 클래스
+    private static class ParsedFestivalEvent {
+        String title = "";
+        String schedule = "";
+        String location = "";
+        String ticketPrice = "";
+        String booking = "";
+        String openTime = "";
+        String details = "";
+        java.sql.Date startDate = null;
+        java.sql.Date endDate = null;
     }
 
-    // 운영일자 문자열(예: "📆2025년 4월 19일-20일 (토~일)")를 파싱하여 정보를 추출
-    private ParsedContent parseContent(String content) {
-        String location = null;
-        String popupsStartDateStr = null;
-        String popupsEndDateStr = null;
-        String operatingTime = null;
-        StringBuilder detailsBuilder = new StringBuilder();
-
+    // 게시글 텍스트를 파싱하여 제목, 일정, 장소, 티켓 가격 등 필요한 정보를 추출
+    private ParsedFestivalEvent parseFestivalEvent(String content) {
+        ParsedFestivalEvent event = new ParsedFestivalEvent();
         String[] lines = content.split("\\r?\\n");
+        String currentField = "";
         for (String line : lines) {
             line = line.trim();
-            if (line.startsWith("📍")) {
-                int cp = line.codePointAt(0);
-                int emojiCharCount = Character.charCount(cp);
-                location = line.substring(emojiCharCount).trim();
-            } else if (line.startsWith("📆")) {
-                // "📆" 라벨 뒤의 문자열에서 "-"가 있으면 시작일과 종료일을 분리
-                String dateLine = line.substring(1).trim();
-                if (dateLine.contains("-")) {
-                    String[] dateParts = dateLine.split("-");
-                    popupsStartDateStr = dateParts[0].trim();
-                    popupsEndDateStr = dateParts[1].trim();
+            if (line.startsWith("일정:") || line.startsWith("공연 일정:")) {
+                currentField = "";
+                event.schedule = line.substring(line.indexOf(":") + 1).trim();
+                event.startDate = parseStartDate(event.schedule);
+                event.endDate = parseEndDate(event.schedule);
+            } else if (line.startsWith("장소:") || line.startsWith("공연 장소:")) {
+                currentField = "";
+                event.location = line.substring(line.indexOf(":") + 1).trim();
+            } else if (line.startsWith("가격:") || line.startsWith("티켓 가격:") ||
+                    line.startsWith("가격") || line.startsWith("티켓 가격")) {
+                currentField = "ticketPrice";
+                if (line.contains(":")) {
+                    event.ticketPrice = line.substring(line.indexOf(":") + 1).trim();
                 } else {
-                    popupsStartDateStr = dateLine;
+                    event.ticketPrice = "";
                 }
-            } else if (line.startsWith("⏰")) {
-                operatingTime = line.substring(1).trim();
+            } else if (line.startsWith("예매:") || line.startsWith("티켓 예매:")) {
+                currentField = "";
+                event.booking = line.substring(line.indexOf(":") + 1).trim();
+            } else if (line.startsWith("오픈:") || line.startsWith("티켓 오픈:")) {
+                currentField = "";
+                event.openTime = line.substring(line.indexOf(":") + 1).trim();
             } else {
-                detailsBuilder.append(line).append("\n");
+                if ("ticketPrice".equals(currentField)) {
+                    if (line.startsWith("-")) {
+                        event.ticketPrice += "\n" + line;
+                    } else {
+                        event.ticketPrice += "\n" + line;
+                    }
+                } else {
+                    if (event.title.isEmpty()) {
+                        event.title = line;
+                    } else {
+                        if (event.details.isEmpty()) {
+                            event.details = line;
+                        } else {
+                            event.details += "\n" + line;
+                        }
+                    }
+                }
             }
         }
-        String details = detailsBuilder.toString().trim();
-        java.sql.Date operatingDate = parseOperatingDate(popupsStartDateStr);
-        java.sql.Date popupsEndDate = parsepopupsEndDate(popupsEndDateStr);
-        return new ParsedContent(location, operatingDate, popupsEndDate, operatingTime, details);
+        return event;
     }
 
-    private java.sql.Date parseOperatingDate(String operatingDateStr) {
-        if (operatingDateStr == null || operatingDateStr.isEmpty()) {
+    // 시작일자를 파싱 (예: "2025년 5월 30일" -> "2025/5/30")
+    private java.sql.Date parseStartDate(String scheduleLine) {
+        if (scheduleLine == null || scheduleLine.isEmpty()) {
             return null;
         }
-        String[] parts = operatingDateStr.split("-");
-        if (parts.length == 0) {
+        String cleaned = scheduleLine.replaceAll("\\s+", "")
+                .replace("년", "/")
+                .replace("월", "/")
+                .replace("일", "");
+        String[] parts = cleaned.split("~");
+        String startDateStr = parts[0];
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/M/d");
+        try {
+            java.util.Date parsed = sdf.parse(startDateStr);
+            return new java.sql.Date(parsed.getTime());
+        } catch (Exception e) {
+            System.out.println("시작일자 파싱 실패: " + e.getMessage());
             return null;
         }
-        String startDatePart = parts[0].trim().replaceAll("\\(.*?\\)", "").replaceAll("[^0-9/]", "").trim();
-        SimpleDateFormat sdf = null;
-        String dateStr = null;
-        if (startDatePart.contains("/")) {
-            dateStr = "2025/" + startDatePart; // 연도 고정 처리 (필요시 동적 연도 처리)
-            sdf = new SimpleDateFormat("yyyy/MM/dd");
-        } else if (startDatePart.matches("\\d{8,}")) {
-            dateStr = startDatePart.substring(0, 8);
-            sdf = new SimpleDateFormat("yyyyMMdd");
-        }
-        if (sdf != null && dateStr != null) {
-            try {
-                java.util.Date parsedDate = sdf.parse(dateStr);
-                return new java.sql.Date(parsedDate.getTime());
-            } catch (Exception e) {
-                System.out.println("시작일자 파싱 실패: " + e.getMessage());
-            }
-        }
-        return null;
     }
 
-    private java.sql.Date parsepopupsEndDate(String popupsEndDateStr) {
-        if (popupsEndDateStr == null || popupsEndDateStr.isEmpty()) {
+    // 종료일자를 파싱 (예: "2025년 5월 30일 ~ 20일" -> "2025/5/20")
+    private java.sql.Date parseEndDate(String scheduleLine) {
+        if (scheduleLine == null || scheduleLine.isEmpty()) {
             return null;
         }
-        String[] parts = popupsEndDateStr.split("-");
-        if (parts.length == 0) {
+        String cleaned = scheduleLine.replaceAll("\\s+", "")
+                .replace("년", "/")
+                .replace("월", "/")
+                .replace("일", "");
+        if (cleaned.contains("(")) {
+            cleaned = cleaned.substring(0, cleaned.indexOf("("));
+        }
+        String[] parts = cleaned.split("~");
+        if (parts.length < 2) {
             return null;
         }
-        String endDatePart = parts[0].trim().replaceAll("\\(.*?\\)", "").replaceAll("[^0-9/]", "").trim();
-        SimpleDateFormat sdf = null;
-        String dateStr = null;
-        if (endDatePart.contains("/")) {
-            dateStr = "2025/" + endDatePart; // 연도 고정 처리
-            sdf = new SimpleDateFormat("yyyy/MM/dd");
-        } else if (endDatePart.matches("\\d{8,}")) {
-            dateStr = endDatePart.substring(0, 8);
-            sdf = new SimpleDateFormat("yyyyMMdd");
+        String endPart = parts[1].trim();
+        String startPart = parts[0].trim();
+        String[] startComponents = startPart.split("/");
+        if (startComponents.length < 3) {
+            return null;
         }
-        if (sdf != null && dateStr != null) {
-            try {
-                java.util.Date parsedDate = sdf.parse(dateStr);
-                return new java.sql.Date(parsedDate.getTime());
-            } catch (Exception e) {
-                System.out.println("종료일자 파싱 실패: " + e.getMessage());
+        String year = startComponents[0];
+        String month = startComponents[1];
+        String endDateStr;
+        if (endPart.contains("/")) {
+            String[] endComponents = endPart.split("/");
+            if (endComponents.length == 2) {
+                endDateStr = year + "/" + endComponents[0] + "/" + endComponents[1];
+            } else if (endComponents.length == 3) {
+                endDateStr = endPart;
+            } else {
+                return null;
             }
+        } else {
+            endDateStr = year + "/" + month + "/" + endPart;
         }
-        return null;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/M/d");
+        try {
+            java.util.Date parsed = sdf.parse(endDateStr);
+            return new java.sql.Date(parsed.getTime());
+        } catch (Exception e) {
+            System.out.println("종료일자 파싱 실패: " + e.getMessage());
+            return null;
+        }
     }
 
     // 공연 상태 결정 로직: 현재 날짜와 시작/종료일 비교
@@ -288,59 +303,63 @@ public class PopupStorePostService {
             return "진행 종료";
         } else if (startDate != null && today.before(startDate)) {
             return "진행 예정";
-        } else if (startDate != null && endDate != null &&
-                (!today.before(startDate) && !today.after(endDate))) {
+        } else if (startDate != null && endDate != null && (!today.before(startDate) && !today.after(endDate))) {
             return "진행중";
         }
         return "상태 미정";
     }
 
-    // 전체 크롤링 실행 로직 (JPA 방식으로 저장)
+    //랜덤 조회
+    public List<EventResponseDTO> getRandomFestivalPosts(int randomSize, Long userId) {
+        if (randomSize < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return festivalPostRepository.findRandomFestivalPosts(randomSize)
+                .stream()
+                .map(festivalPost -> {
+                    boolean isBookmarked = userId != null &&
+                            bookmarkRepository.findByUserIdAndFestivalPostId(userId, festivalPost.getId())
+                                    .isPresent();
+                    return new EventResponseDTO(festivalPost, isBookmarked);
+                })
+                .toList();
+    }
+
+    // 전체 크롤링 실행 로직 (JPA 방식으로 엔티티 저장)
     public void runCrawling() {
         try {
             WebDriver driver = setupWebDriver();
             try {
                 WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
                 loginToInstagram(driver, wait, username, password);
-                driver.get("https://www.instagram.com/pops.official_/");
+                driver.get("https://www.instagram.com/fstvl.life/");
                 Set<String> postLinks = collectPostLinks(driver, 10);
                 System.out.println("총 수집된 게시글 개수: " + postLinks.size());
-                for (String postUrl : postLinks) {
-                    driver.get(postUrl);
-                    System.out.println("\n게시글 URL: " + postUrl);
-                    String postContent = fetchPostContent(wait);
-                    List<String> imageUrls = fetchImageUrls(wait);
-                    ParsedContent pc = parseContent(postContent);
-//                    if (pc.popupsStartDate == null || pc.operatingTime == null ||
-//                            pc.location == null || pc.details == null || postContent.isEmpty()) {
-//                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
-//                        continue;
-//                    }
-                    PopupStorePost post = new PopupStorePost();
-                    post.setPostUrl(postUrl);
-                    post.setContent(postContent);
-                    post.setPopupsStartDate(pc.popupsStartDate);
-                    post.setOperatingTime(pc.operatingTime);
-                    post.setPopupsEndDate(pc.popupsEndDate);
-                    post.setLocation(pc.location);
-                    post.setDetails(pc.details);
-                    post.setImageUrls(imageUrls);
-                    // 상태 결정 (현재 날짜와 운영/종료일 비교)
-                    String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
-                    post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
-
-                    // 지역 추출 로직: location에서 앞의 두 단어를 추출하여 popupsArea에 저장
-                    String location = pc.location;
-                    if (location != null && !location.trim().isEmpty()) {
-                        String[] tokens = location.split("\\s+");
-                        if (tokens.length >= 2) {
-                            String popupsArea = tokens[0] + " " + tokens[1];
-                            post.setPopupsArea(popupsArea);
-                        }
+                for (String festivalPostUrl : postLinks) {
+                    driver.get(festivalPostUrl);
+                    System.out.println("\n게시글 URL: " + festivalPostUrl);
+                    String festivalPostContent = fetchPostContent(wait);
+                    List<String> festivalImageUrls = fetchImageUrls(wait);
+                    ParsedFestivalEvent event = parseFestivalEvent(festivalPostContent);
+                    if (event.location.isEmpty()) {
+                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + festivalPostUrl);
+                        continue;
                     }
-
-                    PopupStorePost savedPost = popupStorePostRepository.save(post);
-                    System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
+                    FestivalPost post = new FestivalPost();
+                    post.setFestivalPostUrl(festivalPostUrl);
+                    String combinedContent = event.title + "\n" + event.schedule;
+                    post.setFestivalContent(combinedContent);
+                    post.setFestivalStartDate(event.startDate);
+                    post.setFestivalEndDate(event.endDate);
+                    post.setFestivalLocation(event.location);
+                    post.setFestivalDetails(event.details);
+                    post.setFestivalTicketPrice(event.ticketPrice);
+                    String status = determineStatus(event.startDate, event.endDate);
+                    post.setFestivalStatus(status);
+                    // 이미지 URL 목록은 @ElementCollection으로 매핑된 필드에 설정
+                    post.setImageUrls(festivalImageUrls);
+                    FestivalPost savedPost = festivalPostRepository.save(post);
+                    System.out.println("FestivalPost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
                 }
             } finally {
                 driver.quit();
@@ -350,44 +369,26 @@ public class PopupStorePostService {
         }
     }
 
-
-    public List<EventResponseDTO> getRandomPopupStorePosts(int randomSize, Long userId) {
-        if (randomSize < 0) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-        }
-
-        return popupStorePostRepository.findRandomPopupStorePosts(randomSize)
-                .stream()
-                .map(popupStorePost -> {
-                    boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPopupStorePostId(userId, popupStorePost.getId())
-                                    .isPresent();
-                    return new EventResponseDTO(popupStorePost, isBookmarked);
-                })
-                .toList();
-    }
-
-
     // 공연/전시 상세정보 조회
-    public EventResponseDTO getPopupStorePostDetail(Long id, Long userId) {
-        EventResponseDTO eventResponseDTO = popupStorePostRepository.findById(id)
-                .map(popupStorePost -> {
+    public EventResponseDTO getFestivalPostDetail(Long id, Long userId) {
+        EventResponseDTO eventResponseDTO = festivalPostRepository.findById(id)
+                .map(festivalPost -> {
                     boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPopupStorePostId(userId, popupStorePost.getId())
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
                                     .isPresent();
-                    return new EventResponseDTO(popupStorePost, isBookmarked);
+                    return new EventResponseDTO(festivalPost, isBookmarked);
                 })
-                .orElseThrow(() -> new RuntimeException("popupStorePost not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Performance not found with id: " + id));
         return eventResponseDTO;
     }
 
-    public EventPageResponseDTO searchPopupStorePosts(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
-        Specification<PopupStorePost> spec = (root, query, criteriaBuilder) -> {
+    public EventPageResponseDTO searchFestivalPosts(String region, String status, String titleKeyword, int pageNum, int pageSize, Long userId) {
+        Specification<FestivalPost> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             // 제목 키워드 검색 (대소문자 구분 없이)
             if (titleKeyword != null && !titleKeyword.trim().isEmpty()) {
-                Expression<String> titleExpression = root.get("content").as(String.class);
+                Expression<String> titleExpression = root.get("festivalContent").as(String.class);
                 Expression<String> lowerTitle = criteriaBuilder.lower(titleExpression);
 
                 predicates.add(
@@ -400,27 +401,27 @@ public class PopupStorePostService {
 
             // 지역 필터
             if (region != null && !region.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.equal(root.get("popupsArea"), region));
+                predicates.add(criteriaBuilder.equal(root.get("festivalArea"), region));
             }
 
             // 공연 상태(공연중, 공연예정) 필터
             if (status != null && !status.trim().isEmpty()) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+                predicates.add(criteriaBuilder.equal(root.get("festivalStatus"), status));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
         Pageable pageable = PageRequest.of(pageNum, pageSize);
-        Page<PopupStorePost> performancePage = popupStorePostRepository.findAll(spec, pageable);
+        Page<FestivalPost> performancePage = festivalPostRepository.findAll(spec, pageable);
 
         List<EventResponseDTO> posts = performancePage.getContent()
                 .stream()
-                .map(popupStorePost -> {
+                .map(festivalPost -> {
                     boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPerformanceId(userId, popupStorePost.getId())
+                            bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
                                     .isPresent();
-                    return new EventResponseDTO(popupStorePost, isBookmarked);
+                    return new EventResponseDTO(festivalPost, isBookmarked);
                 })
                 .toList();
 

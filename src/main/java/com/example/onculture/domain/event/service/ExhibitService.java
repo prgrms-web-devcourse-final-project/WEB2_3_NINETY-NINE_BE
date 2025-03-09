@@ -4,6 +4,7 @@ import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
+import com.example.onculture.domain.event.util.RegionMapper;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,27 +41,6 @@ public class ExhibitService {
     @Value("${PUBLIC_API_SERVICE_KEY}")
     private String serviceKey;
 
-    // 기간별 공연/전시 목록 조회
-    public List<ExhibitDTO> getExhibitByPeriod(String from, String to) {
-        List<ExhibitEntity> exhibit = exhibitRepository
-                .findByStartDateGreaterThanEqualAndEndDateLessThanEqual(from, to);
-        return exhibit.stream().map(this::toListDTO).collect(Collectors.toList());
-    }
-
-    // 지역별 공연/전시 목록 조회
-    public List<ExhibitDTO> getExhibitByArea(String area, String from, String to) {
-        List<ExhibitEntity> exhibit = exhibitRepository
-                .findByAreaAndStartDateGreaterThanEqualAndEndDateLessThanEqual(area, from, to);
-        return exhibit.stream().map(this::toListDTO).collect(Collectors.toList());
-    }
-
-    // 분야별 공연/전시 목록 조회
-    public List<ExhibitDTO> getExhibitByRealm(String realmName, String from, String to) {
-        List<ExhibitEntity> exhibit = exhibitRepository
-                .findByRealmNameAndStartDateGreaterThanEqualAndEndDateLessThanEqual(realmName, from, to);
-        return exhibit.stream().map(this::toListDTO).collect(Collectors.toList());
-    }
-
     // 공연/전시 상세정보 조회
     public EventResponseDTO getExhibitDetail(Long seq, Long userId) {
         EventResponseDTO eventResponseDTO = exhibitRepository.findById(seq)
@@ -76,38 +56,46 @@ public class ExhibitService {
 
     // 클라이언트로부터 전달받은 공공데이터(JSON)를 DB에 저장하는 메서드
     public void savePublicData(PublicDataRequestDTO requestDTO) {
-        // 날짜 파싱 (문자열 "YYYYMMDD" -> java.util.Date)
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        java.util.Date start = null;
-        java.util.Date end = null;
+        java.sql.Date startDate = null;
+        java.sql.Date endDate = null;
+
         try {
-            start = sdf.parse(requestDTO.getStartDate());
-            end = sdf.parse(requestDTO.getEndDate());
-        } catch (ParseException e) {
+            String start = requestDTO.getStartDate();
+            String end = requestDTO.getEndDate();
+
+            if (start != null && start.length() == 8) {
+                String formattedStart = start.substring(0, 4) + "-" + start.substring(4, 6) + "-" + start.substring(6, 8);
+                startDate = java.sql.Date.valueOf(formattedStart);
+            }
+            if (end != null && end.length() == 8) {
+                String formattedEnd = end.substring(0, 4) + "-" + end.substring(4, 6) + "-" + end.substring(6, 8);
+                endDate = java.sql.Date.valueOf(formattedEnd);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
             // 파싱 실패 시 기본값 또는 예외 처리 로직 추가 가능
         }
 
-        // determineStatus 메서드는 java.sql.Date 타입을 받으므로 변환
-        String status = determineStatus(
-                start != null ? new java.sql.Date(start.getTime()) : null,
-                end != null ? new java.sql.Date(end.getTime()) : null
-        );
+        String status = determineStatus(startDate, endDate);
+
+        // 기존의 area 값을 RegionMapper를 통해 매핑하여 저장
+        String mappedArea = RegionMapper.mapRegion(requestDTO.getArea());
 
         ExhibitEntity entity = ExhibitEntity.builder()
                 .title(requestDTO.getTitle())
-                .startDate(requestDTO.getStartDate())
-                .endDate(requestDTO.getEndDate())
+                .startDate(startDate)
+                .endDate(endDate)
                 .place(requestDTO.getPlace())
                 .realmName(requestDTO.getRealmName())
-                .area(requestDTO.getArea())
+                .area(mappedArea) // 변환된 값 사용
                 .thumbnail(requestDTO.getThumbnail())
                 .gpsX(requestDTO.getGpsX())
                 .gpsY(requestDTO.getGpsY())
-                .exhibitStatus(status) // 계산된 상태 저장
+                .exhibitStatus(status)
                 .build();
         exhibitRepository.save(entity);
     }
+
 
     /**
      * 공공데이터 API로부터 XML을 받아 JSON으로 변환 후, DB에 저장하는 로직 (페이지네이션 적용)
@@ -218,44 +206,6 @@ public class ExhibitService {
         return "상태 미정";
     }
 
-    // Entity -> ListDTO 변환
-    private ExhibitDTO toListDTO(ExhibitEntity p) {
-        return ExhibitDTO.builder()
-                .seq(p.getSeq())
-                .title(p.getTitle())
-                .startDate(p.getStartDate())
-                .endDate(p.getEndDate())
-                .place(p.getPlace())
-                .realmName(p.getRealmName())
-                .area(p.getArea())
-                .thumbnail(p.getThumbnail())
-                .gpsX(p.getGpsX())
-                .gpsY(p.getGpsY())
-                .build();
-    }
-
-//    // Entity -> DetailDTO 변환
-//    private ExhibitDetailDTO toDetailDTO(ExhibitEntity p) {
-//        return ExhibitDetailDTO.builder()
-//                .seq(p.getSeq())
-//                .title(p.getTitle())
-//                .startDate(p.getStartDate())
-//                .endDate(p.getEndDate())
-//                .place(p.getPlace())
-//                .realmName(p.getRealmName())
-//                .area(p.getArea())
-//                .thumbnail(p.getThumbnail())
-//                .gpsX(p.getGpsX())
-//                .gpsY(p.getGpsY())
-//                .build();
-//    }
-
-    // 제목 검색 기능
-    public List<ExhibitDTO> getExhibitByTitle(String title) {
-        String keyword = title.trim();
-        List<ExhibitEntity> exhibits = exhibitRepository.findByTitleContaining(keyword);
-        return exhibits.stream().map(this::toListDTO).collect(Collectors.toList());
-    }
     //랜덤조회
     public List<EventResponseDTO> getRandomExhibitions(int randomSize,Long userId) {
         if (randomSize < 0) {
@@ -326,9 +276,4 @@ public class ExhibitService {
 
         return response;
     }
-
-
-
-
-
 }

@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -50,8 +51,8 @@ public class ExhibitServiceTest {
         exhibit.setSeq(seq);
         exhibit.setTitle("전시 제목 " + seq);
         // 테스트 안정성을 위해 미래 날짜 사용 (현재보다 미래이므로 "진행 예정" 상태 예상)
-        exhibit.setStartDate("20990101");
-        exhibit.setEndDate("20991231");
+        exhibit.setStartDate(java.sql.Date.valueOf("2099-01-01"));
+        exhibit.setEndDate(java.sql.Date.valueOf("2099-12-31"));
         exhibit.setPlace("전시 장소");
         exhibit.setRealmName("예술");
         exhibit.setArea("서울특별시");
@@ -96,70 +97,6 @@ public class ExhibitServiceTest {
                 .user(user)              // userId() 대신 user() 메소드 사용
                 .exhibitEntity(exhibit)
                 .build();
-    }
-
-    @Test
-    @DisplayName("getExhibitByPeriod - 기간별 전시 목록 조회")
-    void testGetExhibitByPeriod() {
-        // Given
-        String from = "20250101";
-        String to = "20251231";
-        ExhibitEntity exhibit1 = createDummyExhibitEntity(1L);
-        ExhibitEntity exhibit2 = createDummyExhibitEntity(2L);
-        List<ExhibitEntity> exhibits = Arrays.asList(exhibit1, exhibit2);
-
-        when(exhibitRepository.findByStartDateGreaterThanEqualAndEndDateLessThanEqual(from, to))
-                .thenReturn(exhibits);
-
-        // When
-        List<ExhibitDTO> result = exhibitService.getExhibitByPeriod(from, to);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(exhibit1.getTitle(), result.get(0).getTitle());
-    }
-
-    @Test
-    @DisplayName("getExhibitByArea - 지역별 전시 목록 조회")
-    void testGetExhibitByArea() {
-        // Given
-        String area = "서울특별시";
-        String from = "20250101";
-        String to = "20251231";
-        ExhibitEntity exhibit = createDummyExhibitEntity(3L);
-
-        when(exhibitRepository.findByAreaAndStartDateGreaterThanEqualAndEndDateLessThanEqual(area, from, to))
-                .thenReturn(Collections.singletonList(exhibit));
-
-        // When
-        List<ExhibitDTO> result = exhibitService.getExhibitByArea(area, from, to);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(area, result.get(0).getArea());
-    }
-
-    @Test
-    @DisplayName("getExhibitByRealm - 분야별 전시 목록 조회")
-    void testGetExhibitByRealm() {
-        // Given
-        String realmName = "예술";
-        String from = "20250101";
-        String to = "20251231";
-        ExhibitEntity exhibit = createDummyExhibitEntity(4L);
-
-        when(exhibitRepository.findByRealmNameAndStartDateGreaterThanEqualAndEndDateLessThanEqual(realmName, from, to))
-                .thenReturn(Collections.singletonList(exhibit));
-
-        // When
-        List<ExhibitDTO> result = exhibitService.getExhibitByRealm(realmName, from, to);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(realmName, result.get(0).getRealmName());
     }
 
     @Test
@@ -225,24 +162,6 @@ public class ExhibitServiceTest {
         assertEquals(requestDTO.getTitle(), savedEntity.getTitle());
         // 미래 날짜이므로 today.before(startDate) 조건에 의해 "진행 예정"이 설정되어야 함
         assertEquals("진행 예정", savedEntity.getExhibitStatus());
-    }
-
-    @Test
-    @DisplayName("getExhibitByTitle - 제목 검색")
-    void testGetExhibitByTitle() {
-        // Given
-        String keyword = "전시";
-        ExhibitEntity exhibit = createDummyExhibitEntity(30L);
-        when(exhibitRepository.findByTitleContaining(keyword))
-                .thenReturn(Collections.singletonList(exhibit));
-
-        // When
-        List<ExhibitDTO> result = exhibitService.getExhibitByTitle(keyword);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getTitle().contains(keyword));
     }
 
     @Test

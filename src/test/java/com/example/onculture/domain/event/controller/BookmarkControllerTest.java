@@ -53,8 +53,8 @@ public class BookmarkControllerTest {
                 "http://example.com/event1",       // postUrl
                 "All",                             // ageRating
                 "Event One",                       // title
-                "2025-03-01",                      // startDate
-                "2025-03-10",                      // endDate
+                java.sql.Date.valueOf("2025-03-01"),                      // startDate
+                java.sql.Date.valueOf("2025-03-10"),                      // endDate
                 "10:00-22:00",                     // operatingHours
                 "Location 1",                      // location
                 "Venue 1",                         // venue
@@ -72,8 +72,8 @@ public class BookmarkControllerTest {
                 "http://example.com/event2",       // postUrl
                 "18+",                             // ageRating
                 "Event Two",                       // title
-                "2025-04-01",                      // startDate
-                "2025-04-05",                      // endDate
+                java.sql.Date.valueOf("2025-04-01"),                      // startDate
+                java.sql.Date.valueOf("2025-04-05"),                      // endDate
                 "12:00-23:00",                     // operatingHours
                 "Location 2",                      // location
                 "Venue 2",                         // venue

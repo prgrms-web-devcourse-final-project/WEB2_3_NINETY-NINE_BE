@@ -60,8 +60,8 @@ public class PerformanceServiceTest {
         performance.setPerformanceId("performanceId");
         performance.setFacilityId("facilityId");
         performance.setPerformanceTitle("공연 제목");
-        performance.setStartDate("2025-01-01");
-        performance.setEndDate("2025-01-31");
+        performance.setStartDate(java.sql.Date.valueOf("2025-01-01"));
+        performance.setEndDate(java.sql.Date.valueOf("2025-01-31"));
         performance.setFacilityName("코엑스 아티움");
         performance.setRuntime("120분");
         performance.setAgeRating("전체 관람가");

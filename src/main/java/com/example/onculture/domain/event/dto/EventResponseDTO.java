@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Date;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -17,8 +19,8 @@ public class EventResponseDTO {
     private String postUrl;
     private String ageRating;
     private String title;
-    private String startDate;
-    private String endDate;
+    private Date startDate;
+    private Date endDate;
     private String operatingHours;
     private String location;
     private String venue;
@@ -53,7 +55,7 @@ public class EventResponseDTO {
     }
     public EventResponseDTO(ExhibitEntity exhibitEntity, boolean isBookmarked) {
         this.id = exhibitEntity.getSeq();
-        this.genre = exhibitEntity.getArea();
+        this.genre = "전시회";
         this.postUrl = exhibitEntity.getThumbnail();
         this.ageRating = null;
         this.title = exhibitEntity.getTitle();
@@ -72,12 +74,12 @@ public class EventResponseDTO {
 
     public EventResponseDTO(PopupStorePost popupStorePost, boolean isBookmarked) {
         this.id = popupStorePost.getId();
-        this.genre = null;
+        this.genre = "팝업스토어";
         this.postUrl = popupStorePost.getImageUrls().toString();
         this.ageRating = null;
         this.title = popupStorePost.getContent();
-        this.startDate = String.valueOf(popupStorePost.getPopupsStartDate());
-        this.endDate = String.valueOf(popupStorePost.getPopupsEndDate());
+        this.startDate = popupStorePost.getPopupsStartDate();
+        this.endDate = popupStorePost.getPopupsEndDate();
         this.operatingHours = null;
         this.location = popupStorePost.getPopupsArea();
         this.venue = popupStorePost.getLocation();
@@ -91,12 +93,12 @@ public class EventResponseDTO {
 
     public EventResponseDTO(FestivalPost festivalPost, boolean isBookmarked) {
         this.id = festivalPost.getId();
-        this.genre = null;
+        this.genre = "축제";
         this.postUrl = festivalPost.getImageUrls().toString();
         this.ageRating = null;
         this.title = festivalPost.getFestivalContent();
-        this.startDate = String.valueOf(festivalPost.getFestivalStartDate());
-        this.endDate = String.valueOf(festivalPost.getFestivalEndDate());
+        this.startDate = festivalPost.getFestivalStartDate();
+        this.endDate = festivalPost.getFestivalEndDate();
         this.operatingHours = null;
         this.location = festivalPost.getFestivalArea();
         this.venue = festivalPost.getFestivalLocation();

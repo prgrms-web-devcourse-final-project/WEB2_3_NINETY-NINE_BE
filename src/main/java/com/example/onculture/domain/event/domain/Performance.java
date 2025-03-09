@@ -3,6 +3,7 @@ package com.example.onculture.domain.event.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,8 +24,8 @@ public class Performance {
     @Column(nullable = false)
     private String performanceTitle;
 
-    private String startDate;
-    private String endDate;
+    private Date startDate;
+    private Date endDate;
     private String facilityName;
     private String runtime;
     private String ageRating;
