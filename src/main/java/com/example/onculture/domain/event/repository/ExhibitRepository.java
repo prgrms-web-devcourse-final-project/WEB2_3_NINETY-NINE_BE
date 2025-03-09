@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.util.List;
 
 @Repository
@@ -18,4 +19,8 @@ public interface ExhibitRepository extends JpaRepository<ExhibitEntity, Long>, J
     List<ExhibitEntity> findRandomExhibitions(int randomSize);
 
     Page<ExhibitEntity> findAll(Specification<ExhibitEntity> spec, Pageable pageable);
+
+    List<ExhibitEntity> findByExhibitStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(String exhibitStatus, Date start, Date end);
+
+    List<ExhibitEntity> findByEndDateLessThan(Date date);
 }

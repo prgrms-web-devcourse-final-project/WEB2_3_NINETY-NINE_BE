@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.util.List;
 @Repository
 public interface FestivalPostRepository extends JpaRepository<FestivalPost, Long>, JpaSpecificationExecutor<FestivalPost> {
@@ -20,4 +21,8 @@ public interface FestivalPostRepository extends JpaRepository<FestivalPost, Long
     List<FestivalPost> findByFestivalLocationIsNotNull();
 
     Page<FestivalPost> findAll(Specification<FestivalPost> spec, Pageable pageable);
+
+    List<FestivalPost> findByFestivalStatusAndFestivalStartDateLessThanEqualAndFestivalEndDateGreaterThanEqual(String festivalStatus, Date start, Date end);
+
+    List<FestivalPost> findByFestivalEndDateLessThan(Date date);
 }

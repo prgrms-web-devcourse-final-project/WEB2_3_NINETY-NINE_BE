@@ -23,8 +23,8 @@ public class ExhibitEntity {
     private Long seq; // 공연/전시 일련번호
 
     private String title;       // 제목
-    private Date startDate;   // 시작일 (YYYYMMDD 형식)
-    private Date endDate;     // 종료일 (YYYYMMDD 형식)
+    private Date startDate;
+    private Date endDate;
     private String place;       // 공연 장소
     private String realmName;   // 분야명 (예: 연극, 콘서트, 전시 등)
     private String area;        // 지역 (예: 서울)

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.util.List;
 @Repository
 public interface PopupStorePostRepository extends JpaRepository<PopupStorePost, Long>, JpaSpecificationExecutor<PopupStorePost> {
@@ -17,4 +18,8 @@ public interface PopupStorePostRepository extends JpaRepository<PopupStorePost, 
     List<PopupStorePost> findRandomPopupStorePosts(int randomSize);
 
     Page<PopupStorePost> findAll(Specification<PopupStorePost> spec, Pageable pageable);
+
+    List<PopupStorePost> findByStatusAndPopupsStartDateLessThanEqualAndPopupsEndDateGreaterThanEqual(String status, Date start, Date end);
+
+    List<PopupStorePost> findByPopupsEndDateLessThan(Date date);
 }
