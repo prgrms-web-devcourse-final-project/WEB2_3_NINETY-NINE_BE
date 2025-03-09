@@ -4,6 +4,7 @@ import com.example.onculture.domain.event.dto.*;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
+import com.example.onculture.domain.event.util.RegionMapper;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -62,7 +63,6 @@ public class ExhibitService {
             String start = requestDTO.getStartDate();
             String end = requestDTO.getEndDate();
 
-            // "yyyyMMdd" 형식 -> "yyyy-MM-dd" 형식으로 변환
             if (start != null && start.length() == 8) {
                 String formattedStart = start.substring(0, 4) + "-" + start.substring(4, 6) + "-" + start.substring(6, 8);
                 startDate = java.sql.Date.valueOf(formattedStart);
@@ -76,8 +76,10 @@ public class ExhibitService {
             // 파싱 실패 시 기본값 또는 예외 처리 로직 추가 가능
         }
 
-        // determineStatus 메서드는 java.sql.Date 타입을 받음
         String status = determineStatus(startDate, endDate);
+
+        // 기존의 area 값을 RegionMapper를 통해 매핑하여 저장
+        String mappedArea = RegionMapper.mapRegion(requestDTO.getArea());
 
         ExhibitEntity entity = ExhibitEntity.builder()
                 .title(requestDTO.getTitle())
@@ -85,11 +87,11 @@ public class ExhibitService {
                 .endDate(endDate)
                 .place(requestDTO.getPlace())
                 .realmName(requestDTO.getRealmName())
-                .area(requestDTO.getArea())
+                .area(mappedArea) // 변환된 값 사용
                 .thumbnail(requestDTO.getThumbnail())
                 .gpsX(requestDTO.getGpsX())
                 .gpsY(requestDTO.getGpsY())
-                .exhibitStatus(status) // 계산된 상태 저장
+                .exhibitStatus(status)
                 .build();
         exhibitRepository.save(entity);
     }

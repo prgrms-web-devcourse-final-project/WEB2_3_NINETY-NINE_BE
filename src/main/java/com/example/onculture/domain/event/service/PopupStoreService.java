@@ -5,6 +5,7 @@ import com.example.onculture.domain.event.dto.EventPageResponseDTO;
 import com.example.onculture.domain.event.dto.EventResponseDTO;
 import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
+import com.example.onculture.domain.event.util.RegionMapper;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -303,11 +304,7 @@ public class PopupStoreService {
                     String postContent = fetchPostContent(wait);
                     List<String> imageUrls = fetchImageUrls(wait);
                     ParsedContent pc = parseContent(postContent);
-//                    if (pc.popupsStartDate == null || pc.operatingTime == null ||
-//                            pc.location == null || pc.details == null || postContent.isEmpty()) {
-//                        System.out.println("필수 정보 누락되어 저장 건너뜀: " + postUrl);
-//                        continue;
-//                    }
+
                     PopupStorePost post = new PopupStorePost();
                     post.setPostUrl(postUrl);
                     post.setContent(postContent);
@@ -319,20 +316,17 @@ public class PopupStoreService {
                     post.setImageUrls(imageUrls);
                     // 상태 결정 (현재 날짜와 운영/종료일 비교)
                     String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
-                    post.setStatus(status); // 엔티티에 status 필드가 있다고 가정
+                    post.setStatus(status);
 
-                    // 지역 추출 로직: location에서 앞의 두 단어를 추출하여 popupsArea에 저장
-                    String location = pc.location;
-                    if (location != null && !location.trim().isEmpty()) {
-                        String[] tokens = location.split("\\s+");
-                        if (tokens.length >= 2) {
-                            String popupsArea = tokens[0] + " " + tokens[1];
-                            post.setPopupsArea(popupsArea);
-                        }
+                    // 기존의 단순 토큰 추출 대신, RegionMapper를 사용하여 지역 매핑
+                    if (pc.location != null && !pc.location.trim().isEmpty()) {
+                        String mappedRegion = RegionMapper.mapRegion(pc.location);
+                        post.setPopupsArea(mappedRegion);
                     }
 
                     PopupStorePost savedPost = popupStorePostRepository.save(post);
                     System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
+
                 }
             } finally {
                 driver.quit();
