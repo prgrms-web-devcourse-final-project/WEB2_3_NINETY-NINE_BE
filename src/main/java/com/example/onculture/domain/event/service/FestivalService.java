@@ -36,7 +36,6 @@ public class FestivalService {
     private String password;
 
     private final FestivalPostRepository festivalPostRepository;
-
     private final BookmarkRepository bookmarkRepository;
 
     public FestivalService(FestivalPostRepository festivalPostRepository, BookmarkRepository bookmarkRepository) {
@@ -340,6 +339,16 @@ public class FestivalService {
                     System.out.println("\n게시글 URL: " + festivalPostUrl);
                     String festivalPostContent = fetchPostContent(wait);
                     List<String> festivalImageUrls = fetchImageUrls(wait);
+                    // 여러 이미지 중 첫 번째 이미지 URL만 선택하여 저장하도록 수정
+                    String selectedImageUrl = null;
+                    if (!festivalImageUrls.isEmpty()) {
+                        selectedImageUrl = festivalImageUrls.get(0);
+                    }
+                    List<String> singleImageUrlList = new ArrayList<>();
+                    if (selectedImageUrl != null) {
+                        singleImageUrlList.add(selectedImageUrl);
+                    }
+
                     ParsedFestivalEvent event = parseFestivalEvent(festivalPostContent);
                     if (event.location.isEmpty()) {
                         System.out.println("필수 정보 누락되어 저장 건너뜀: " + festivalPostUrl);
@@ -356,8 +365,8 @@ public class FestivalService {
                     post.setFestivalTicketPrice(event.ticketPrice);
                     String status = determineStatus(event.startDate, event.endDate);
                     post.setFestivalStatus(status);
-                    // 이미지 URL 목록은 @ElementCollection으로 매핑된 필드에 설정
-                    post.setImageUrls(festivalImageUrls);
+                    // @ElementCollection으로 매핑된 이미지 URL 목록에 단일 URL 저장
+                    post.setImageUrls(singleImageUrlList);
                     FestivalPost savedPost = festivalPostRepository.save(post);
                     System.out.println("FestivalPost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
                 }
