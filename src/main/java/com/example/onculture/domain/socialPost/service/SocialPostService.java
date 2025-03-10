@@ -1,8 +1,6 @@
 package com.example.onculture.domain.socialPost.service;
 
 
-import static com.example.onculture.global.utils.AwsS3Util.*;
-
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;

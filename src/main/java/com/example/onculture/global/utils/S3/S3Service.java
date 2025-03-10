@@ -15,10 +15,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import javax.imageio.ImageIO;
 
 @Slf4j
 @Service
@@ -59,11 +66,11 @@ public class S3Service {
 					fileUrls.add(fileUrl);
 					uploadedFileNames.add(folder + "/" + fileName);
 
-					log.info("✅ 업로드된 이미지 URL: {}", fileUrl); // ✅ 추가 로그
+					log.info("✅ 업로드된 이미지 URL: {}", fileUrl);
 				}
 			}
 		} catch (Exception e) {
-			log.error("❌ 파일 업로드 실패: {}", e.getMessage()); // ✅ 에러 로그 추가
+			log.error("❌ 파일 업로드 실패: {}", e.getMessage());
 			for (String fileName : uploadedFileNames) {
 				amazonS3.deleteObject(bucket, fileName);
 				log.info("🗑 업로드 실패로 삭제된 파일: {}", fileName);
@@ -71,9 +78,32 @@ public class S3Service {
 			throw new CustomException(ErrorCode.S3_UPLOAD_FAILED);
 		}
 
-		log.info("🚀 최종 반환되는 이미지 URL 리스트: {}", fileUrls); // ✅ 최종 반환 로그
+		log.info("🚀 최종 반환되는 이미지 URL 리스트: {}", fileUrls);
 		return fileUrls;
 	}
+
+	public String uploadFileFromUrl(String imageUrl, String folder, String fileName) {
+		try {
+			BufferedImage image = ImageIO.read(new URL(imageUrl));
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			ImageIO.write(image, "jpg", os);
+			byte[] byteArray = os.toByteArray();
+
+			InputStream inputStream = new ByteArrayInputStream(byteArray);
+
+			ObjectMetadata metadata = new ObjectMetadata();
+			metadata.setContentLength(byteArray.length);
+			metadata.setContentType("image/jpeg");
+
+			String fullPath = folder + "/" + fileName;
+			amazonS3.putObject(bucket, fullPath, inputStream, metadata);
+
+			return amazonS3.getUrl(bucket, fullPath).toString();
+		} catch (Exception e) {
+			throw new CustomException(ErrorCode.S3_UPLOAD_FAILED);
+		}
+	}
+
 
 
 	// S3에 있는 파일 주소 조회
@@ -120,6 +150,17 @@ public class S3Service {
 			throw new CustomException(ErrorCode.S3_DELETE_FAILED);
 		}
 	}
+
+	public boolean doesFileExist(String folder, String fileName) {
+		String fullPath = folder + "/" + fileName;
+		return amazonS3.doesObjectExist(bucket, fullPath);
+	}
+
+	public String getFileUrl(String folder, String fileName) {
+		String fullPath = folder + "/" + fileName;
+		return amazonS3.getUrl(bucket, fullPath).toString();
+	}
+
 
 
 
