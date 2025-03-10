@@ -15,5 +15,6 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long>,
     List<Performance> findRandomPerformances(int randomSize);
     List<Performance> findByPerformanceStateAndStartDateLessThanEqualAndEndDateGreaterThanEqual(String performanceState, Date start, Date end);
     List<Performance> findByEndDateLessThan(Date date);
-
+    @Query("SELECT p.performanceId FROM Performance p")
+    List<String> findAllPerformanceIds();
 }

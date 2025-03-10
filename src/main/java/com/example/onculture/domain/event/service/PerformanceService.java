@@ -23,7 +23,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.StringReader;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,24 +46,34 @@ public class PerformanceService {
     }
 
     public void savePerformances(String from, String to, String genre, String status) {
-        // 장르 코드 변환 (요청시 장르 코드를 따로 사용)
+        // 장르 코드 변환
         String genreCode = getGenreCode(genre);
 
         // 공연 목록 API 호출 및 공연 ID 목록 추출
         List<String> performanceIds = fetchPerformanceIds(from, to, genreCode, status);
 
+        // 기존 DB에 저장된 공연의 performanceId 목록 조회
+        Set<String> existingPerformanceIds = new HashSet<>(performanceRepository.findAllPerformanceIds());
+
+        // 중복되지 않은 새로운 performanceId만 필터링
+        List<String> newPerformanceIds = performanceIds.stream()
+                .filter(id -> !existingPerformanceIds.contains(id))
+                .toList();
+
+        if (newPerformanceIds.isEmpty()) {
+            throw new CustomException(ErrorCode.NO_NEW_CONTENT); // 새 데이터가 없을 경우 예외 처리
+        }
+
         // 각 공연 ID별 상세정보 API 호출 및 Performance 엔터티로 변환
         List<Performance> performanceList = new ArrayList<>();
-        for (String id : performanceIds) {
+        for (String id : newPerformanceIds) {
             performanceList.addAll(fetchPerformanceEntities(id));
         }
 
-        if (performanceList.isEmpty()) {
-            throw new CustomException(ErrorCode.NO_CONTENT);
-        }
         // Performance 엔터티 통합 저장
         performanceRepository.saveAll(performanceList);
     }
+
 
     public List<EventResponseDTO> getRandomPerformances(int randomSize, Long userId) {
         if (randomSize < 0) {
