@@ -9,6 +9,8 @@ import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class S3Service {
@@ -69,11 +72,12 @@ public class S3Service {
 		return fileUrls;
 	}
 
-
-	public String getFileUrl(String folder, String fileName) {
+	// ✅ S3에 있는 파일 주소 조회
+	public String readFile(String folder, String fileName) {
 		String fullPath = folder + "/" + fileName;
 
 		if (!amazonS3.doesObjectExist(bucket, fullPath)) {
+			log.warn("⚠️ AWS S3에 해당 파일이 존재하지 않음: {}", fullPath);
 			throw new CustomException(ErrorCode.S3_FILE_NOT_FOUND);
 		}
 

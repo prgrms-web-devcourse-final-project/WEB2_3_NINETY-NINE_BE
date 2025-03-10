@@ -129,20 +129,22 @@ public class ReviewService {
 
 	// 📌 기존 S3 이미지 삭제
 	private void deleteExistingReviewImage(Review review) {
-		if (!review.getImages().isEmpty()) {
-			ReviewImage image = review.getImages().get(0);
-			String imageUrl = image.getImageUrl();
-			String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
-			s3Service.deleteFile("reviews", fileName);
-			review.getImages().clear();
-			reviewImageRepository.delete(image);
+
+		if (review.getImages() == null || review.getImages().isEmpty()) {
+			return;
 		}
+		ReviewImage image = review.getImages().get(0);
+		String imageUrl = image.getImageUrl();
+		String fileName = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+		s3Service.deleteFile("reviews", fileName);
+		review.getImages().clear();
+		reviewImageRepository.delete(image);
 	}
 
 	// 📌 이벤트 타입 설정
 	private void setReviewEvent(Review review, ReviewRequestDTO requestDTO) {
 		if (requestDTO.getExhibitId() != null) {
-			review.setExhibit(exhibitRepository.findById(requestDTO.getExhibitId())
+			review.setExhibit(exhibitRepository.findBySeq(requestDTO.getExhibitId())
 				.orElseThrow(() -> new CustomException(ErrorCode.EVENT_NOT_FOUND)));
 		} else if (requestDTO.getFestivalId() != null) {
 			review.setFestival(festivalPostRepository.findById(requestDTO.getFestivalId())

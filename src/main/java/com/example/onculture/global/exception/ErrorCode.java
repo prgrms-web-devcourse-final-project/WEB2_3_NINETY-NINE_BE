@@ -11,6 +11,7 @@ public enum ErrorCode {
 
 
 	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "잘못된 입력값입니다."),
+	INVALID_IMAGE_URL(HttpStatus.INTERNAL_SERVER_ERROR, "잘못된 URL입니다."),
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
 	/*
@@ -119,6 +120,7 @@ public enum ErrorCode {
 	// S3
 	S3_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S3 파일 삭제에 실패했습니다."),
 	DUPLICATE_NICKNAME_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "소셜 로그인 성공 후 중복 닉네임을 대체할 임시 닉네임 생성에 실패했습니다."),
+	IMAGE_UPLOAD_LIMIT_EXCEEDED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 제한 개수가 초과했습니다."),
 	;
 
 	private final HttpStatus status;
