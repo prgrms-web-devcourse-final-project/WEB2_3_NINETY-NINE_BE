@@ -13,6 +13,7 @@ import com.example.onculture.domain.user.domain.Profile;
 import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.response.LikedSocialPostIdsResponseDto;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
+import com.example.onculture.domain.user.dto.response.UserListResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.model.Interest;
 import com.example.onculture.domain.user.model.LoginType;
@@ -26,8 +27,10 @@ import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.utils.S3.S3Service;
 import com.example.onculture.global.utils.CookieUtil;
+import com.example.onculture.global.utils.S3.S3Service;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
+import jakarta.persistence.Tuple;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -295,6 +298,41 @@ public class UserService {
             }
         }
         return null;
+    }
+
+    // 회원 삭제 메서드
+    @Transactional
+    public void deleteUser(Long userId) {
+        // 사용자 정보 여부 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException.CustomJpaReadException(ErrorCode.USER_NOT_FOUND));
+
+        // S3 삭제용 프로필 이미지 파일명 가져오기 (프로필이 존재하지 않을 경우도 고려)
+        String profileImageName = user.getProfile() != null ? user.getProfile().getProfileImage() : null;
+
+        // 사용자 삭제
+        userRepository.delete(user);
+        userRepository.flush();  // 즉시 DELETE SQL 실행
+
+        // 회원 삭제 성공 후, S3 이미지 삭제 실행
+        deleteOldProfileImage("profiles", profileImageName);
+    }
+
+    // 모든 사용자 조회 메서드 (모든 사용자의 userID와 Email만 반환)
+    public List<UserListResponse> findUserList(int count) {
+        Pageable pageable = PageRequest.of(0, count);
+        List<Tuple> list = userRepository.findUserList(pageable);
+
+        System.out.println("list: " + list);
+
+        return list.stream()
+                .map(tuple -> {
+                    Long id = tuple.get("id", Long.class);
+                    String email = tuple.get("email", String.class);
+                    // UserListResponse 객체를 직접 생성하고 값 할당
+                    return new UserListResponse(id, email);
+                })
+                .collect(Collectors.toList());
     }
 
 //    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
