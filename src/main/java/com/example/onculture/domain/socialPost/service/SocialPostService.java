@@ -38,6 +38,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -68,9 +73,16 @@ public class SocialPostService {
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, sortConfig);
 
-        Page<PostWithLikeResponseDTO> posts = socialPostRepository.findAll(pageable).map(socialPost -> {
-            boolean likeStatus = userId != null &&
-                    socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, socialPost.getId());
+        Page<SocialPost> PagePosts = socialPostRepository.findAllWithUserAndProfile(pageable);
+
+        List<Long> postIds = PagePosts.map(SocialPost::getId).toList();
+
+        Set<Long> likedPostIds = userId != null
+                ? new HashSet<>(socialPostLikeRepository.findSocialPostIdsByUserIdAndSocialPostIds(userId, postIds))
+                : Collections.emptySet();
+
+        Page<PostWithLikeResponseDTO> posts = PagePosts.map(socialPost -> {
+            boolean likeStatus = likedPostIds.contains(socialPost.getId());
             return new PostWithLikeResponseDTO(socialPost, likeStatus);
         });
 
