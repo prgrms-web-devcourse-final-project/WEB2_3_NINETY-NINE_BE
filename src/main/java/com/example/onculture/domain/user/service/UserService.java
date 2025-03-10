@@ -25,7 +25,7 @@ import com.example.onculture.domain.user.repository.ProfileRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
-import com.example.onculture.global.utils.AwsS3Util;
+import com.example.onculture.global.utils.S3.S3Service;
 import com.example.onculture.global.utils.CookieUtil;
 import com.example.onculture.global.utils.S3.S3Service;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
@@ -67,11 +67,10 @@ public class UserService {
     private final ImageFileService imageFileService;
     private final ModelMapper modelMapper;
     private final ProfileRepository profileRepository;
-    private final AwsS3Util awsS3Util;
+    private final S3Service s3Service; // 수정
     private final SocialPostLikeRepository socialPostLikeRepository;
     private final SocialPostRepository socialPostRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final S3Service s3Service;
 
     // 회원가입 메서드
     @Transactional
@@ -169,7 +168,7 @@ public class UserService {
         String s3ImageFileUrl = "";
         if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
             // S3에서 실제 프로필 이미지 URL 가져오기 (예: S3 프리사인 URL 생성 방식)
-            s3ImageFileUrl = awsS3Util.readFile(user.getProfile().getProfileImage());
+            s3ImageFileUrl = s3Service.readFile("profiles",user.getProfile().getProfileImage()); // 수정 그리고 profile.getProfileImage() 안쓰고 user.getProfile 사용한 이유가 있는지?
         }
 
         return UserProfileResponse.builder()
@@ -223,12 +222,14 @@ public class UserService {
     // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드
     public String profileImageSave(ModifyRequestDTO dto, MultipartFile imageData, User user) {
         String dbUserProfileImageName = user.getProfile().getProfileImage();
+        String folder = "profiles"; // 수정
 
+        // 수정
         // 새로운 이미지가 업로드된 경우
         if (imageData != null && !imageData.isEmpty()) {
-            deleteOldProfileImage(dbUserProfileImageName);
+            deleteOldProfileImage(folder, dbUserProfileImageName);
             String imageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
-            awsS3Util.uploadFile(imageData, imageFileName);
+            s3Service.uploadFile(imageData, folder, imageFileName);
             return imageFileName;
         }
 
@@ -237,20 +238,16 @@ public class UserService {
             return dto.getProfileImage();
         }
 
+        // 수정
         // 프로필 이미지 삭제하는 경우
-        deleteOldProfileImage(dbUserProfileImageName);
+        deleteOldProfileImage(folder, dbUserProfileImageName);
         return "";
     }
 
-    // 사용자 프로필 이미지 삭제 메서드
-    private void deleteOldProfileImage(String profileImageName) {
+    // 수정
+    private void deleteOldProfileImage(String folder, String profileImageName) {
         if (profileImageName != null && !profileImageName.trim().isEmpty()) {
-            boolean result = awsS3Util.deleteFile(profileImageName);
-            if (result) {
-                System.out.println("회원탈퇴한 사용자의 프로필 이미지 삭제 성공");
-            } else {
-                System.err.println("S3 프로필 이미지 삭제 실패: " + profileImageName);
-            }
+            s3Service.deleteFile(folder, profileImageName);
         }
     }
 

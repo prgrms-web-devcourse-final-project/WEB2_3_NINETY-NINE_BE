@@ -34,14 +34,17 @@ public class PostWithLikeResponseDTO {
         this.userId = socialPost.getUser().getId();
         this.title = socialPost.getTitle();
         this.content = socialPost.getContent();
-        this.imageUrls = ImageUrlUtil.splitImageUrls(socialPost.getImageUrls());
+        this.imageUrls = socialPost.getImageUrls(); // 수정
         this.likeCount = socialPost.getLikeCount();
         this.viewCount = socialPost.getViewCount();
         this.commentCount = socialPost.getCommentCount();
         this.createdAt = socialPost.getCreatedAt();
         this.updatedAt = socialPost.getUpdatedAt();
         this.userNickname = socialPost.getUser().getNickname();
-        this.userProfileImage = socialPost.getUser().getProfile().getProfileImage();
+        // User Profile이 null인지 확인 후 처리
+        this.userProfileImage = (socialPost.getUser().getProfile() != null)
+            ? socialPost.getUser().getProfile().getProfileImage()
+            : "https://s3.amazonaws.com/bucket/default_profile.jpg"; // 기본 프로필 이미지
         this.likeStatus = likeStatus;
     }
 }

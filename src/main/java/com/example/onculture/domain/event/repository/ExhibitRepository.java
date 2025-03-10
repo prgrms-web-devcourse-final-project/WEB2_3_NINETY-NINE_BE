@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ExhibitRepository extends JpaRepository<ExhibitEntity, Long>, JpaSpecificationExecutor<ExhibitEntity> {
@@ -23,4 +24,6 @@ public interface ExhibitRepository extends JpaRepository<ExhibitEntity, Long>, J
     List<ExhibitEntity> findByExhibitStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(String exhibitStatus, Date start, Date end);
 
     List<ExhibitEntity> findByEndDateLessThan(Date date);
+
+    Optional<ExhibitEntity> findBySeq(Long seq);
 }
