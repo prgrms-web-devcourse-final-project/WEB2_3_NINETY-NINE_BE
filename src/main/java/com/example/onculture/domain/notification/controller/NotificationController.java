@@ -40,14 +40,6 @@ public class NotificationController {
 		return ResponseEntity.ok(SuccessResponse.success("테스트 알림이 생성되었습니다.", responseDTO));
 	}
 
-	// @Operation(summary = "특정 사용자의 모든 알림 조회", description = "userId에 해당하는 사용자의 모든 알림을 조회합니다.")
-	// @GetMapping("/{userId}")
-	// public ResponseEntity<SuccessResponse<List<NotificationResponseDTO>>> getUserNotifications(
-	// 	@PathVariable Long userId) {
-	// 	List<NotificationResponseDTO> notifications = notificationService.getAllNotifications(userId);
-	// 	return ResponseEntity.ok(SuccessResponse.success("알림 목록 조회 성공", notifications));
-	// }
-
 	@Operation(summary = "현재 로그인한 사용자의 모든 알림 조회", description = "로그인한 사용자의 모든 알림을 조회합니다.")
 	@GetMapping
 	public ResponseEntity<SuccessResponse<List<NotificationResponseDTO>>> getUserNotifications(
@@ -56,13 +48,6 @@ public class NotificationController {
 		List<NotificationResponseDTO> notifications = notificationService.getAllNotifications(userDetails.getUserId());
 		return ResponseEntity.ok(SuccessResponse.success("알림 목록 조회 성공", notifications));
 	}
-
-	// @Operation(summary = "특정 사용자의 특정 알림 읽음 처리", description = "userId와 notiId에 해당하는 특정 알림을 읽음 처리합니다.")
-	// @PatchMapping("/{userId}/{notiId}/status")
-	// public ResponseEntity<SuccessResponse<Void>> markAsRead(@PathVariable Long userId, @PathVariable Long notiId) {
-	// 	notificationService.markNotificationAsRead(userId, notiId);
-	// 	return ResponseEntity.ok(SuccessResponse.success("알림이 읽음 처리되었습니다.", null));
-	// }
 
 	@Operation(summary = "현재 로그인한 사용자의 특정 알림 읽음 처리", description = "로그인한 사용자의 특정 알림을 읽음 처리합니다.")
 	@PatchMapping("/{notiId}/status")
@@ -74,13 +59,6 @@ public class NotificationController {
 		return ResponseEntity.ok(SuccessResponse.success("알림이 읽음 처리되었습니다.", null));
 	}
 
-	// @Operation(summary = "특정 사용자의 모든 알림 읽음 처리", description = "userId에 해당하는 모든 알림을 읽음 처리합니다.")
-	// @PatchMapping("/{userId}/all/status")
-	// public ResponseEntity<SuccessResponse<Void>> markAllAsRead(@PathVariable Long userId) {
-	// 	notificationService.markAllNotificationsAsRead(userId);
-	// 	return ResponseEntity.ok(SuccessResponse.success("모든 알림이 읽음 처리되었습니다.", null));
-	// }
-
 	@Operation(summary = "현재 로그인한 사용자의 모든 알림 읽음 처리", description = "로그인한 사용자의 모든 알림을 읽음 처리합니다.")
 	@PatchMapping("/all/status")
 	public ResponseEntity<SuccessResponse<Void>> markAllAsRead(
@@ -89,13 +67,6 @@ public class NotificationController {
 		notificationService.markAllNotificationsAsRead(userDetails.getUserId());
 		return ResponseEntity.ok(SuccessResponse.success("모든 알림이 읽음 처리되었습니다.", null));
 	}
-
-	// @Operation(summary = "특정 사용자의 모든 알림 삭제", description = "userId에 해당하는 모든 알림을 삭제합니다.")
-	// @DeleteMapping("/{userId}")
-	// public ResponseEntity<SuccessResponse<Void>> deleteAll(@PathVariable Long userId) {
-	// 	notificationService.deleteAllNotifications(userId);
-	// 	return ResponseEntity.ok(SuccessResponse.success("모든 알림이 삭제되었습니다.", null));
-	// }
 
 	@Operation(summary = "현재 로그인한 사용자의 모든 알림 삭제", description = "로그인한 사용자의 모든 알림을 삭제합니다.")
 	@DeleteMapping
