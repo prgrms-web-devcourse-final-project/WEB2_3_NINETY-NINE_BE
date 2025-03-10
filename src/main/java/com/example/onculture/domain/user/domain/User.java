@@ -43,7 +43,7 @@ public class User {
     private LoginType loginType;
 
     // 기본값 : Null
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "socials", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "socials")

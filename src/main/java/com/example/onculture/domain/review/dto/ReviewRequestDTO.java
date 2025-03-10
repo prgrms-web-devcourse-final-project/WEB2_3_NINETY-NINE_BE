@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
 
 @Getter
 @Setter
@@ -32,7 +34,7 @@ public class ReviewRequestDTO {
 	@Max(value = 5, message = "별점은 최대 5 이하이어야 합니다.")
 	private int rating;
 
-	private List<String> imageUrls;
+	private List<MultipartFile> images;
 
 	public boolean isValidEventType() {
 		int count = 0;

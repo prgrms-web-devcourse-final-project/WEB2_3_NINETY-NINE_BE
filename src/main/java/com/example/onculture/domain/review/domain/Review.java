@@ -40,7 +40,7 @@ public class Review {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "exhibit_id", nullable = true)
+	@JoinColumn(name = "exhibit_seq", referencedColumnName = "seq", nullable = true)
 	private ExhibitEntity exhibit;
 
 	@ManyToOne(fetch = FetchType.LAZY)

@@ -50,8 +50,8 @@ public class PerformanceControllerTest {
                 "postUrl",    // postUrl
                 "만 7세 이상",    // ageRating
                 "뮤지컬 콘서트, 심포니 오브 뮤지컬 with 옥주현, 이지혜, 김성식",    // title
-                "2025.03.29",    // startDate
-                "2025.03.29",    // endDate
+                java.sql.Date.valueOf("2025-03-29"),    // startDate
+                java.sql.Date.valueOf("2025-03-29"),    // endDate
                 "토요일(17:00)",    // operatingHours
                 "서울특별시",    // location
                 "강동아트센터",    // venue

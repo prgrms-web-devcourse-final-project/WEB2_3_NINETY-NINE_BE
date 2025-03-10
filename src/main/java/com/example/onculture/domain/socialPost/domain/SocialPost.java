@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.domain;
 
+import com.example.onculture.domain.event.converter.StringListConverter;
 import com.example.onculture.domain.socialPost.dto.UpdatePostRequestDTO;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.global.utils.image.ImageUrlUtil;
@@ -32,7 +33,10 @@ public class SocialPost {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    private String imageUrls;
+    // 수정
+    @Convert(converter = StringListConverter.class)
+    @Column(columnDefinition = "TEXT") // 추가 - 길이 제한 해제
+    private List<String> imageUrls = new ArrayList<>();
 
     @Column(nullable = false)
     private int viewCount = 0;
@@ -62,10 +66,12 @@ public class SocialPost {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateSocialPost(UpdatePostRequestDTO requestDTO) {
+
+    // 수정
+    public void updateSocialPost(UpdatePostRequestDTO requestDTO, List<String> newImageUrls) {
         this.title = requestDTO.getTitle();
         this.content = requestDTO.getContent();
-        this.imageUrls = ImageUrlUtil.joinImageUrls(requestDTO.getImageUrls());
+        this.imageUrls = newImageUrls;
     }
 
     public void increaseViewCount() {
