@@ -55,7 +55,7 @@ public class Notification {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = true)
-	private RelatedType relatedType; // POST, COMMENT, EVENT
+	private RelatedType relatedType;
 
 	@Column(nullable = false)
 	private Boolean isRead = false; // 읽음 여부
@@ -69,7 +69,7 @@ public class Notification {
 	}
 
 	public enum RelatedType {
-		POST, EVENT, COMMENT
+		POST, EXHIBIT, PERFORMANCE, FESTIVAL, POPUPSTORE
 	}
 }
 

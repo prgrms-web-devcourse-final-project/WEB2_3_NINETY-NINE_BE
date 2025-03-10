@@ -10,5 +10,4 @@ import java.util.List;
 public class CreatePostRequestDTO {
     private String title;
     private String content;
-    private List<String> imageUrls;
 }
