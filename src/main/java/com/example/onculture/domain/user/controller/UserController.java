@@ -10,6 +10,7 @@ import com.example.onculture.domain.user.dto.request.ModifyRequestDTO;
 import com.example.onculture.domain.user.dto.request.SignupRequestDTO;
 import com.example.onculture.domain.user.dto.response.LikedSocialPostIdsResponseDto;
 import com.example.onculture.domain.user.dto.response.TokenResponse;
+import com.example.onculture.domain.user.dto.response.UserListResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
 import com.example.onculture.domain.user.service.UserService;
 import com.example.onculture.global.exception.CustomException;
@@ -32,6 +33,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,6 +121,38 @@ public class UserController {
             @RequestPart(name = "image_data", required = false) MultipartFile imageData) {
         userService.modifyUserProfile(customUserDetails.getUserId(), dto, imageData);
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "프로필 수정 성공"));
+    }
+
+    // 회원탈퇴 API
+    @Operation( summary = "현재 사용자 회원 탈퇴", description = "현재 로그인한 유저의 계정을 삭제하는 API" )
+    @DeleteMapping( "/delete_account" )
+    public ResponseEntity<SuccessResponse<String>> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            HttpServletRequest request, HttpServletResponse response) {
+        Long userId = customUserDetails.getUserId();
+        userService.deleteUser(userId);
+        // 회원탈퇴 후, 로그아웃 메서드 실행 (리프레시 토큰, 각 쿠키들 삭제)
+        userService.logout(request, response);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "회원탈퇴 성공"));
+    }
+
+    // 모든 사용자 정보 조회 (관리자용 - userID, email 조회)
+    @Operation( summary = "모든 사용자 조회", description = "모든 사용자의 UserID와 Email을 조회하는 관지자용 API" )
+    @GetMapping( "/admin/{count}/user_list" )
+    public ResponseEntity<SuccessResponse<List<UserListResponse>>> findAllUsers(@PathVariable int count) {
+        System.out.println("count: " + count);
+        List<UserListResponse> userList = userService.findUserList(count);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "모든 사용자 조회 성공", userList));
+    }
+
+    // 지정 사용자 회원탈퇴 API (관리자용)
+    @Operation( summary = "지정 사용자 회원 탈퇴", description = "지정된 유저의 계정을 삭제하는 관리자용 API" )
+    @DeleteMapping( "/admin/{userId}/delete_account" )
+    public ResponseEntity<SuccessResponse<String>> adminDeleteByUser(@PathVariable Long userId, HttpServletRequest request, HttpServletResponse response) {
+        userService.deleteUser(userId);
+        // 회원탈퇴 후, 로그아웃 메서드 실행 (리프레시 토큰, 각 쿠키들 삭제)
+        userService.logout(request, response);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "지정된 사용자의 회원탈퇴 성공"));
     }
 
 //    @Operation(summary = "유저가 좋아요를 누른 SocialPost 목록 조회",

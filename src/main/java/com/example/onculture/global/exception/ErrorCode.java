@@ -97,6 +97,8 @@ public enum ErrorCode {
 	/*
 	 * 500 INTERNAL_SERVER_ERROR
 	 */
+	// 회원탈퇴 실패 시
+	USER_DELETION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "회원 탈퇴에 실패했습니다."),
 	// JPA 조회 실패 시
 	FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "조회에 실패했습니다."), // 조회 실패 공용 에러코드
 	POST_FIND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 조회에 실패했습니다."),
