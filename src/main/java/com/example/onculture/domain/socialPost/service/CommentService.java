@@ -80,9 +80,9 @@ public class CommentService {
             postOwnerId,           // 알림 받을 사용자 ID (게시글 작성자)
             userId,                // 알림 보낸 사용자 ID (댓글 작성자)
             Notification.NotificationType.COMMENT,
-            "회원님 게시글에 새로운 댓글이 달렸습니다.",
+            " ",
             socialPostId,
-            Notification.RelatedType.COMMENT
+            Notification.RelatedType.POST
         );
         notificationService.createNotification(notificationDTO);
 

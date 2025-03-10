@@ -1,13 +1,20 @@
 package com.example.onculture.domain.event.task;
 
+import com.example.onculture.domain.event.domain.Bookmark;
 import com.example.onculture.domain.event.domain.ExhibitEntity;
 import com.example.onculture.domain.event.domain.FestivalPost;
 import com.example.onculture.domain.event.domain.Performance;
 import com.example.onculture.domain.event.domain.PopupStorePost;
+import com.example.onculture.domain.event.repository.BookmarkRepository;
 import com.example.onculture.domain.event.repository.ExhibitRepository;
 import com.example.onculture.domain.event.repository.FestivalPostRepository;
 import com.example.onculture.domain.event.repository.PerformanceRepository;
 import com.example.onculture.domain.event.repository.PopupStorePostRepository;
+import com.example.onculture.domain.notification.domain.Notification;
+import com.example.onculture.domain.notification.dto.NotificationRequestDTO;
+import com.example.onculture.domain.notification.repository.NotificationRepository;
+import com.example.onculture.domain.notification.service.NotificationService;
+
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +31,8 @@ public class EventScheduler {
     private ExhibitRepository exhibitRepository;
     private FestivalPostRepository festivalPostRepository;
     private PopupStorePostRepository popupStorePostRepository;
+    private BookmarkRepository bookmarkRepository;
+    private NotificationService notificationService;
 
     // 공연(Performance) 처리: 상태 업데이트 및 종료된 데이터 삭제
     @Scheduled(cron = "0 1 0 * * ?")
@@ -97,11 +106,54 @@ public class EventScheduler {
         popupStorePostRepository.deleteAll(postsToDelete);
     }
 
+    // 북마크한 게시글의 오픈 및 마감 알림 발송
+    @Scheduled(cron = "0 2 0 * * ?") // 하루 1회 실행 (매일 00:02)
+    public void sendBookmarkNotifications() {
+        // 오늘 오픈하는 북마크 찾기
+        List<Bookmark> openingBookmarks = bookmarkRepository.findBookmarksWithOpeningToday();
+        for (Bookmark bookmark : openingBookmarks) {
+            sendOpeningNotification(bookmark);
+        }
+
+        // 오늘 마감하는 북마크 찾기
+        List<Bookmark> closingBookmarks = bookmarkRepository.findBookmarksWithClosingToday();
+        for (Bookmark bookmark : closingBookmarks) {
+            sendClosingNotification(bookmark);
+        }
+    }
+
+    private void sendOpeningNotification(Bookmark bookmark) {
+        NotificationRequestDTO requestDTO = new NotificationRequestDTO(
+            bookmark.getUser().getId(),
+            null, // 보낸 사람 없음
+            Notification.NotificationType.OPENING,
+            "",
+            bookmark.getExhibitEntity().getSeq(),
+            Notification.RelatedType.EXHIBIT
+        );
+
+        notificationService.createNotification(requestDTO);
+    }
+
+    private void sendClosingNotification(Bookmark bookmark) {
+        NotificationRequestDTO requestDTO = new NotificationRequestDTO(
+            bookmark.getUser().getId(),
+            null,
+            Notification.NotificationType.CLOSING,
+            "",
+            bookmark.getExhibitEntity().getSeq(),
+            Notification.RelatedType.EXHIBIT
+        );
+
+        notificationService.createNotification(requestDTO);
+    }
+
     @PostConstruct
     public void runAtStartup() {
         updateAndCleanPerformances();
         updateAndCleanExhibits();
         updateAndCleanFestivalPosts();
         updateAndCleanPopupStorePosts();
+        sendBookmarkNotifications();
     }
 }
