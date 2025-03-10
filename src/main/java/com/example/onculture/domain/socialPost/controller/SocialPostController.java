@@ -1,17 +1,26 @@
 package com.example.onculture.domain.socialPost.controller;
 
+import java.util.List;
+
 import com.example.onculture.domain.socialPost.dto.*;
 import com.example.onculture.domain.socialPost.service.SocialPostLikeService;
 import com.example.onculture.domain.socialPost.service.SocialPostService;
+import com.example.onculture.global.exception.CustomException;
+import com.example.onculture.global.exception.ErrorCode;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/socialPosts")
@@ -45,24 +54,48 @@ public class SocialPostController {
     }
 
 
+    // 수정
     @Operation(summary = "소셜 게시판 생성", description = "소셜 게시판 생성 API 입니다.")
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> createSocialPost(
-            @RequestBody CreatePostRequestDTO requestDTO,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        @RequestPart("requestDTO") String requestDTOStr,
+        @RequestPart(value = "images", required = false) List<MultipartFile> images,
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        CreatePostRequestDTO requestDTO;
+        try {
+            requestDTO = objectMapper.readValue(requestDTOStr, CreatePostRequestDTO.class);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
         PostWithLikeResponseDTO responseDTO = socialPostService.createSocialPost(
-                userDetails.getUserId(), requestDTO);
+            userDetails.getUserId(), requestDTO, images);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.success(HttpStatus.CREATED, responseDTO));
     }
 
+    // 수정
     @Operation(summary = "소셜 게시판 수정", description = "socialPostId에 해당하는 게시글의 수정 API 입니다")
-    @PutMapping("/{socialPostId}")
+    @PutMapping(value = "/{socialPostId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> updateSocialPost(
-            @RequestBody UpdatePostRequestDTO requestDTO,
-            @PathVariable Long socialPostId,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        @RequestPart("requestDTO") String requestDTOStr,
+        @RequestPart(value = "images", required = false) List<MultipartFile> images,
+        @PathVariable Long socialPostId,
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        UpdatePostRequestDTO requestDTO;
+        try {
+            requestDTO = objectMapper.readValue(requestDTOStr, UpdatePostRequestDTO.class);
+        } catch (JsonProcessingException e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
         PostWithLikeResponseDTO responseDTO = socialPostService.updateSocialPost(
-                userDetails.getUserId(), requestDTO, socialPostId);
+            userDetails.getUserId(), requestDTO, socialPostId, images);
+
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.success(HttpStatus.OK, responseDTO));
     }
 

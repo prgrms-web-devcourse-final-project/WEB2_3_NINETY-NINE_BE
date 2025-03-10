@@ -30,7 +30,7 @@ public class PostResponseDTO {
         this.userId = socialPost.getUser().getId();
         this.title = socialPost.getTitle();
         this.content = socialPost.getContent();
-        this.imageUrls = ImageUrlUtil.splitImageUrls(socialPost.getImageUrls());
+        this.imageUrls = socialPost.getImageUrls(); //수정
         this.likeCount = socialPost.getLikeCount();
         this.viewCount = socialPost.getViewCount();
         this.commentCount = socialPost.getCommentCount();
