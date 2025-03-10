@@ -303,6 +303,17 @@ public class PopupStoreService {
                     System.out.println("\n게시글 URL: " + postUrl);
                     String postContent = fetchPostContent(wait);
                     List<String> imageUrls = fetchImageUrls(wait);
+
+                    // 여러 이미지 중 첫 번째 이미지 URL만 선택하여 저장
+                    String selectedImageUrl = null;
+                    if (!imageUrls.isEmpty()) {
+                        selectedImageUrl = imageUrls.get(0);
+                    }
+                    List<String> singleImageUrlList = new ArrayList<>();
+                    if (selectedImageUrl != null) {
+                        singleImageUrlList.add(selectedImageUrl);
+                    }
+
                     ParsedContent pc = parseContent(postContent);
 
                     PopupStorePost post = new PopupStorePost();
@@ -313,7 +324,7 @@ public class PopupStoreService {
                     post.setPopupsEndDate(pc.popupsEndDate);
                     post.setLocation(pc.location);
                     post.setDetails(pc.details);
-                    post.setImageUrls(imageUrls);
+                    post.setImageUrls(singleImageUrlList); // 단일 이미지 URL 리스트 설정
                     // 상태 결정 (현재 날짜와 운영/종료일 비교)
                     String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
                     post.setStatus(status);
@@ -326,7 +337,6 @@ public class PopupStoreService {
 
                     PopupStorePost savedPost = popupStorePostRepository.save(post);
                     System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
-
                 }
             } finally {
                 driver.quit();
@@ -335,6 +345,7 @@ public class PopupStoreService {
             e.printStackTrace();
         }
     }
+
 
 
     public List<EventResponseDTO> getRandomPopupStorePosts(int randomSize, Long userId) {
