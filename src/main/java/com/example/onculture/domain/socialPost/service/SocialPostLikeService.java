@@ -55,7 +55,7 @@ public class SocialPostLikeService {
                     postOwnerId,           // 알림 받을 사용자 ID (게시글 작성자)
                     userId,                // 알림 보낸 사용자 ID (좋아요 누른 사람)
                     Notification.NotificationType.LIKE,
-                    "회원님 게시글에 새로운 좋아요가 추가되었습니다.",
+                    " ",
                     socialPostId,
                     Notification.RelatedType.POST
                 );

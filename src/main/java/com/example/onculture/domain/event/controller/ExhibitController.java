@@ -28,7 +28,7 @@ public class ExhibitController {
     // 공공 데이터 API 저장
     @Operation(summary = "전시회 공공 데이터 저장",
             description = "공공데이터 OPEN API를 사용해서 데이터를 저장하는 API입니다")
-    @GetMapping("/fetchXmlAndSave")
+    @PostMapping("/fetchXmlAndSave")
     public ResponseEntity<String> fetchXmlAndSave() {
         exhibitService.fetchXmlAndSaveWithPagination();
         return ResponseEntity.ok("공공데이터 XML을 불러와 저장했습니다.");

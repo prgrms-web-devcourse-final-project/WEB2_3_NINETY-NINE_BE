@@ -38,6 +38,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -68,9 +73,16 @@ public class SocialPostService {
 
         Pageable pageable = PageRequest.of(pageNum, pageSize, sortConfig);
 
-        Page<PostWithLikeResponseDTO> posts = socialPostRepository.findAll(pageable).map(socialPost -> {
-            boolean likeStatus = userId != null &&
-                    socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, socialPost.getId());
+        Page<SocialPost> PagePosts = socialPostRepository.findAllWithUserAndProfile(pageable);
+
+        List<Long> postIds = PagePosts.map(SocialPost::getId).toList();
+
+        Set<Long> likedPostIds = userId != null
+                ? new HashSet<>(socialPostLikeRepository.findSocialPostIdsByUserIdAndSocialPostIds(userId, postIds))
+                : Collections.emptySet();
+
+        Page<PostWithLikeResponseDTO> posts = PagePosts.map(socialPost -> {
+            boolean likeStatus = likedPostIds.contains(socialPost.getId());
             return new PostWithLikeResponseDTO(socialPost, likeStatus);
         });
 
@@ -106,21 +118,28 @@ public class SocialPostService {
     public PostWithLikeResponseDTO createSocialPost(Long userId, CreatePostRequestDTO requestDTO, List<MultipartFile> images) {
         User user = findUserOrThrow(userId);
 
-        // 최대 4장의 이미지를 S3에 업로드
+        log.info("📢 createSocialPost 실행 - images: {}", images != null ? images.size() : 0); // ✅ 추가
+
         List<String> uploadedImageUrls = images != null && !images.isEmpty()
-            ? s3Service.uploadFiles(images, "social_posts")
+            ? s3Service.uploadFiles(images, "social_posts")  // ✅ S3 업로드
             : Collections.emptyList();
+
+        log.info("🟢 업로드된 이미지 URL 리스트: {}", uploadedImageUrls); // ✅ 추가
 
         SocialPost socialPost = SocialPost.builder()
             .user(user)
             .title(requestDTO.getTitle())
             .content(requestDTO.getContent())
-            .imageUrls(uploadedImageUrls)
+            .imageUrls(uploadedImageUrls) // ✅ 여기서 제대로 저장되는지 확인
             .build();
 
         socialPostRepository.save(socialPost);
+
+        log.info("📌 저장된 게시글 ID: {}, 이미지 리스트: {}", socialPost.getId(), socialPost.getImageUrls()); // ✅ 추가
+
         return new PostWithLikeResponseDTO(socialPost, false);
     }
+
 
     // 수정
     public PostWithLikeResponseDTO updateSocialPost(Long userId, UpdatePostRequestDTO requestDTO, Long socialPostId, List<MultipartFile> images) {
@@ -130,10 +149,10 @@ public class SocialPostService {
         SocialPost socialPost = socialPostRepository.findById(socialPostId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        // ✅ 기존 이미지 삭제
+        // 기존 이미지 삭제
         deleteExistingImages(socialPost.getImageUrls());
 
-        // ✅ 새 이미지 업로드
+        // 새 이미지 업로드
         List<String> uploadedImageUrls = images != null && !images.isEmpty()
             ? s3Service.uploadFiles(images, "social_posts")
             : Collections.emptyList();
@@ -186,13 +205,13 @@ public class SocialPostService {
         if (imageUrls != null && !imageUrls.isEmpty()) {
             for (String imageUrl : imageUrls) {
                 try {
-                    // ✅ URL 디코딩 적용 (한글, 공백, 특수문자 포함)
+                    // URL 디코딩 적용 (한글, 공백, 특수문자 포함)
                     String decodedUrl = URLDecoder.decode(imageUrl, StandardCharsets.UTF_8);
                     String fileName = decodedUrl.substring(decodedUrl.lastIndexOf("/") + 1);
 
                     log.info("🟢 S3 삭제 요청 Key: {}", fileName);
 
-                    // ✅ 정확한 폴더 경로 전달
+                    // 정확한 폴더 경로 전달
                     s3Service.deleteFile("social_posts", fileName);
 
                     log.info("✅ S3 파일 삭제 완료: {}", fileName);

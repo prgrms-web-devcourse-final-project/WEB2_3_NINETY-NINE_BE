@@ -1,11 +1,15 @@
 package com.example.onculture.domain.user.repository;
 
 import com.example.onculture.domain.user.domain.User;
+import com.example.onculture.domain.user.dto.response.UserListResponse;
 import com.example.onculture.domain.user.dto.response.UserProfileResponse;
+import jakarta.persistence.Tuple;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -21,4 +25,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByNickname(String nickname);
 
     boolean existsByEmail(String email);
+
+    @Query(value = "select u.id as id, u.email as email from User u")
+    List<Tuple> findUserList(Pageable pageable);
 }
