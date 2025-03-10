@@ -315,7 +315,7 @@ public class UserService {
         userRepository.flush();  // 즉시 DELETE SQL 실행
 
         // 회원 삭제 성공 후, S3 이미지 삭제 실행
-        deleteOldProfileImage(profileImageName);
+        deleteOldProfileImage("profiles", profileImageName);
     }
 
     // 모든 사용자 조회 메서드 (모든 사용자의 userID와 Email만 반환)

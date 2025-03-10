@@ -137,7 +137,7 @@ public class UserController {
     }
 
     // 모든 사용자 정보 조회 (관리자용 - userID, email 조회)
-    @Operation( summary = "모든 사용자 조회", description = "모든 사용자의 UserID와 Email을 조회하는 관지자용 API" )
+    @Operation( summary = "모든 사용자 조회(관리자용)", description = "모든 사용자의 UserID와 Email을 조회하는 관지자용 API" )
     @GetMapping( "/admin/{count}/user_list" )
     public ResponseEntity<SuccessResponse<List<UserListResponse>>> findAllUsers(@PathVariable int count) {
         System.out.println("count: " + count);
@@ -146,7 +146,7 @@ public class UserController {
     }
 
     // 지정 사용자 회원탈퇴 API (관리자용)
-    @Operation( summary = "지정 사용자 회원 탈퇴", description = "지정된 유저의 계정을 삭제하는 관리자용 API" )
+    @Operation( summary = "지정 사용자 회원 탈퇴(관리자용)", description = "지정된 유저의 계정을 삭제하는 관리자용 API" )
     @DeleteMapping( "/admin/{userId}/delete_account" )
     public ResponseEntity<SuccessResponse<String>> adminDeleteByUser(@PathVariable Long userId, HttpServletRequest request, HttpServletResponse response) {
         userService.deleteUser(userId);
