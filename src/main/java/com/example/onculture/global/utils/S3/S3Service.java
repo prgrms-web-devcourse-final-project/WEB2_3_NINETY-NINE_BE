@@ -47,7 +47,6 @@ public class S3Service {
 		return amazonS3.getUrl(bucket, fullPath).toString(); // 업로드된 파일의 URL 반환
 	}
 
-	// 여러 개의 파일 업로드 (소셜 게시판, 페스티벌, 팝업스토어)
 	public List<String> uploadFiles(List<MultipartFile> files, String folder) {
 		List<String> fileUrls = new ArrayList<>();
 		List<String> uploadedFileNames = new ArrayList<>();
@@ -59,20 +58,25 @@ public class S3Service {
 					String fileUrl = uploadFile(file, folder, fileName);
 					fileUrls.add(fileUrl);
 					uploadedFileNames.add(folder + "/" + fileName);
+
+					log.info("✅ 업로드된 이미지 URL: {}", fileUrl); // ✅ 추가 로그
 				}
 			}
 		} catch (Exception e) {
-			// 업로드 실패 시, 이미 업로드된 파일 삭제
+			log.error("❌ 파일 업로드 실패: {}", e.getMessage()); // ✅ 에러 로그 추가
 			for (String fileName : uploadedFileNames) {
 				amazonS3.deleteObject(bucket, fileName);
+				log.info("🗑 업로드 실패로 삭제된 파일: {}", fileName);
 			}
 			throw new CustomException(ErrorCode.S3_UPLOAD_FAILED);
 		}
 
+		log.info("🚀 최종 반환되는 이미지 URL 리스트: {}", fileUrls); // ✅ 최종 반환 로그
 		return fileUrls;
 	}
 
-	// ✅ S3에 있는 파일 주소 조회
+
+	// S3에 있는 파일 주소 조회
 	public String readFile(String folder, String fileName) {
 		String fullPath = folder + "/" + fileName;
 
