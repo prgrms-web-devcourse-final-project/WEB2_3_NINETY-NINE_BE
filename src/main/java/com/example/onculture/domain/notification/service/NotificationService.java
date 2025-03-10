@@ -169,7 +169,7 @@ public class NotificationService {
 		if (sender == null) {
 			Map<Notification.NotificationType, String> systemMessages = Map.of(
 				Notification.NotificationType.TICKET, String.format("'%s'의 티켓 오픈이 하루 전입니다.", title),
-				Notification.NotificationType.OPENING, String.format("'%s'이(가) 오픈되었습니다.", title),
+				Notification.NotificationType.OPENING, String.format("'%s'이(가) 오픈 되었습니다.", title),
 				Notification.NotificationType.CLOSING, String.format("'%s'이(가) 마지막날입니다.", title)
 			);
 			return systemMessages.getOrDefault(type, "새로운 알림이 있습니다.");

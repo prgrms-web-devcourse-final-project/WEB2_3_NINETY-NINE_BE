@@ -8,9 +8,14 @@ import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import com.example.onculture.domain.event.util.RegionMapper;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
+import com.example.onculture.global.utils.S3.S3Service;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
+
+import org.apache.commons.codec.digest.DigestUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -27,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
 
+@Slf4j
 @Service
 public class PopupStoreService {
 
@@ -40,9 +46,12 @@ public class PopupStoreService {
 
     private final BookmarkRepository bookmarkRepository;
 
-    public PopupStoreService(PopupStorePostRepository popupStorePostRepository, BookmarkRepository bookmarkRepository) {
+    private final S3Service s3Service;
+
+    public PopupStoreService(PopupStorePostRepository popupStorePostRepository, BookmarkRepository bookmarkRepository, S3Service s3Service) {
         this.popupStorePostRepository = popupStorePostRepository;
         this.bookmarkRepository = bookmarkRepository;
+        this.s3Service = s3Service;
     }
 
     // WebDriver 설정: ChromeOptions를 사용하여 브라우저를 실제 사용자처럼 모방
@@ -144,23 +153,61 @@ public class PopupStoreService {
         }
     }
 
-    private List<String> fetchImageUrls(WebDriverWait wait) {
-        List<String> imageUrls = new ArrayList<>();
+    private String fetchAndUploadFirstImage(WebDriverWait wait) {
         try {
             List<WebElement> images = wait.until(
-                    ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//img[contains(@class, 'x5yr21d')]"))
+                ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//img[contains(@class, 'x5yr21d')]"))
             );
-            System.out.println("게시글 이미지:");
-            for (WebElement img : images) {
-                String src = img.getAttribute("src");
-                imageUrls.add(src);
-                System.out.println(src);
+
+            if (images.isEmpty()) {
+                log.warn("⚠️ 게시글에서 이미지 찾을 수 없음.");
+                return null;
             }
+
+            // 첫 번째 이미지 URL 가져오기
+            String imageUrl = images.get(0).getAttribute("src");
+            log.info("🔗 원본 이미지 URL: {}", imageUrl);
+
+            // S3 업로드 후 URL 반환 (중복 방지)
+            return uploadImageToS3(imageUrl);
         } catch (Exception e) {
-            System.out.println("게시글 이미지 없음.");
+            log.error("⚠️ 첫 번째 이미지 가져오기 실패: {}", e.getMessage());
+            return null;
         }
-        return imageUrls;
     }
+
+    // S3에 이미지 업로드 (중복 방지)
+    private String uploadImageToS3(String imageUrl) {
+        try {
+            String fileName = generateFileName(imageUrl); // URL을 해시값으로 변환하여 파일명 통일
+
+            // 기존에 같은 파일이 있는지 확인
+            if (s3Service.doesFileExist("popup_store_posts", fileName)) {
+                log.info("⚠️ 동일한 이미지가 이미 S3에 존재함: {}", s3Service.getFileUrl("popup_store_posts", fileName));
+                return s3Service.getFileUrl("popup_store_posts", fileName);
+            }
+
+            // 존재하지 않으면 업로드
+            String s3Url = s3Service.uploadFileFromUrl(imageUrl, "popup_store_posts", fileName);
+            log.info("✅ S3 업로드 완료: {}", s3Url);
+            return s3Url;
+        } catch (Exception e) {
+            log.error("❌ S3 업로드 실패: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // 이미지 URL을 MD5 해시로 변환하여 고유한 파일명 생성
+    private String generateFileName(String imageUrl) {
+        return DigestUtils.md5Hex(imageUrl) + ".jpg";
+    }
+
+    // S3 URL에서 파일명 추출
+    private String extractFileNameFromUrl(String s3Url) {
+        return s3Url.substring(s3Url.lastIndexOf("/") + 1);
+    }
+
+
 
     // ParsedContent 헬퍼 클래스 (종료일자 필드 추가)
     private static class ParsedContent {
@@ -296,26 +343,27 @@ public class PopupStoreService {
                 WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
                 loginToInstagram(driver, wait, username, password);
                 driver.get("https://www.instagram.com/pops.official_/");
+
                 Set<String> postLinks = collectPostLinks(driver, 10);
-                System.out.println("총 수집된 게시글 개수: " + postLinks.size());
+                System.out.println("총 수집된 팝업스토어 게시글 개수: " + postLinks.size());
+
                 for (String postUrl : postLinks) {
                     driver.get(postUrl);
-                    System.out.println("\n게시글 URL: " + postUrl);
+                    System.out.println("\n📌 게시글 URL: " + postUrl);
+
                     String postContent = fetchPostContent(wait);
-                    List<String> imageUrls = fetchImageUrls(wait);
-
-                    // 여러 이미지 중 첫 번째 이미지 URL만 선택하여 저장
-                    String selectedImageUrl = null;
-                    if (!imageUrls.isEmpty()) {
-                        selectedImageUrl = imageUrls.get(0);
-                    }
-                    List<String> singleImageUrlList = new ArrayList<>();
-                    if (selectedImageUrl != null) {
-                        singleImageUrlList.add(selectedImageUrl);
-                    }
-
                     ParsedContent pc = parseContent(postContent);
 
+                    // 필수 정보 검증 (위치 정보 없으면 저장 X)
+                    if (pc.location == null || pc.location.trim().isEmpty()) {
+                        System.out.println("❌ 필수 정보 누락으로 게시글 저장 건너뜀: " + postUrl);
+                        continue;
+                    }
+
+                    // 이미지 URL 가져와서 S3 업로드
+                    String s3ImageUrl = fetchAndUploadFirstImage(wait);
+
+                    // PopupStorePost 엔티티 생성 및 설정
                     PopupStorePost post = new PopupStorePost();
                     post.setPostUrl(postUrl);
                     post.setContent(postContent);
@@ -324,19 +372,34 @@ public class PopupStoreService {
                     post.setPopupsEndDate(pc.popupsEndDate);
                     post.setLocation(pc.location);
                     post.setDetails(pc.details);
-                    post.setImageUrls(singleImageUrlList); // 단일 이미지 URL 리스트 설정
-                    // 상태 결정 (현재 날짜와 운영/종료일 비교)
-                    String status = determineStatus(pc.popupsStartDate, pc.popupsEndDate);
-                    post.setStatus(status);
+                    post.setStatus(determineStatus(pc.popupsStartDate, pc.popupsEndDate));
 
-                    // 기존의 단순 토큰 추출 대신, RegionMapper를 사용하여 지역 매핑
+                    // 지역 매핑 (RegionMapper 활용)
                     if (pc.location != null && !pc.location.trim().isEmpty()) {
                         String mappedRegion = RegionMapper.mapRegion(pc.location);
                         post.setPopupsArea(mappedRegion);
                     }
 
-                    PopupStorePost savedPost = popupStorePostRepository.save(post);
-                    System.out.println("PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + status);
+                    // S3에 업로드된 첫 번째 이미지 저장
+                    if (s3ImageUrl != null) {
+                        post.setImageUrls(Collections.singletonList(s3ImageUrl));
+                    } else {
+                        post.setImageUrls(Collections.emptyList()); // 이미지 없을 경우 빈 리스트 저장
+                    }
+
+                    try {
+                        PopupStorePost savedPost = popupStorePostRepository.save(post);
+                        System.out.println("✅ PopupStorePost 저장 완료! ID: " + savedPost.getId() + ", 상태: " + post.getStatus());
+                    } catch (Exception e) {
+                        System.out.println("❌ 게시글 저장 실패! S3에서 업로드된 이미지 삭제");
+
+                        if (s3ImageUrl != null) {
+                            s3Service.deleteFile("festival_posts", extractFileNameFromUrl(s3ImageUrl));
+                            System.out.println("🗑 업로드된 이미지 삭제됨: " + s3ImageUrl);
+                        }
+
+                        throw new RuntimeException("게시글 저장 실패로 이미지 삭제 완료", e);
+                    }
                 }
             } finally {
                 driver.quit();
@@ -345,6 +408,7 @@ public class PopupStoreService {
             e.printStackTrace();
         }
     }
+
 
 
 
