@@ -380,6 +380,23 @@ public class UserServiceTest {
         assertEquals("valid_refresh_token", result);
     }
 
+    @Test
+    @DisplayName("회원 삭제 메서드")
+    void deleteUser() {
+        // Given
+        Long userId = 2L;
+        when(userRepository.findById(userId)).thenReturn(Optional.of(findUser));
+        doNothing().when(userRepository).delete(findUser);
+        doNothing().when(userRepository).flush();
+
+        // When
+        userService.deleteUser(userId);
+
+        // Then
+        verify(userRepository, times(1)).delete(findUser);
+        verify(userRepository, times(1)).flush();
+    }
+
     @DisplayName("getBookmarkedEvents - 사용자 북마크 이벤트 목록 조회 요청")
     @Test
     void getBookmarkedEvents_returnsCorrectEventPageResponse() {
