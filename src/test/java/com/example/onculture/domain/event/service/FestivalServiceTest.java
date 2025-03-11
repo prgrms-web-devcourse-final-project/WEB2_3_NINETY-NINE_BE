@@ -150,8 +150,7 @@ public class FestivalServiceTest {
         FestivalPost post = createDummyFestivalPost(id);
         when(festivalPostRepository.findById(id))
                 .thenReturn(Optional.of(post));
-        // FestivalPost 상세 조회 시 내부적으로 findByUserIdAndPerformanceId()를 호출함
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, post.getId()))
+        when(bookmarkRepository.findByUserIdAndFestivalPostId(userId, post.getId()))
                 .thenReturn(Optional.empty());
 
         // When
@@ -173,7 +172,7 @@ public class FestivalServiceTest {
         when(festivalPostRepository.findById(id))
                 .thenReturn(Optional.of(post));
         Bookmark bookmark = createDummyBookmark(userId, post);
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, post.getId()))
+        when(bookmarkRepository.findByUserIdAndFestivalPostId(userId, post.getId()))
                 .thenReturn(Optional.of(bookmark));
 
         // When
@@ -201,8 +200,8 @@ public class FestivalServiceTest {
                 PageRequest.of(pageNum, pageSize),
                 1
         );
-        // searchFestivalPosts() 내부에서는 bookmarkRepository.findByUserIdAndPerformanceId()를 사용함
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, post.getId()))
+
+        when(bookmarkRepository.findByUserIdAndFestivalPostId(userId, post.getId()))
                 .thenReturn(Optional.empty());
         when(festivalPostRepository.findAll((Specification<FestivalPost>) any(), eq(PageRequest.of(pageNum, pageSize))))
                 .thenReturn(page);

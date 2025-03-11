@@ -479,7 +479,7 @@ public class PopupStoreService {
                 .stream()
                 .map(popupStorePost -> {
                     boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPerformanceId(userId, popupStorePost.getId())
+                            bookmarkRepository.findByUserIdAndPopupStorePostId(userId, popupStorePost.getId())
                                     .isPresent();
                     return new EventResponseDTO(popupStorePost, isBookmarked);
                 })
