@@ -46,7 +46,7 @@ public class ExhibitService {
         EventResponseDTO eventResponseDTO = exhibitRepository.findById(seq)
                 .map(exhibitEntity -> {
                     boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPerformanceId(userId, exhibitEntity.getSeq())
+                            bookmarkRepository.findByUserIdAndExhibitEntitySeq(userId, exhibitEntity.getSeq())
                                     .isPresent();
                     return new EventResponseDTO(exhibitEntity, isBookmarked);
                 })
@@ -260,7 +260,7 @@ public class ExhibitService {
                 .stream()
                 .map(exhibitEntity -> {
                     boolean isBookmarked = userId != null &&
-                            bookmarkRepository.findByUserIdAndPerformanceId(userId, exhibitEntity.getSeq())
+                            bookmarkRepository.findByUserIdAndExhibitEntitySeq(userId, exhibitEntity.getSeq())
                                     .isPresent();
                     return new EventResponseDTO(exhibitEntity, isBookmarked);
                 })
