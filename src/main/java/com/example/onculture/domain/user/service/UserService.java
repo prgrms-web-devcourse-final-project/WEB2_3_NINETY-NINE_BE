@@ -50,6 +50,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -167,9 +168,11 @@ public class UserService {
         }
 
         String s3ImageFileUrl = "";
-        if (user.getProfile().getProfileImage() != null && !user.getProfile().getProfileImage().isEmpty()) {
-            // S3에서 실제 프로필 이미지 URL 가져오기 (예: S3 프리사인 URL 생성 방식)
-            s3ImageFileUrl = s3Service.readFile("profiles",user.getProfile().getProfileImage()); // 수정 그리고 profile.getProfileImage() 안쓰고 user.getProfile 사용한 이유가 있는지?
+        if (profile.getProfileImage() != null && !profile.getProfileImage().isEmpty()) {
+            // S3에서 실제 프로필 이미지 URL 가져오기 (예: S3 프리사인 URL 생성 방식 / 사용 보류)
+//            s3ImageFileUrl = s3Service.readFile("profiles",user.getProfile().getProfileImage());
+            // S3 이미지 파일 주소를 DB에 저장함에 따라 profileImage 필드 값을 그대로 반환
+            s3ImageFileUrl = profile.getProfileImage();
         }
 
         return UserProfileResponse.builder()
@@ -220,22 +223,28 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드
+    // 프로필 이미지 파일 S3 저장 및 파일명 반환 메서드 ( profileImage 필드가 s3 Url를 갖는 방식으로 변환 )
     public String profileImageSave(ModifyRequestDTO dto, MultipartFile imageData, User user) {
         String dbUserProfileImageName = user.getProfile().getProfileImage();
-        String folder = "profiles"; // 수정
+        String folder = "profiles";
 
         // 수정
         // 새로운 이미지가 업로드된 경우
         if (imageData != null && !imageData.isEmpty()) {
             deleteOldProfileImage(folder, dbUserProfileImageName);
             String imageFileName = imageFileService.checkFileExtensionAndRename(imageData, user.getEmail());
-            s3Service.uploadFile(imageData, folder, imageFileName);
+            imageFileName = s3Service.uploadFile(imageData, folder, imageFileName);     // 생성한 s3 URL를 profileImage 필드에 그대로 저장
             return imageFileName;
         }
 
         // 기존 프로필 이미지 유지하는 경우
         if (dto.getProfileImage() != null && !dto.getProfileImage().trim().isEmpty()) {
+
+            if (!dto.getProfileImage().equals(dbUserProfileImageName)) {
+                System.out.println("[에러] 기존 프로필 이미지 유지 실패");
+                throw new CustomException(ErrorCode.S3_FILE_NOT_FOUND);
+            }
+
             return dto.getProfileImage();
         }
 
@@ -245,11 +254,32 @@ public class UserService {
         return "";
     }
 
-    // 수정
+    // 프로필 이미지 파일 삭제 메서드
     private void deleteOldProfileImage(String folder, String profileImageName) {
         if (profileImageName != null && !profileImageName.trim().isEmpty()) {
-            s3Service.deleteFile(folder, profileImageName);
+
+            String imageFileName = extractTargetPath(profileImageName);
+            System.out.println("imageFileName  : " + imageFileName);
+
+            s3Service.deleteFile(folder, imageFileName);
         }
+    }
+
+    // 프로필 이미지 파일 S3 URL에서 파일명 추출
+    private String extractTargetPath(String urlString) {
+        try {
+            URL url = new URL(urlString);
+            String path = url.getPath(); // URL의 경로 추출
+
+            // "profiles/" 이후의 부분만 추출
+            int index = path.indexOf("profiles/");
+            if (index != -1) {
+                return path.substring(index + 9); // "profiles/" 길이만큼 제외
+            }
+        } catch (Exception e) {
+            System.out.println("[에러]" + e.getMessage());
+        }
+        return "";
     }
 
     // userId 기반 User 조회 및 Profile 존재 여부에 따른 처리
@@ -334,6 +364,23 @@ public class UserService {
                     return new UserListResponse(id, email);
                 })
                 .collect(Collectors.toList());
+    }
+
+    // 지정된 사용자의 profileImage 필드 초기화(빈값) 처리 메서드 (관리자용)
+    @Transactional
+    public void deleteProfileImageByEmail(String email) {
+
+        // 사용자 정보 여부 확인
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException.CustomJpaReadException(ErrorCode.USER_NOT_FOUND));
+
+        Profile profile = user.getProfile();
+        if (profile == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        profile.setProfileImage(""); // 변경 감지로 자동 반영됨
+        log.info("사용자 {}의 프로필 이미지가 초기화되었습니다.", email);
     }
 
 //    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
