@@ -10,7 +10,7 @@ public class CorsConfig implements WebMvcConfigurer {
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/**")
 			.allowedOrigins("http://localhost:3000", "http://localhost:5173", "https://on-culture.netlify.app") // 로컬 개발 환경 허용
-			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+			.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
 			.allowedHeaders("*") // 모든 요청 헤더 허용
 			.allowCredentials(true);
 	}
