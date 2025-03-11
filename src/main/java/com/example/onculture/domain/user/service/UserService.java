@@ -366,6 +366,23 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    // 지정된 사용자의 profileImage 필드 초기화(빈값) 처리 메서드 (관리자용)
+    @Transactional
+    public void deleteProfileImageByEmail(String email) {
+
+        // 사용자 정보 여부 확인
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException.CustomJpaReadException(ErrorCode.USER_NOT_FOUND));
+
+        Profile profile = user.getProfile();
+        if (profile == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        profile.setProfileImage(""); // 변경 감지로 자동 반영됨
+        log.info("사용자 {}의 프로필 이미지가 초기화되었습니다.", email);
+    }
+
 //    // 사용자가 좋아요를 누른 소셜 게시판 ID 목록 조회
 //    public LikedSocialPostIdsResponseDto getLikedSocialPosts(Long userId) {
 //        if (!userRepository.existsById(userId)) {
