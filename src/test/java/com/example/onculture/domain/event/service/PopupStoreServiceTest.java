@@ -189,8 +189,8 @@ public class PopupStoreServiceTest {
                 PageRequest.of(pageNum, pageSize),
                 1
         );
-        // 내부에서 bookmarkRepository.findByUserIdAndPerformanceId를 사용하므로 모의 처리
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, post.getId()))
+
+        when(bookmarkRepository.findByUserIdAndPopupStorePostId(userId, post.getId()))
                 .thenReturn(Optional.empty());
         when(popupStorePostRepository.findAll((Specification<PopupStorePost>) any(), eq(PageRequest.of(pageNum, pageSize))))
                 .thenReturn(page);

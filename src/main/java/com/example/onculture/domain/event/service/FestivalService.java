@@ -443,7 +443,7 @@ public class FestivalService {
 		EventResponseDTO eventResponseDTO = festivalPostRepository.findById(id)
 			.map(festivalPost -> {
 				boolean isBookmarked = userId != null &&
-					bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
+					bookmarkRepository.findByUserIdAndFestivalPostId(userId, festivalPost.getId())
 						.isPresent();
 				return new EventResponseDTO(festivalPost, isBookmarked);
 			})
@@ -489,7 +489,7 @@ public class FestivalService {
 			.stream()
 			.map(festivalPost -> {
 				boolean isBookmarked = userId != null &&
-					bookmarkRepository.findByUserIdAndPerformanceId(userId, festivalPost.getId())
+					bookmarkRepository.findByUserIdAndFestivalPostId(userId, festivalPost.getId())
 						.isPresent();
 				return new EventResponseDTO(festivalPost, isBookmarked);
 			})

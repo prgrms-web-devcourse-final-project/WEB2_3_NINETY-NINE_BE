@@ -108,8 +108,7 @@ public class ExhibitServiceTest {
         ExhibitEntity exhibit = createDummyExhibitEntity(seq);
 
         when(exhibitRepository.findById(seq)).thenReturn(Optional.of(exhibit));
-        // 상세 조회에서는 bookmarkRepository.findByUserIdAndPerformanceId 사용
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, seq))
+        when(bookmarkRepository.findByUserIdAndExhibitEntitySeq(userId, seq))
                 .thenReturn(Optional.empty());
 
         // When
@@ -132,7 +131,7 @@ public class ExhibitServiceTest {
         when(exhibitRepository.findById(seq)).thenReturn(Optional.of(exhibit));
         // 북마크가 존재하는 경우
         Bookmark bookmark = createDummyBookmark(userId, exhibit);
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, seq))
+        when(bookmarkRepository.findByUserIdAndExhibitEntitySeq(userId, seq))
                 .thenReturn(Optional.of(bookmark));
 
         // When
@@ -245,7 +244,7 @@ public class ExhibitServiceTest {
         );
 
         // 상세 검색에서는 bookmarkRepository.findByUserIdAndPerformanceId 사용
-        when(bookmarkRepository.findByUserIdAndPerformanceId(userId, exhibit.getSeq()))
+        when(bookmarkRepository.findByUserIdAndExhibitEntitySeq(userId, exhibit.getSeq()))
                 .thenReturn(Optional.empty());
         when(exhibitRepository.findAll((Specification<ExhibitEntity>) any(), eq(PageRequest.of(pageNum, pageSize))))
                 .thenReturn(page);
