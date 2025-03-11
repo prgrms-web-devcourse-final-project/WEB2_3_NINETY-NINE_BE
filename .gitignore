@@ -39,3 +39,5 @@ out/
 .DS_Store
 
 .env
+
+chromedriver-mac-arm64
