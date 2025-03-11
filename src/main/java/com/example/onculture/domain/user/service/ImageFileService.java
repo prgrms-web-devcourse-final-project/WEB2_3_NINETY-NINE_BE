@@ -31,8 +31,9 @@ public class ImageFileService {
         if( !ALLOW_IMAGE_EXTENSIONS.contains(ext) ) throw new CustomException(ErrorCode.FILE_EXTENSION_NOT_ALLOWED);
         if( !ALLOW_IMAGE_MIME_TYPES.contains(mimeType) ) throw new CustomException(ErrorCode.FILE_MIME_TYPE_NOT_ALLOWED);
 
-        // 유니크 속성인 이메일을 추가
-        fileName = email + "/" + UUID.randomUUID() + ext;
+        // 유니크 속성인 이메일을 추가 ( 사용 안함 - 이미지 url에서 파일명을 추출함에 따라 사용 불가능해짐 )
+//        fileName = email + "/" + UUID.randomUUID() + ext;
+        fileName = UUID.randomUUID() + ext;
 
         return fileName;
     }
