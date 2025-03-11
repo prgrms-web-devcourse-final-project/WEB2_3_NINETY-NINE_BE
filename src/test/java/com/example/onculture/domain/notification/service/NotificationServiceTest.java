@@ -19,10 +19,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
+import com.example.onculture.domain.event.repository.ExhibitRepository;
+import com.example.onculture.domain.event.repository.FestivalPostRepository;
+import com.example.onculture.domain.event.repository.PerformanceRepository;
+import com.example.onculture.domain.event.repository.PopupStorePostRepository;
 import com.example.onculture.domain.notification.domain.Notification;
 import com.example.onculture.domain.notification.dto.NotificationRequestDTO;
 import com.example.onculture.domain.notification.dto.NotificationResponseDTO;
 import com.example.onculture.domain.notification.repository.NotificationRepository;
+import com.example.onculture.domain.socialPost.repository.SocialPostRepository;
 import com.example.onculture.domain.user.domain.User;
 import com.example.onculture.domain.user.model.LoginType;
 import com.example.onculture.domain.user.model.Role;
@@ -45,6 +50,21 @@ class NotificationServiceTest {
 
 	@Mock
 	private ModelMapper modelMapper;
+
+	@Mock
+	private SocialPostRepository socialPostRepository;
+
+	@Mock
+	private ExhibitRepository exhibitRepository;
+
+	@Mock
+	private PerformanceRepository performanceRepository;
+
+	@Mock
+	private FestivalPostRepository festivalPostRepository;
+
+	@Mock
+	private PopupStorePostRepository popupStorePostRepository;
 
 	// @Mock으로 선언된 객체들을 자동 주입
 	@InjectMocks
@@ -89,8 +109,6 @@ class NotificationServiceTest {
 
 		responseDTO = new NotificationResponseDTO(
 			null,  // notiId
-			5L,  // userId (알림 받는 사용자)
-			3L,  // senderId (알림을 보낸 사용자)
 			Notification.NotificationType.COMMENT,  // 알림 유형
 			"테스트 알림",  // 알림 내용
 			100L,  // relatedId
@@ -106,21 +124,23 @@ class NotificationServiceTest {
 	@DisplayName("알림 생성 테스트") // 해당 설명이 테스트 이름으로 표시됨
 	void testCreateNotification() {
 		// GIVEN
-		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser)); // 알림 받는 사용자 조회
-		when(userRepository.findById(3L)).thenReturn(Optional.of(mockSender)); // 보낸 사용자 조회
+		when(userRepository.findById(5L)).thenReturn(Optional.of(mockUser));
+		when(userRepository.findById(3L)).thenReturn(Optional.of(mockSender));
+
 		when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
 			Notification savedNotification = invocation.getArgument(0);
-			savedNotification.setNotiId(1L); // ID 설정 (DB에서 자동 증가되는 값 시뮬레이션)
+			savedNotification.setNotiId(1L);
 			return savedNotification;
 		});
+
 		when(modelMapper.map(any(Notification.class), eq(NotificationResponseDTO.class))).thenReturn(responseDTO);
 
 		// WHEN
 		notificationService.createNotification(requestDTO);
 
 		// THEN
-		verify(notificationRepository, times(1)).save(any(Notification.class)); // 저장 메서드 1회 호출 확인
-		verify(messagingTemplate, times(1)).convertAndSend("/topic/notifications/5", responseDTO); // WebSocket 전송 확인
+		verify(notificationRepository, times(1)).save(any(Notification.class));
+		verify(messagingTemplate, times(1)).convertAndSend("/topic/notifications/5", responseDTO);
 	}
 
 	// 특정 사용자의 모든 알림 조회 테스트

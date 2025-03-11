@@ -5,6 +5,9 @@ import com.example.onculture.domain.socialPost.service.SocialPostLikeService;
 import com.example.onculture.domain.socialPost.service.SocialPostService;
 import com.example.onculture.global.response.SuccessResponse;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,24 +40,31 @@ public class SocialPostControllerTest {
     @InjectMocks
     private SocialPostController socialPostController;
 
+    private ObjectMapper objectMapper;
     private PostListResponseDTO mockPostListResponseDTO;
     private PostWithLikeResponseDTO mockPostWithLikeResponseDTO;
     private UserPostListResponseDTO mockUserPostListResponseDTO;
 
     private CustomUserDetails customUserDetails;
-    private List<String> images = new ArrayList<>();
+    private List<MultipartFile> images;
 
     @BeforeEach
     void setUp() {
-        images.add("image.jpg");
-        images.add("image2.jpg");
+
+        objectMapper = new ObjectMapper();
+
+        images = Arrays.asList(
+            new MockMultipartFile("images", "image1.jpg", "image/jpeg", "dummy image 1".getBytes()),
+            new MockMultipartFile("images", "image2.jpg", "image/jpeg", "dummy image 2".getBytes())
+        );
+
 
         mockPostWithLikeResponseDTO = new PostWithLikeResponseDTO();
         mockPostWithLikeResponseDTO.setId(1L);
         mockPostWithLikeResponseDTO.setUserId(1L);
         mockPostWithLikeResponseDTO.setTitle("제목");
         mockPostWithLikeResponseDTO.setContent("내용");
-        mockPostWithLikeResponseDTO.setImageUrls(images);
+        mockPostWithLikeResponseDTO.setImageUrls(Arrays.asList("image1.jpg", "image2.jpg"));
         mockPostWithLikeResponseDTO.setViewCount(0);
         mockPostWithLikeResponseDTO.setCommentCount(0);
         mockPostWithLikeResponseDTO.setLikeCount(0);
@@ -127,48 +139,76 @@ public class SocialPostControllerTest {
 
     @Test
     @DisplayName("소셜 게시판 생성 요청 - 인증 정보 포함")
-    void testCreateSocialPost() {
+    void testCreateSocialPost() throws Exception {
         // given
         CreatePostRequestDTO requestDTO = new CreatePostRequestDTO();
         requestDTO.setTitle("제목");
         requestDTO.setContent("내용");
-        requestDTO.setImageUrls(images);
 
-        when(socialPostService.createSocialPost(customUserDetails.getUserId(), requestDTO))
-                .thenReturn(mockPostWithLikeResponseDTO);
+        String requestJson = objectMapper.writeValueAsString(requestDTO);
+        MockMultipartFile requestDTOMultipart =
+            new MockMultipartFile("requestDTO", "", "application/json", requestJson.getBytes());
+
+        when(socialPostService.createSocialPost(
+            eq(customUserDetails.getUserId()),
+            any(CreatePostRequestDTO.class),  // ✅ 인스턴스 무시하고 타입만 체크
+            eq(images)
+        )).thenReturn(mockPostWithLikeResponseDTO);
 
         // when
         ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> response =
-                socialPostController.createSocialPost(requestDTO, customUserDetails);
+            socialPostController.createSocialPost(requestJson, images, customUserDetails);
 
         // then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(mockPostWithLikeResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).createSocialPost(customUserDetails.getUserId(), requestDTO);
+
+        // ✅ 객체 매칭을 완화하여 검증
+        verify(socialPostService, times(1)).createSocialPost(
+            eq(customUserDetails.getUserId()),
+            any(CreatePostRequestDTO.class),
+            eq(images)
+        );
     }
+
 
     @Test
     @DisplayName("소셜 게시판 수정 요청 - 인증 정보 포함")
-    void testUpdateSocialPost() {
+    void testUpdateSocialPost() throws Exception {
         // given
         Long socialPostId = 1L;
         UpdatePostRequestDTO requestDTO = new UpdatePostRequestDTO();
         requestDTO.setTitle("수정 제목");
         requestDTO.setContent("수정 내용");
-        requestDTO.setImageUrls(images);
 
-        when(socialPostService.updateSocialPost(customUserDetails.getUserId(), requestDTO, socialPostId))
-                .thenReturn(mockPostWithLikeResponseDTO);
+        String requestJson = objectMapper.writeValueAsString(requestDTO);
+        MockMultipartFile requestDTOMultipart =
+            new MockMultipartFile("requestDTO", "", "application/json", requestJson.getBytes());
+
+        when(socialPostService.updateSocialPost(
+            eq(customUserDetails.getUserId()),
+            any(UpdatePostRequestDTO.class),  // ✅ 객체 매칭 완화
+            eq(socialPostId),
+            eq(images)
+        )).thenReturn(mockPostWithLikeResponseDTO);
 
         // when
         ResponseEntity<SuccessResponse<PostWithLikeResponseDTO>> response =
-                socialPostController.updateSocialPost(requestDTO, socialPostId, customUserDetails);
+            socialPostController.updateSocialPost(requestJson, images, socialPostId, customUserDetails);
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mockPostWithLikeResponseDTO, response.getBody().getData());
-        verify(socialPostService, times(1)).updateSocialPost(customUserDetails.getUserId(), requestDTO, socialPostId);
+
+        // ✅ 객체 매칭을 완화하여 검증
+        verify(socialPostService, times(1)).updateSocialPost(
+            eq(customUserDetails.getUserId()),
+            any(UpdatePostRequestDTO.class),
+            eq(socialPostId),
+            eq(images)
+        );
     }
+
 
     @Test
     @DisplayName("소셜 게시판 삭제 요청 - 인증 정보 포함")

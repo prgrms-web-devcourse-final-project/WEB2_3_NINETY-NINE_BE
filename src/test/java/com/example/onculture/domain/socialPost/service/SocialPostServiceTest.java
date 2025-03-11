@@ -10,6 +10,8 @@ import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
+import com.example.onculture.global.utils.S3.S3Service;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,9 +20,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +45,9 @@ public class SocialPostServiceTest {
     @Mock
     private SocialPostLikeRepository socialPostLikeRepository;
 
+    @Mock
+    private S3Service s3Service;
+
     @InjectMocks
     private SocialPostService socialPostService;
 
@@ -48,13 +56,14 @@ public class SocialPostServiceTest {
     private CreatePostRequestDTO createPostRequestDTO;
     private UpdatePostRequestDTO updatePostRequestDTO;
 
-    private List<String> images = new ArrayList<>();
+    private List<MultipartFile> images;
 
     @BeforeEach
     void setUp() {
-        images.add("image.jpg");
-        images.add("image2.jpg");
-
+        images = Arrays.asList(
+            new MockMultipartFile("file1", "image1.jpg", "image/jpeg", "dummy image 1".getBytes()),
+            new MockMultipartFile("file2", "image2.jpg", "image/jpeg", "dummy image 2".getBytes())
+        );
         testUser = User.builder()
                 .id(1L)
                 .email("test@example.com")
@@ -72,18 +81,16 @@ public class SocialPostServiceTest {
                 .user(testUser)
                 .title("제목")
                 .content("내용")
-                .imageUrls("image.jpg")
+                .imageUrls(new ArrayList<>())
                 .build();
 
         createPostRequestDTO = new CreatePostRequestDTO();
         createPostRequestDTO.setTitle("제목");
         createPostRequestDTO.setContent("내용");
-        createPostRequestDTO.setImageUrls(images);
 
         updatePostRequestDTO = new UpdatePostRequestDTO();
         updatePostRequestDTO.setTitle("제목");
         updatePostRequestDTO.setContent("내용");
-        updatePostRequestDTO.setImageUrls(images);
     }
 
     @Test
@@ -197,25 +204,30 @@ public class SocialPostServiceTest {
     void testCreateSocialPost_valid() {
         // given
         Long userId = 1L;
+        List<String> uploadedImageUrls = Arrays.asList("s3://bucket/image1.jpg", "s3://bucket/image2.jpg");
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(s3Service.uploadFiles(images, "social_posts")).thenReturn(uploadedImageUrls);
         when(socialPostRepository.save(any(SocialPost.class))).thenAnswer(invocation -> {
             SocialPost sp = invocation.getArgument(0);
             return SocialPost.builder()
-                    .id(1L)
-                    .user(sp.getUser())
-                    .title(sp.getTitle())
-                    .content(sp.getContent())
-                    .imageUrls(sp.getImageUrls())
-                    .build();
+                .id(1L)
+                .user(sp.getUser())
+                .title(sp.getTitle())
+                .content(sp.getContent())
+                .imageUrls(sp.getImageUrls())
+                .build();
         });
 
         // when
         // 반환 타입을 PostWithLikeResponseDTO로 변경
-        PostWithLikeResponseDTO responseDTO = socialPostService.createSocialPost(userId, createPostRequestDTO);
+        PostWithLikeResponseDTO responseDTO = socialPostService.createSocialPost(userId, createPostRequestDTO, images);
 
         // then
         assertNotNull(responseDTO);
+        assertEquals(uploadedImageUrls, responseDTO.getImageUrls());
         verify(userRepository, times(1)).findById(userId);
+        verify(s3Service, times(1)).uploadFiles(images, "social_posts");
         verify(socialPostRepository, times(1)).save(any(SocialPost.class));
     }
 
@@ -228,7 +240,7 @@ public class SocialPostServiceTest {
 
         // when & then
         CustomException ex = assertThrows(CustomException.class, () ->
-                socialPostService.createSocialPost(userId, createPostRequestDTO)
+            socialPostService.createSocialPost(userId, createPostRequestDTO, images)
         );
         assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
     }
@@ -239,19 +251,24 @@ public class SocialPostServiceTest {
         // given
         Long userId = 1L;
         Long socialPostId = 1L;
+        List<String> uploadedImageUrls = Arrays.asList("s3://bucket/image3.jpg", "s3://bucket/image4.jpg");
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(testSocialPost));
+        when(s3Service.uploadFiles(images, "social_posts")).thenReturn(uploadedImageUrls);
         when(socialPostRepository.save(any(SocialPost.class))).thenReturn(testSocialPost);
         when(socialPostLikeRepository.existsByUserIdAndSocialPostId(userId, testSocialPost.getId())).thenReturn(false);
 
         // when
         // 반환 타입을 PostWithLikeResponseDTO로 변경
-        PostWithLikeResponseDTO responseDTO = socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId);
+        PostWithLikeResponseDTO responseDTO = socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId, images);
 
         // then
         assertNotNull(responseDTO);
+        assertEquals(uploadedImageUrls, responseDTO.getImageUrls());
         verify(userRepository, times(1)).findById(userId);
         verify(socialPostRepository, times(2)).findById(socialPostId);
+        verify(s3Service, times(1)).uploadFiles(images, "social_posts");
         verify(socialPostRepository, times(1)).save(testSocialPost);
     }
 
@@ -266,7 +283,7 @@ public class SocialPostServiceTest {
 
         // when & then
         CustomException ex = assertThrows(CustomException.class, () ->
-                socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId)
+                socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId, images)
         );
         assertEquals(ErrorCode.POST_NOT_FOUND, ex.getErrorCode());
     }
@@ -291,13 +308,13 @@ public class SocialPostServiceTest {
                 .user(otherUser)
                 .title("Title")
                 .content("Content")
-                .imageUrls("img.jpg")
+                .imageUrls(new ArrayList<>())
                 .build();
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(otherPost));
 
         // when & then
         CustomException ex = assertThrows(CustomException.class, () ->
-                socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId)
+                socialPostService.updateSocialPost(userId, updatePostRequestDTO, socialPostId, images)
         );
         assertEquals(ErrorCode.UNAUTHORIZED_POST_MANAGE, ex.getErrorCode());
     }
@@ -308,6 +325,9 @@ public class SocialPostServiceTest {
         // given
         Long userId = 1L;
         Long socialPostId = 1L;
+        List<String> existingImages = Arrays.asList("s3://bucket/image1.jpg", "s3://bucket/image2.jpg");
+        testSocialPost.setImageUrls(existingImages);
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(testSocialPost));
 
@@ -316,6 +336,8 @@ public class SocialPostServiceTest {
 
         // then
         assertEquals("삭제 완료", result);
+        verify(s3Service, times(1)).deleteFile("social_posts", "image1.jpg"); // ✅ S3 이미지 삭제 확인
+        verify(s3Service, times(1)).deleteFile("social_posts", "image2.jpg");
         verify(socialPostRepository, times(1)).deleteById(socialPostId);
     }
 
@@ -340,7 +362,7 @@ public class SocialPostServiceTest {
                 .user(otherUser)
                 .title("Title")
                 .content("Content")
-                .imageUrls("img.jpg")
+                .imageUrls(new ArrayList<>())
                 .build();
         when(socialPostRepository.findById(socialPostId)).thenReturn(Optional.of(otherPost));
 

@@ -1,5 +1,6 @@
 package com.example.onculture.domain.socialPost.service;
 
+import com.example.onculture.domain.notification.dto.NotificationRequestDTO;
 import com.example.onculture.domain.notification.service.NotificationService;
 import com.example.onculture.domain.socialPost.domain.Comment;
 import com.example.onculture.domain.socialPost.domain.SocialPost;
@@ -79,7 +80,7 @@ public class CommentServiceTest {
                 .user(testUser)
                 .title("Test Post")
                 .content("Test Content")
-                .imageUrls("post.jpg")
+                .imageUrls(new ArrayList<>())
                 .build();
 
         testComment = Comment.builder()
@@ -143,6 +144,7 @@ public class CommentServiceTest {
         verify(socialPostRepository, times(1)).findById(socialPostId);
         verify(commentRepository, times(1)).save(any(Comment.class));
         verify(socialPostRepository, times(1)).save(testSocialPost);
+        verify(notificationService, times(1)).createNotification(any(NotificationRequestDTO.class));
     }
 
     @Test
@@ -159,6 +161,7 @@ public class CommentServiceTest {
         CommentResponseDTO dto = commentService.updateCommentByPost(1L, socialPostId, commentId, updateCommentRequestDTO);
         // then
         assertNotNull(dto);
+        assertEquals("Updated Comment", dto.getContent());
         verify(userRepository, times(1)).findById(1L);
         verify(commentRepository, times(2)).findById(commentId);
         verify(commentRepository, times(1)).save(any(Comment.class));
