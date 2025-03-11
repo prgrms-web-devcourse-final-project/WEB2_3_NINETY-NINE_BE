@@ -239,6 +239,12 @@ public class UserService {
 
         // 기존 프로필 이미지 유지하는 경우
         if (dto.getProfileImage() != null && !dto.getProfileImage().trim().isEmpty()) {
+
+            if (!dto.getProfileImage().equals(dbUserProfileImageName)) {
+                System.out.println("[에러] 기존 프로필 이미지 유지 실패");
+                throw new CustomException(ErrorCode.S3_FILE_NOT_FOUND);
+            }
+
             return dto.getProfileImage();
         }
 
