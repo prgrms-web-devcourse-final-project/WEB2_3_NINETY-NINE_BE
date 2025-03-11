@@ -155,6 +155,14 @@ public class UserController {
         return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "지정된 사용자의 회원탈퇴 성공"));
     }
 
+    // 지정 사용자의 profileImage 필드 초기화 API (관리자용)
+    @Operation( summary = "지정 사용자의 profileImage 필드 초기화 (관리자용)", description = "지정된 유저의 profileImage 필드를 빈값으로 초기화하는 관리자용 API" )
+    @PutMapping( "/admin/{email}/delete_profile_image" )
+    public ResponseEntity<SuccessResponse<String>> adminDeleteProfileImageByUser(@PathVariable String email) {
+        userService.deleteProfileImageByEmail(email);
+        return ResponseEntity.ok(SuccessResponse.success(HttpStatus.OK, "지정된 사용자의 profileImage 필드 초기화 성공"));
+    }
+
 //    @Operation(summary = "유저가 좋아요를 누른 SocialPost 목록 조회",
 //            description = "")
 //    @GetMapping("/users/{userId}/liked-social-posts")
