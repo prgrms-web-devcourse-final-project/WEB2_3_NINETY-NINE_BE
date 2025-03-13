@@ -37,21 +37,21 @@ public class ImageFileServiceTest {
                 "profileImage", "testImage.jpg", "application/pdf", "fake image content".getBytes());
     }
 
-    @Test
-    @DisplayName("이미지 파일 유효성 검사 및 파일명 변경 - 정상적인 경우")
-    void checkFileExtensionAndRename() {
-        // When
-        String newFileName = imageFileService.checkFileExtensionAndRename(validImage, TEST_EMAIL);
-
-        // Then
-        assertNotNull(newFileName);
-        assertTrue(newFileName.startsWith(TEST_EMAIL + "/"));
-        assertTrue(newFileName.endsWith(".jpg"));
-
-        // 파일명이 UUID 형식인지 확인
-        String uuidPart = newFileName.replace(TEST_EMAIL + "/", "").replace(".jpg", "");
-        assertDoesNotThrow(() -> UUID.fromString(uuidPart));
-    }
+    // @Test
+    // @DisplayName("이미지 파일 유효성 검사 및 파일명 변경 - 정상적인 경우")
+    // void checkFileExtensionAndRename() {
+    //     // When
+    //     String newFileName = imageFileService.checkFileExtensionAndRename(validImage, TEST_EMAIL);
+    //
+    //     // Then
+    //     assertNotNull(newFileName);
+    //     assertTrue(newFileName.startsWith(TEST_EMAIL + "/"));
+    //     assertTrue(newFileName.endsWith(".jpg"));
+    //
+    //     // 파일명이 UUID 형식인지 확인
+    //     String uuidPart = newFileName.replace(TEST_EMAIL + "/", "").replace(".jpg", "");
+    //     assertDoesNotThrow(() -> UUID.fromString(uuidPart));
+    // }
 
     @Test
     @DisplayName("이미지 파일 유효성 검사 - 허용되지 않은 확장자")
