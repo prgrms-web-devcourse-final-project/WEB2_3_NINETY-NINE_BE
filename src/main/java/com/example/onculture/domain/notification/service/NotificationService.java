@@ -141,7 +141,7 @@ public class NotificationService {
 		}
 
 		notification.setIsRead(true);
-		notificationRepository.saveAndFlush(notification);
+		notificationRepository.save(notification);
 
 	}
 
@@ -159,7 +159,6 @@ public class NotificationService {
 		notifications.forEach(notification -> notification.setIsRead(true));
 		notificationRepository.saveAll(notifications);
 
-		entityManager.flush();
 	}
 
 	// 특정 사용자의 모든 알림 삭제
