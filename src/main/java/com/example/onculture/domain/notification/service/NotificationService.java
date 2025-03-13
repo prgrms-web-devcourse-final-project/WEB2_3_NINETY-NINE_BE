@@ -28,6 +28,9 @@ import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -42,6 +45,10 @@ public class NotificationService {
 	private final PerformanceRepository performanceRepository;
 	private final FestivalPostRepository festivalPostRepository;
 	private final PopupStorePostRepository popupStorePostRepository;
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
 
 	// 알림 기능 예정
 	// 1. 사용자가 작성한 글에 좋아요 달리면 알림 - done
@@ -101,6 +108,7 @@ public class NotificationService {
 	}
 
 	// 특정 사용자의 모든 알림 조회
+	@Transactional
 	public List<NotificationResponseDTO> getAllNotifications(Long userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -119,6 +127,7 @@ public class NotificationService {
 	}
 
 	// 특정 알림 읽음 처리
+	@Transactional
 	public void markNotificationAsRead(Long userId, Long notiId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -132,10 +141,12 @@ public class NotificationService {
 		}
 
 		notification.setIsRead(true);
-		notificationRepository.save(notification);
+		notificationRepository.saveAndFlush(notification);
+
 	}
 
 	// 특정 사용자의 모든 알림 읽음 처리
+	@Transactional
 	public void markAllNotificationsAsRead(Long userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -147,6 +158,8 @@ public class NotificationService {
 
 		notifications.forEach(notification -> notification.setIsRead(true));
 		notificationRepository.saveAll(notifications);
+
+		entityManager.flush();
 	}
 
 	// 특정 사용자의 모든 알림 삭제
