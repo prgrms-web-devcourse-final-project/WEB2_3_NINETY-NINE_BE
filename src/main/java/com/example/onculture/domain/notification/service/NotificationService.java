@@ -28,6 +28,9 @@ import com.example.onculture.domain.user.repository.UserRepository;
 import com.example.onculture.global.exception.CustomException;
 import com.example.onculture.global.exception.ErrorCode;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -42,6 +45,10 @@ public class NotificationService {
 	private final PerformanceRepository performanceRepository;
 	private final FestivalPostRepository festivalPostRepository;
 	private final PopupStorePostRepository popupStorePostRepository;
+
+	@PersistenceContext
+	private EntityManager entityManager;
+
 
 	// 알림 기능 예정
 	// 1. 사용자가 작성한 글에 좋아요 달리면 알림 - done
@@ -101,6 +108,7 @@ public class NotificationService {
 	}
 
 	// 특정 사용자의 모든 알림 조회
+	@Transactional
 	public List<NotificationResponseDTO> getAllNotifications(Long userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -119,6 +127,7 @@ public class NotificationService {
 	}
 
 	// 특정 알림 읽음 처리
+	@Transactional
 	public void markNotificationAsRead(Long userId, Long notiId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -132,10 +141,12 @@ public class NotificationService {
 		}
 
 		notification.setIsRead(true);
-		notificationRepository.save(notification);
+		notificationRepository.saveAndFlush(notification);
+
 	}
 
 	// 특정 사용자의 모든 알림 읽음 처리
+	@Transactional
 	public void markAllNotificationsAsRead(Long userId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -147,6 +158,8 @@ public class NotificationService {
 
 		notifications.forEach(notification -> notification.setIsRead(true));
 		notificationRepository.saveAll(notifications);
+
+		entityManager.flush();
 	}
 
 	// 특정 사용자의 모든 알림 삭제
@@ -176,8 +189,8 @@ public class NotificationService {
 		}
 
 		Map<Notification.NotificationType, String> userMessages = Map.of(
-			Notification.NotificationType.LIKE, String.format("%s님이 '%s' 게시글에 좋아요를 눌렀습니다.", sender.getNickname(), title),
-			Notification.NotificationType.COMMENT, String.format("%s님이 '%s' 게시글에 댓글을 달았습니다.", sender.getNickname(), title)
+			Notification.NotificationType.LIKE, String.format("%s님이 게시글에 좋아요를 눌렀습니다.", sender.getNickname()),
+			Notification.NotificationType.COMMENT, String.format("%s님이 게시글에 댓글을 달았습니다.", sender.getNickname())
 		);
 
 		return userMessages.getOrDefault(type, "새로운 알림이 있습니다.");
@@ -189,30 +202,39 @@ public class NotificationService {
 			return "알 수 없는 게시글";
 		}
 
+		String title;
 		switch (relatedType) {
 			case POST:
-				return socialPostRepository.findById(relatedId)
+				title = socialPostRepository.findById(relatedId)
 					.map(SocialPost::getTitle)
 					.orElse("삭제된 게시글");
+				break;
 			case EXHIBIT:
-				return exhibitRepository.findById(relatedId)
+				title = exhibitRepository.findById(relatedId)
 					.map(ExhibitEntity::getTitle)
 					.orElse("삭제된 전시");
+				break;
 			case PERFORMANCE:
-				return performanceRepository.findById(relatedId)
+				title = performanceRepository.findById(relatedId)
 					.map(Performance::getPerformanceTitle)
 					.orElse("삭제된 공연");
+				break;
 			case FESTIVAL:
-				return festivalPostRepository.findById(relatedId)
-					.map(FestivalPost::getFestivalContent) //
+				title = festivalPostRepository.findById(relatedId)
+					.map(FestivalPost::getFestivalContent)
 					.orElse("삭제된 축제");
+				break;
 			case POPUPSTORE:
-				return popupStorePostRepository.findById(relatedId)
-					.map(PopupStorePost::getContent) //
+				title = popupStorePostRepository.findById(relatedId)
+					.map(PopupStorePost::getContent)
 					.orElse("삭제된 팝업스토어");
+				break;
 			default:
-				return "알 수 없는 게시글";
+				title = "알 수 없는 게시글";
 		}
+
+		// 5글자 이상이면 앞 5글자만 가져오고 "..." 추가
+		return title.length() > 5 ? title.substring(0, 5) + "..." : title;
 	}
 
 

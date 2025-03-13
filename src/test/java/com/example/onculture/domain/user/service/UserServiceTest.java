@@ -1,5 +1,6 @@
 package com.example.onculture.domain.user.service;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.example.onculture.domain.event.domain.Bookmark;
 import com.example.onculture.domain.event.domain.Performance;
 import com.example.onculture.domain.event.dto.BookmarkEventListDTO;
@@ -23,8 +24,8 @@ import com.example.onculture.domain.user.model.Role;
 import com.example.onculture.domain.user.model.Social;
 import com.example.onculture.domain.user.repository.ProfileRepository;
 import com.example.onculture.domain.user.repository.UserRepository;
-import com.example.onculture.global.utils.AwsS3Util;
 import com.example.onculture.global.utils.CookieUtil;
+import com.example.onculture.global.utils.S3.S3Service;
 import com.example.onculture.global.utils.jwt.CustomUserDetails;
 import com.example.onculture.global.utils.jwt.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
@@ -80,7 +81,9 @@ public class UserServiceTest {
     @Mock
     private Authentication authentication;
     @Mock
-    private AwsS3Util awsS3Util;
+    private S3Service s3Service;
+    @Mock
+    private AmazonS3 amazonS3;
     @Mock
     private ImageFileService imageFileService;
     @Mock
@@ -253,30 +256,30 @@ public class UserServiceTest {
         Long userId = 2L;
         doReturn(findUser).when(userService).findUserAndProfileByuserId(userId);
 
-        String mockS3Url = "https://s3bucket/fpdjxpa37@gmail.com/testimage.jpg";
-        doReturn(mockS3Url).when(awsS3Util).readFile(findUser.getProfile().getProfileImage());
+        // ✅ 서비스 코드 변경에 맞춰 직접 URL을 profileImage 필드에 저장
+        String profileImageUrl = "https://s3bucket/fpdjxpa37@gmail.com/profiles/testimage.jpa";
+        findProfile.setProfileImage(profileImageUrl);
 
         // When
         UserProfileResponse response = userService.getUserProfile(userId);
 
         // Then
-        // DTO 검증
         assertNotNull(response);
         assertEquals(findUser.getNickname(), response.getNickname());
         assertEquals(findUser.getLoginType(), response.getLoginType());
-        assertEquals(findProfile.getProfileImage(), response.getProfileImage());
-        assertEquals(findProfile.getProfileImage(), response.getProfileImage());
-        assertEquals(mockS3Url, response.getS3Bucket());
+
+        // ✅ 프로필 이미지 URL이 profile.getProfileImage() 값과 일치해야 함
+        assertEquals(profileImageUrl, response.getProfileImage());
+        assertEquals(profileImageUrl, response.getS3Bucket());  // ✅ 필드명이 `s3Bucket`이므로 동일하게 반환
 
         // 관심사 검증
         Set<String> interests = findProfile.getInterests().stream()
-                .map(Interest::getKor)
-                .collect(Collectors.toSet());
+            .map(Interest::getKor)
+            .collect(Collectors.toSet());
         assertEquals(interests, response.getInterests());
 
         // 호출 검증
         verify(userService, times(1)).findUserAndProfileByuserId(userId);
-        verify(awsS3Util, times(1)).readFile(findUser.getProfile().getProfileImage());
     }
 
     @Test
@@ -284,47 +287,64 @@ public class UserServiceTest {
     void modifyUserProfile() {
         // Given
         Long userId = findUser.getId();
-        String newImageFileName = "newImageFileName";
+        String newImageFileName = "testimage.jpa"; // ✅ 기존 파일명 유지
+        String folder = "profiles";
 
         doReturn(findUser).when(userService).findUserAndProfileByuserId(userId);
         when(userRepository.existsByNickname(modifyRequestDTO.getNickname())).thenReturn(false);
-        when(passwordEncoder.encode(modifyRequestDTO.getPassword().trim())).thenReturn(modifyRequestDTO.getPassword());
-        when(imageFileService.checkFileExtensionAndRename(imageData, findUser.getEmail())).thenReturn(newImageFileName);
-        doNothing().when(awsS3Util).uploadFile(imageData, newImageFileName);
+        when(passwordEncoder.encode(modifyRequestDTO.getPassword().trim())).thenReturn("encodedPassword");
+        when(imageFileService.checkFileExtensionAndRename(imageData, findUser.getEmail()))
+            .thenReturn(newImageFileName);
+
+        // ✅ `uploadFile()` 호출 시 실제 S3 URL을 반환하도록 변경
+        String uploadedImageUrl = "https://s3bucket/fpdjxpa37@gmail.com/profiles/" + newImageFileName;
+        doReturn(uploadedImageUrl).when(s3Service).uploadFile(imageData, folder, newImageFileName);
 
         // When
         userService.modifyUserProfile(userId, modifyRequestDTO, imageData);
 
         // Then
-        assertEquals(findUser.getNickname(), modifyRequestDTO.getNickname());
+        assertEquals(modifyRequestDTO.getNickname(), findUser.getNickname());
         assertEquals("encodedPassword", findUser.getPassword());
-        assertEquals(findProfile.getDescription(), modifyRequestDTO.getDescription());
-        assertEquals("newImageFileName", findProfile.getProfileImage());
-        Set<String> interests = findProfile.getInterests().stream()
-                        .map(Interest::getKor)
-                                .collect(Collectors.toSet());
-        assertEquals(interests, modifyRequestDTO.getInterests());
+        assertEquals(modifyRequestDTO.getDescription(), findProfile.getDescription());
+        assertEquals(uploadedImageUrl, findProfile.getProfileImage());  // ✅ 프로필 이미지 URL 검증
 
+        // Interest 변환 후 비교 (String -> Interest 변환 필요)
+        Set<String> expectedInterests = modifyRequestDTO.getInterests();
+        Set<String> actualInterests = findProfile.getInterests().stream()
+            .map(Interest::getKor)
+            .collect(Collectors.toSet());
+        assertEquals(expectedInterests, actualInterests);
+
+        // 검증
         verify(userRepository, times(1)).save(findUser);
-        verify(awsS3Util, times(1)).uploadFile(imageData, newImageFileName);
+        verify(s3Service, times(1)).uploadFile(imageData, folder, newImageFileName);
     }
+
 
     @Test
     @DisplayName("프로필 이미지 파일 S3 저장 및 파일명 반환 메서드")
     void profileImageSave() {
         // Given
-        String newImageFileName = "newImageFileName";
+        String newImageFileName = "testimage.jpa";
+        String folder = "profiles";
+
+        // ✅ `uploadFile()`에서 실제 S3 URL을 반환하도록 Mock 설정
+        String uploadedImageUrl = "https://s3bucket/fpdjxpa37@gmail.com/profiles/" + newImageFileName;
         when(imageFileService.checkFileExtensionAndRename(imageData, findUser.getEmail())).thenReturn(newImageFileName);
-        doNothing().when(awsS3Util).uploadFile(imageData, newImageFileName);
+        doReturn(uploadedImageUrl).when(s3Service).uploadFile(imageData, folder, newImageFileName);
 
         // When
         String imageFileName = userService.profileImageSave(modifyRequestDTO, imageData, findUser);
 
         // Then
-        assertEquals(newImageFileName, imageFileName);
+        assertEquals(uploadedImageUrl, imageFileName);
         verify(imageFileService, times(1)).checkFileExtensionAndRename(imageData, findUser.getEmail());
-        verify(awsS3Util, times(1)).uploadFile(imageData, newImageFileName);
+        verify(s3Service, times(1)).uploadFile(imageData, folder, newImageFileName);
     }
+
+
+
 
     @Test
     @DisplayName("userId 기반 User 조회 및 Profile 존재 여부에 따른 처리")
