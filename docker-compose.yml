@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  app:
+    container_name: my-app
+    image: teayoung789/my-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/OnCulture?serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: !123456
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.mariadb.jdbc.Driver
+    networks:
+      - app-network
+
+  db:
+    image: mariadb:10.6
+    container_name: my-mariadb
+    restart: always
+    environment:
+      MYSQL_DATABASE: OnCulture
+      MYSQL_ROOT_PASSWORD: !123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
